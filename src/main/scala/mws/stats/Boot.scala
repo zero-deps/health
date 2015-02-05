@@ -29,5 +29,5 @@ object Boot extends App {
   }
 
   udpListener = Some(system.actorOf(UdpListener.props(port = 50123, statsKvs), "udp-listener"))
-  httpListener = Some(system.actorOf(HttpListener.props(port = 9010), "http-listener"))
+  httpListener = Some(system.actorOf(HttpListener.props(port = 9010, statsKvs), "http-listener"))
 }
