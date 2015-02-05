@@ -1,15 +1,19 @@
 package .stats
 
-import akka.actor.{Props, Actor, ActorLogging}
+import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.io.Udp
 
 object Handler {
-  def props(): Props = Props(new Handler())
+  def props(kvs: ActorRef): Props = Props(new Handler(kvs))
 }
 
-class Handler extends Actor with ActorLogging {
+class Handler(kvs: ActorRef) extends Actor with ActorLogging {
   def receive: Receive = {
     case Udp.Received(data, _) =>
-      log.info(data.decodeString("UTF-8"))
+      data.decodeString("UTF-8").split('#') match {
+        case Array(node, stats, _*) =>
+          kvs ! StatsKvsService.Put(node, stats)
+        case _ =>
+      }
   }
 }
