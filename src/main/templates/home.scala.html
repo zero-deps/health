@@ -1,13 +1,32 @@
 <!DOCTYPE html>
 <html>
-<head>
-  <meta charset="utf-8">
-  <title>Dashboard</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="home.css" rel="stylesheet">
-  <script src="home.js"></script>
-</head>
-<body>
-
-</body>
+  <head>
+    <meta charset="utf-8">
+    <title>Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="home.css" rel="stylesheet">
+    <script type="text/javascript" src="lib/smoothie.js"></script>
+    <script src="home.js"></script>
+  </head>
+  <body>
+    <canvas id="mycanvas" width="400" height="100"></canvas>
+    <script type="text/javascript">
+      var line = new TimeSeries();
+      setInterval(function() {
+        var xhr = new XMLHttpRequest();
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState == 4 && xhr.status == 200) {
+            var data = JSON.parse(xhr.responseText);
+            console.log(data);
+            line.append(new Date().getTime(), Math.random());
+          }
+        }
+        xhr.open("GET", "get", true);
+        xhr.send();
+      }, 3000);
+      var smoothie = new SmoothieChart();
+      smoothie.addTimeSeries(line);
+      smoothie.streamTo(document.getElementById("mycanvas"), 3000);
+    </script>
+  </body>
 </html>

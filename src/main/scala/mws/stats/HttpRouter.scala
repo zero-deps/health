@@ -28,8 +28,8 @@ class HttpRouter(stats: ActorRef) extends Actor with ActorLogging {
 
     case Route(GET, "get" :: Nil, _) =>
       val client = sender
-      stats ? StatsKvs.All onComplete {
-        case Success(StatsKvs.AllAck(nodes)) =>
+      stats ? StatsKvs.Get onComplete {
+        case Success(StatsKvs.GetAck(nodes)) =>
           client ! Content(write(nodes))
         case x =>
           log.warning(s"Bad response: $x")

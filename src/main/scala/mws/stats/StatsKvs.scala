@@ -8,15 +8,13 @@ import org.iq80.leveldb.DB
 object StatsKvs {
   case class Put(key: String, value: String)
   case object PutAck
-  case object All
-  type Time = String
-  type ParamValue = String
-  type TimedParamValues = Map[Time, ParamValue]
+  case object Get
   type ParamKey = String
-  type Params = Map[ParamKey, TimedParamValues]
+  type ParamValue = Map[String, String]
+  type Params = Map[ParamKey, ParamValue]
   type Node = String
   type Nodes = Map[Node, Params]
-  case class AllAck(nodes: Nodes)
+  case class GetAck(nodes: Nodes)
 
   def props(db: DB, dbConfig: String): Props = Props(new StatsKvs(db, dbConfig))
 }
@@ -28,25 +26,18 @@ class StatsKvs(val leveldb: DB, val leveldbConfigPath: String)
     case Put(key, value) =>
       kvs.put(key, value)
       sender ! PutAck
-    case All =>
+    case Get =>
       val nodes = kvs.get()
       val newNodes = nodes.foldLeft(Map.empty[Node, Params]) {
         case (nodes: Nodes, (k, value)) =>
           val Array(node, param, time) = k.split('#')
-          nodes.get(node) match {
-            case Some(params: Params) =>
-              val timedParamValues = params.getOrElse(param, Map.empty)
-              val newTimedParamValues = timedParamValues + (time -> value)
-              val newParams = params.filterNot(_._1 == param) + (param -> newTimedParamValues)
-              val newNodes = nodes.filterNot(_._1 == node) + (node -> newParams)
-              newNodes
-            case None =>
-              val newTimedParamValues = Map(time -> value)
-              val newParams = Map(param -> newTimedParamValues)
-              val newNodes = nodes + (node -> newParams)
-              newNodes
-          }
+          val params = nodes.getOrElse(node, Map.empty)
+          if (time > params.getOrElse(param, Map.empty).getOrElse("time", "0")) {
+            val newParamValue = Map("time" -> time, "value" -> value)
+            val newParams = params.filterNot(_._1 == param) + (param -> newParamValue)
+            nodes.filterNot(_._1 == node) + (node -> newParams)
+          } else nodes
       }
-      sender ! AllAck(newNodes)
+      sender ! GetAck(newNodes)
   }
 }
