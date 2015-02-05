@@ -4,11 +4,11 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.io.{IO, Udp}
 import java.net.InetSocketAddress
 
-object Listener {
-  def props(port: Int, kvs: ActorRef): Props = Props(new Listener(port, kvs))
+object UdpListener {
+  def props(port: Int, kvs: ActorRef): Props = Props(new UdpListener(port, kvs))
 }
 
-class Listener(port: Int, kvs: ActorRef) extends Actor with ActorLogging {
+class UdpListener(port: Int, kvs: ActorRef) extends Actor with ActorLogging {
   import context.system
   IO(Udp) ! Udp.Bind(self, new InetSocketAddress("localhost", port))
 
