@@ -1,20 +1,25 @@
 package .stats
 
-import akka.actor.{ActorLogging, Actor}
-import kvs.Kvs
-import .stats.StatsKvsService._
-import scala.collection.immutable
+import akka.actor.Props
+import collection.immutable
+import kvs.LeveldbKvs
+import .stats.StatsKvs._
+import org.iq80.leveldb.DB
 
-object StatsKvsService {
+object StatsKvs {
   case class Put(key: String, value: String)
   case object PutAck
   case class Get(key: String)
   case class Value(value: Option[String])
   case object All
   case class Values(values: immutable.Seq[(String, String)])
+
+  def props(db: DB, dbConfig: String): Props = Props(new StatsKvs(db, dbConfig))
 }
 
-class StatsKvsService extends Actor with ActorLogging { kvs: Kvs =>
+class StatsKvs(val leveldb: DB, val leveldbConfigPath: String)
+  extends LeveldbKvs { kvs: LeveldbKvs =>
+
   def receive: Receive = {
     case Put(key, value) =>
       kvs.put(key, value)

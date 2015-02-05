@@ -21,7 +21,7 @@ object Boot extends App {
     val configPath = "stats-kvs"
     val leveldb = LeveldbKvs.open(config.getConfig(configPath))
     statsLeveldb = Some(leveldb)
-    system.actorOf(StatsLeveldbKvs.props(leveldb, configPath), "stats-kvs")
+    system.actorOf(StatsKvs.props(leveldb, configPath), "stats-kvs")
   }
 
   system.actorOf(Listener.props(port = 12345, statsKvs), "listener")

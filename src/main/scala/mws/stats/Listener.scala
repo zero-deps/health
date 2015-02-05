@@ -22,11 +22,11 @@ class Listener(port: Int, kvs: ActorRef) extends Actor with ActorLogging {
     case Udp.Received(data, _) =>
       data.decodeString("UTF-8").split('#') match {
         case Array(node, stats, _*) =>
-          kvs ! StatsKvsService.Put(node, stats)
-          kvs ! StatsKvsService.All
+          kvs ! StatsKvs.Put(node, stats)
+          kvs ! StatsKvs.All
         case _ =>
       }
-    case StatsKvsService.Values(values) =>
+    case StatsKvs.Values(values) =>
       log.info(values.mkString(","))
     case Udp.Unbind =>
       socket ! Udp.Unbind
