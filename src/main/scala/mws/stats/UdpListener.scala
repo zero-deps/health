@@ -23,15 +23,11 @@ class UdpListener(port: Int, kvs: ActorRef) extends Actor with ActorLogging {
       data.decodeString("UTF-8").split('^') match {
         case Array(key, value) =>
           kvs ! StatsKvs.Put(key, value)
-          kvs ! StatsKvs.All
         case _ =>
       }
     case "close" =>
       socket ! Udp.Unbind
     case Udp.Unbound =>
       context.stop(self)
-
-    case StatsKvs.Values(values) =>
-      log.info(values.mkString(","))
   }
 }

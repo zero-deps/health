@@ -13,6 +13,7 @@ libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.1.2"
 libraryDependencies += "org.fusesource.leveldbjni" % "leveldbjni-all" % "1.8"
 libraryDependencies += "io.spray" %% "spray-can"   % sprayVersion
 libraryDependencies += "io.spray" %% "spray-httpx" % sprayVersion
+libraryDependencies += "org.json4s" %% "json4s-jackson" % "3.2.11"
 
 mainClass in (Compile, run) := Some(".stats.Boot")
 fork in (Compile, run) := true

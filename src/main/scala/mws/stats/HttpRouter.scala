@@ -4,6 +4,9 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import http.{Content, Resource, Route, Template}
+import org.json4s._
+import org.json4s.jackson.Serialization
+import org.json4s.jackson.Serialization.write
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
@@ -17,6 +20,7 @@ object HttpRouter {
 
 class HttpRouter(stats: ActorRef) extends Actor with ActorLogging {
   implicit val timeout: Timeout = 1 second
+  implicit val formats = Serialization.formats(NoTypeHints)
 
   def receive: Receive = {
     case Route(GET, Nil, _) =>
@@ -25,8 +29,8 @@ class HttpRouter(stats: ActorRef) extends Actor with ActorLogging {
     case Route(GET, "get" :: Nil, _) =>
       val client = sender
       stats ? StatsKvs.All onComplete {
-        case Success(StatsKvs.Values(values)) =>
-          client ! Content(values.mkString(", "))
+        case Success(StatsKvs.AllAck(nodes)) =>
+          client ! Content(write(nodes))
         case x =>
           log.warning(s"Bad response: $x")
           client ! Content("Internal Server Error", StatusCodes.InternalServerError)

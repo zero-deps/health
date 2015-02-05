@@ -1,7 +1,6 @@
 package .stats
 
 import akka.actor.Props
-import collection.immutable
 import kvs.LeveldbKvs
 import .stats.StatsKvs._
 import org.iq80.leveldb.DB
@@ -9,10 +8,15 @@ import org.iq80.leveldb.DB
 object StatsKvs {
   case class Put(key: String, value: String)
   case object PutAck
-  case class Get(key: String)
-  case class Value(value: Option[String])
   case object All
-  case class Values(values: immutable.Seq[(String, String)])
+  type Time = String
+  type ParamValue = String
+  type TimedParamValues = Map[Time, ParamValue]
+  type ParamKey = String
+  type Params = Map[ParamKey, TimedParamValues]
+  type Node = String
+  type Nodes = Map[Node, Params]
+  case class AllAck(nodes: Nodes)
 
   def props(db: DB, dbConfig: String): Props = Props(new StatsKvs(db, dbConfig))
 }
@@ -24,11 +28,25 @@ class StatsKvs(val leveldb: DB, val leveldbConfigPath: String)
     case Put(key, value) =>
       kvs.put(key, value)
       sender ! PutAck
-    case Get(key) =>
-      val value = kvs.get(key)
-      sender ! Value(value)
     case All =>
-      val values = kvs.get()
-      sender ! Values(values)
+      val nodes = kvs.get()
+      val newNodes = nodes.foldLeft(Map.empty[Node, Params]) {
+        case (nodes: Nodes, (k, value)) =>
+          val Array(node, param, time) = k.split('#')
+          nodes.get(node) match {
+            case Some(params: Params) =>
+              val timedParamValues = params.getOrElse(param, Map.empty)
+              val newTimedParamValues = timedParamValues + (time -> value)
+              val newParams = params.filterNot(_._1 == param) + (param -> newTimedParamValues)
+              val newNodes = nodes.filterNot(_._1 == node) + (node -> newParams)
+              newNodes
+            case None =>
+              val newTimedParamValues = Map(time -> value)
+              val newParams = Map(param -> newTimedParamValues)
+              val newNodes = nodes + (node -> newParams)
+              newNodes
+          }
+      }
+      sender ! AllAck(newNodes)
   }
 }
