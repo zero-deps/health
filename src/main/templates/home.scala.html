@@ -14,23 +14,25 @@
     <canvas id="mycanvas" width="400" height="100"></canvas>
     <div id="cpu1Vvalue"></div>
     <script type="text/javascript">
-      var line = new TimeSeries();
-      setInterval(function() {
-        var xhr = new XMLHttpRequest();
-        xhr.onreadystatechange = function() {
-          if (xhr.readyState == 4 && xhr.status == 200) {
-            var data = JSON.parse(xhr.responseText);
-            var cpu1 = data["127.0.0.1:4244"]["cpu"];
-            line.append(cpu1["time"], cpu1["value"]);
-            document.getElementById("cpu1Vvalue").innerHTML = cpu1["value"] + "%";
+      window.onload = function () {
+        var line = new TimeSeries();
+        setInterval(function() {
+          var xhr = new XMLHttpRequest();
+          xhr.onreadystatechange = function() {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+              var data = JSON.parse(xhr.responseText);
+              var cpu1 = data["127.0.0.1:4244"]["cpu"];
+              line.append(cpu1["time"], cpu1["value"]);
+              document.getElementById("cpu1Vvalue").innerHTML = cpu1["value"] + "%";
+            }
           }
-        }
-        xhr.open("GET", "get", true);
-        xhr.send();
-      }, 3000);
-      var smoothie = new SmoothieChart();
-      smoothie.addTimeSeries(line);
-      smoothie.streamTo(document.getElementById("mycanvas"), 6000);
+          xhr.open("GET", "get", true);
+          xhr.send();
+        }, 3000);
+        var smoothie = new SmoothieChart({minValue: 0, maxValue: 2});
+        smoothie.addTimeSeries(line);
+        smoothie.streamTo(document.getElementById("mycanvas"), 6000);
+      };
     </script>
   </body>
 </html>
