@@ -6,7 +6,7 @@ import .stats.StatsKvs._
 import org.iq80.leveldb.DB
 
 object StatsKvs {
-  case class Put(key: String, value: String)
+  case class Put(node: String, param: String, time: String, value: String)
   case object PutAck
   case object Get
   type ParamKey = String
@@ -23,8 +23,8 @@ class StatsKvs(val leveldb: DB, val leveldbConfigPath: String)
   extends LeveldbKvs { kvs: LeveldbKvs =>
 
   def receive: Receive = {
-    case Put(key, value) =>
-      kvs.put(key, value)
+    case Put(node, param, time, value) =>
+      kvs.put(s"$node#$param#$time", value)
       sender ! PutAck
     case Get =>
       val nodes = kvs.get()

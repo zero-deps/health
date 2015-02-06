@@ -20,9 +20,9 @@ class UdpListener(port: Int, kvs: ActorRef) extends Actor with ActorLogging {
 
   def ready(socket: ActorRef): Receive = {
     case Udp.Received(data, _) =>
-      data.decodeString("UTF-8").split('^') match {
-        case Array(key, value) =>
-          kvs ! StatsKvs.Put(key, value)
+      data.decodeString("UTF-8").split('#') match {
+        case Array(node, param, time, value) =>
+          kvs ! StatsKvs.Put(node, param, time, value)
         case _ =>
       }
     case "close" =>

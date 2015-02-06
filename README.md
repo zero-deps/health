@@ -18,9 +18,9 @@ HTTP port: `9010`
 
 ## Input
 
-Format: `<node-name>#<param-name>#<timestamp>^<param-value>`
+Format: `<node-name>#<param-name>#<timestamp>#<param-value>`
 
-Example: `127.0.0.1:8080#cpu#1423219008203^1.09`
+Example: `127.0.0.1:8080#cpu#1423219008203#1.09`
 
 Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
