@@ -4,17 +4,14 @@ import akka.actor.Props
 import kvs.LeveldbKvs
 import .stats.StatsKvs._
 import org.iq80.leveldb.DB
+import scala.collection.immutable
 
 object StatsKvs {
   case class Put(node: String, param: String, time: String, value: String)
   case object PutAck
   case object Get
-  type ParamKey = String
-  type ParamValue = Map[String, String]
-  type Params = Map[ParamKey, ParamValue]
-  type Node = String
-  type Nodes = Map[Node, Params]
-  case class GetAck(nodes: Nodes)
+  case class NodeInfo(node: String, param: String, value: String, time: String)
+  case class GetAck(nodesInfo: immutable.Seq[NodeInfo])
 
   def props(db: DB, dbConfig: String): Props = Props(new StatsKvs(db, dbConfig))
 }
@@ -25,19 +22,19 @@ class StatsKvs(val leveldb: DB, val leveldbConfigPath: String)
   def receive: Receive = {
     case Put(node, param, time, value) =>
       kvs.put(s"$node#$param#$time", value)
+      kvs.index(s"$node#$param", s"$node#$param#$time")
       sender ! PutAck
     case Get =>
-      val nodes = kvs.get()
-      val newNodes = nodes.foldLeft(Map.empty[Node, Params]) {
-        case (nodes: Nodes, (k, value)) =>
-          val Array(node, param, time) = k.split('#')
-          val params = nodes.getOrElse(node, Map.empty)
-          if (time > params.getOrElse(param, Map.empty).getOrElse("time", "0")) {
-            val newParamValue = Map("time" -> time, "value" -> value)
-            val newParams = params.filterNot(_._1 == param) + (param -> newParamValue)
-            nodes.filterNot(_._1 == node) + (node -> newParams)
-          } else nodes
+      val nodesInfo = kvs.indexes().foldLeft(immutable.Seq.empty[NodeInfo]) {
+        case (nodesInfo, (_, index)) =>
+          kvs.get(index) match {
+            case Some(value) =>
+              val Array(node, param, time) = index.split('#')
+              val nodeInfo = NodeInfo(node, param, value, time)
+              nodeInfo +: nodesInfo
+            case None => nodesInfo
+          }
       }
-      sender ! GetAck(newNodes)
+      sender ! GetAck(nodesInfo)
   }
 }

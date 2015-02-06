@@ -21,9 +21,13 @@
           xhr.onreadystatechange = function() {
             if (xhr.readyState == 4 && xhr.status == 200) {
               var data = JSON.parse(xhr.responseText);
-              var cpu1 = data["127.0.0.1:4244"]["cpu"];
-              line.append(cpu1["time"], cpu1["value"]);
-              document.getElementById("cpu1Vvalue").innerHTML = cpu1["value"] + "%";
+              data.forEach(function(item) {
+                if (item.node === "127.0.0.1:4244" &&
+                    item.param === "cpu") {
+                  line.append(item.time, item.value);
+                  document.getElementById("cpu1Vvalue").innerHTML = item.value + "%";
+                }
+              });
             }
           }
           xhr.open("GET", "get", true);

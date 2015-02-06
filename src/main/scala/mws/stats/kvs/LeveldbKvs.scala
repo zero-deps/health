@@ -50,27 +50,31 @@ trait LeveldbKvs extends Kvs with Actor with ActorLogging {
     leveldb.get(key)
   }
 
-  def get(): immutable.Seq[(String, String)] = {
+  private val Index = "index#"
+
+  def index(key: String, value: String): Unit = {
+    leveldb.put(s"$Index$key", value)
+  }
+
+  def indexes(): immutable.Seq[(String, String)] = {
     val ro = leveldbReadOptions.snapshot(leveldb.getSnapshot)
     try {
       val it = leveldb.iterator(ro)
       try {
-        it.seekToFirst()
-        iteratorToList(it, acc = Nil)
+        it.seek(Index)
+        var indexes: immutable.Seq[(String, String)] = immutable.Seq.empty
+        while (it.hasNext && it.peekNext.getKey.startsWith(Index)) {
+          val (k, v) = tupleToStr(it.peekNext.getKey -> it.peekNext.getValue)
+          it.next()
+          indexes = (k.stripPrefix(Index), v) +: indexes
+        }
+        indexes
       } finally Try(it.close())
     } finally Try(ro.snapshot().close())
   }
 
   def delete(key: String): Unit = {
     leveldb.delete(key)
-  }
-  
-  def iteratorToList(it: DBIterator, acc: immutable.Seq[(String, String)]): immutable.Seq[(String, String)] = {
-    if (it.hasNext) {
-      val tuple: (String, String) = it.peekNext().getKey -> it.peekNext().getValue
-      it.next()
-      iteratorToList(it, tuple +: acc)
-    } else acc
   }
 
   import scala.language.implicitConversions
