@@ -9,7 +9,10 @@
     <script src="home.js"></script>
   </head>
   <body>
+    <h1>127.0.0.1:4244</h1>
+    <h2>CPU</h2>
     <canvas id="mycanvas" width="400" height="100"></canvas>
+    <div id="cpu1Vvalue"></div>
     <script type="text/javascript">
       var line = new TimeSeries();
       setInterval(function() {
@@ -17,8 +20,9 @@
         xhr.onreadystatechange = function() {
           if (xhr.readyState == 4 && xhr.status == 200) {
             var data = JSON.parse(xhr.responseText);
-            console.log(data);
-            line.append(new Date().getTime(), Math.random());
+            var cpu1 = data["127.0.0.1:4244"]["cpu"];
+            line.append(cpu1["time"], cpu1["value"]);
+            document.getElementById("cpu1Vvalue").innerHTML = cpu1["value"] + "%";
           }
         }
         xhr.open("GET", "get", true);
@@ -26,7 +30,7 @@
       }, 3000);
       var smoothie = new SmoothieChart();
       smoothie.addTimeSeries(line);
-      smoothie.streamTo(document.getElementById("mycanvas"), 3000);
+      smoothie.streamTo(document.getElementById("mycanvas"), 6000);
     </script>
   </body>
 </html>
