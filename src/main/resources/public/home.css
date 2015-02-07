@@ -1,0 +1,8 @@
+.paramContainer {
+  display: inline-block;
+  margin-right: 25px;
+}
+
+.paramHeader {
+  text-transform: capitalize;
+}
