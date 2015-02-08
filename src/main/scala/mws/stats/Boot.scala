@@ -16,8 +16,9 @@ object Boot extends App {
   sys.addShutdownHook {
     udpListener foreach (_ ! "close")
     httpListener foreach (_ ! "close")
-    statsLeveldb foreach (db => Try(db.close()))
     system.shutdown()
+    system.awaitTermination()
+    statsLeveldb foreach (db => Try(db.close()))
     println("Bye!")
   }
 
