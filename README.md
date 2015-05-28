@@ -10,7 +10,13 @@ Do: `sbt twirlCompileTemplates`
 
 Do `sbt run`
 
+## Deploy
+
+Do `sbt deploy`
+
 ## Configuration
+
+Default ports are:
 
 UDP port: `50123`
 
