@@ -29,6 +29,9 @@ object Boot extends App {
     system.actorOf(StatsKvs.props(leveldb, configPath), "stats-kvs")
   }
 
-  udpListener = Some(system.actorOf(UdpListener.props(config.getInt("udp.port"), statsKvs), "udp-listener"))
-  httpListener = Some(system.actorOf(HttpListener.props(config.getInt("http.port"), statsKvs), "http-listener"))
+  val hostname = config.getString("hostname")
+  val udpPort = config.getInt("udp.port")
+  val httpPort = config.getInt("http.port")
+  udpListener = Some(system.actorOf(UdpListener.props(hostname, udpPort, statsKvs), "udp-listener"))
+  httpListener = Some(system.actorOf(HttpListener.props(hostname, httpPort, statsKvs), "http-listener"))
 }

@@ -5,12 +5,12 @@ import akka.io.{Tcp, IO}
 import spray.can.Http
 
 object HttpListener {
-  def props(port: Int, stats: ActorRef): Props = Props(new HttpListener(port, stats))
+  def props(host: String, port: Int, stats: ActorRef): Props = Props(new HttpListener(host, port, stats))
 }
 
-class HttpListener(port: Int, stats: ActorRef) extends Actor with ActorLogging {
+class HttpListener(host: String, port: Int, stats: ActorRef) extends Actor with ActorLogging {
   import context.system
-  IO(Http) ! Http.Bind(self, "localhost", port)
+  IO(Http) ! Http.Bind(self, host, port)
   val router = context.actorOf(HttpRouter.props(stats))
 
   def receive: Receive = {
