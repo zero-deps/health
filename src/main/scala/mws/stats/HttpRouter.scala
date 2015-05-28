@@ -3,24 +3,25 @@ package .stats
 import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.pattern.ask
 import akka.util.Timeout
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.scala.DefaultScalaModule
 import http.{Content, Resource, Route, Template}
-import org.json4s._
-import org.json4s.jackson.Serialization
-import org.json4s.jackson.Serialization.write
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
 import spray.http.HttpMethods._
 import spray.http.StatusCodes
 import util.Success
+import HttpRouter._
 
 object HttpRouter {
   def props(stats: ActorRef): Props = Props(new HttpRouter(stats))
+
+  val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 }
 
 class HttpRouter(stats: ActorRef) extends Actor with ActorLogging {
   implicit val timeout: Timeout = 1 second
-  implicit val formats = Serialization.formats(NoTypeHints)
 
   def receive: Receive = {
     case Route(GET, Nil, _) =>
@@ -30,7 +31,7 @@ class HttpRouter(stats: ActorRef) extends Actor with ActorLogging {
       val client = sender
       stats ? StatsKvs.Get onComplete {
         case Success(StatsKvs.GetAck(nodes)) =>
-          client ! Content(write(nodes))
+          client ! Content(mapper.writeValueAsString(nodes))
         case x =>
           log.warning(s"Bad response: $x")
           client ! Content("Internal Server Error", StatusCodes.InternalServerError)
