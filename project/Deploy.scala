@@ -30,7 +30,7 @@ object Deploy {
       ssh.executeAll(SSHBatch(List(
         s"cd $remoteDir",
         s"chmod +x $scriptRelativePath",
-        s"nohup $scriptRelativePath -J-Xmx128m & echo $$! > $pidPath"
+        s"nohup $scriptRelativePath -J-Xmx128m >/dev/null 2>&1 & echo $$! > $pidPath"
       ))) filter (_.nonEmpty) foreach println
     })
   )
