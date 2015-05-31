@@ -4,11 +4,11 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.io.{IO, Udp}
 import java.net.InetSocketAddress
 
-object UdpListener {
-  def props(host: String, port: Int, kvs: ActorRef): Props = Props(new UdpListener(host, port, kvs))
+object  UdpListener {
+  def props(host: String, port: Int): Props = Props(new UdpListener(host, port))
 }
 
-class UdpListener(host: String, port: Int, kvs: ActorRef) extends Actor with ActorLogging {
+class UdpListener(host: String, port: Int) extends Actor with ActorLogging {
   import context.system
   IO(Udp) ! Udp.Bind(self, new InetSocketAddress(host, port))
 
@@ -22,7 +22,7 @@ class UdpListener(host: String, port: Int, kvs: ActorRef) extends Actor with Act
     case Udp.Received(data, _) =>
       data.decodeString("UTF-8").split('#') match {
         case Array(node, param, time, value) =>
-          kvs ! StatsKvs.Put(node, param, time, value)
+          //todo publish to event bus
         case _ =>
       }
     case "close" =>

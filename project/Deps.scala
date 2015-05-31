@@ -6,7 +6,7 @@ object Deps {
   object Versions {
     val scala = "2.11.6"
     val akka = "2.3.11"
-    val spray = "1.3.3"
+    val socko = "0.6.0"
     val leveldbPort = "0.7"
     val leveldbNative = "1.8"
     val sqlite = "3.8.6"
@@ -18,9 +18,8 @@ object Deps {
     "com.typesafe.akka" %% "akka-actor" % Versions.akka
   )
 
-  val spray = Seq(
-    "io.spray" %% "spray-can"   % Versions.spray,
-    "io.spray" %% "spray-httpx" % Versions.spray
+  val socko = Seq(
+    "org.mashupbots.socko" %% "socko-webserver" % Versions.socko
   )
 
   val json = Seq(

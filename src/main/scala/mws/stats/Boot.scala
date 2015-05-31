@@ -1,37 +1,33 @@
 package .stats
 
 import akka.actor.{ActorRef, ActorSystem}
-import kvs.LeveldbKvs
-import org.iq80.leveldb.DB
-import util.Try
+import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 
 object Boot extends App {
   val system = ActorSystem("stats")
   val config = system.settings.config
 
   var udpListener: Option[ActorRef] = None
-  var httpListener: Option[ActorRef] = None
-  var statsLeveldb: Option[DB] = None
+  var webServer: Option[WebServer] = None
 
   sys.addShutdownHook {
+    webServer foreach (_.stop())
     udpListener foreach (_ ! "close")
-    httpListener foreach (_ ! "close")
     system.shutdown()
     system.awaitTermination()
-    statsLeveldb foreach (db => Try(db.close()))
     println("Bye!")
-  }
-
-  val statsKvs: ActorRef = {
-    val configPath = "stats-kvs"
-    val leveldb = LeveldbKvs.open(config.getConfig(configPath))
-    statsLeveldb = Some(leveldb)
-    system.actorOf(StatsKvs.props(leveldb, configPath), "stats-kvs")
   }
 
   val hostname = config.getString("hostname")
   val udpPort = config.getInt("udp.port")
   val httpPort = config.getInt("http.port")
-  udpListener = Some(system.actorOf(UdpListener.props(hostname, udpPort, statsKvs), "udp-listener"))
-  httpListener = Some(system.actorOf(HttpListener.props(hostname, httpPort, statsKvs), "http-listener"))
+
+  udpListener = Some(system.actorOf(UdpListener.props(hostname, udpPort), "udp-listener"))
+
+  {
+    val config = WebServerConfig(hostname = hostname, port = httpPort)
+    val ws = new WebServer(config, Http.routes, system)
+    webServer = Some(ws)
+    ws.start()
+  }
 }
