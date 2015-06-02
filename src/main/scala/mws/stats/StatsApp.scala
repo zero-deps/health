@@ -5,7 +5,7 @@ import org.mashupbots.socko.events.HttpResponseStatus
 import org.mashupbots.socko.routes._
 import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 
-object Boot extends App {
+object StatsApp extends App {
   val system = ActorSystem("stats")
   val config = system.settings.config
 

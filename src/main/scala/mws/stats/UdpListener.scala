@@ -4,7 +4,7 @@ import  akka.actor.{Actor, ActorLogging, ActorRef, Props}
 import akka.io.{IO, Udp}
 import java.net.InetSocketAddress
 
-object  UdpListener {
+object UdpListener {
   def props(host: String, port: Int): Props = Props(new UdpListener(host, port))
 }
 
@@ -21,7 +21,7 @@ class UdpListener(host: String, port: Int) extends Actor with ActorLogging {
   def ready(socket: ActorRef): Receive = {
     case Udp.Received(data, _) =>
       val decoded = data.decodeString("UTF-8")
-      Boot.webServer foreach (_.webSocketConnections.writeText(decoded))
+      StatsApp.webServer foreach (_.webSocketConnections.writeText(decoded))
     case "close" =>
       socket ! Udp.Unbind
     case Udp.Unbound =>
