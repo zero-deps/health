@@ -1,6 +1,8 @@
 package .stats
 
 import akka.actor.{ActorRef, ActorSystem}
+import org.mashupbots.socko.events.HttpResponseStatus
+import org.mashupbots.socko.routes._
 import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 
 object Boot extends App {
@@ -26,8 +28,19 @@ object Boot extends App {
 
   {
     val config = WebServerConfig(hostname = hostname, port = httpPort)
-    val ws = new WebServer(config, Http.routes, system)
-    webServer = Some(ws)
-    ws.start()
+    val routes = Routes({
+      case HttpRequest(httpRequest) => httpRequest match {
+        case GET(Path("/")) =>
+          httpRequest.response.write(html.home().toString, "text/html; charset=UTF-8")
+        case Path("/favicon.ico") =>
+          httpRequest.response.write(HttpResponseStatus.NOT_FOUND)
+      }
+      case WebSocketHandshake(wsHandshake) => wsHandshake match {
+        case Path("/websocket") => wsHandshake.authorize()
+      }
+    })
+    lazy val srv: WebServer = new WebServer(config, routes, system)
+    webServer = Some(srv)
+    srv.start()
   }
 }
