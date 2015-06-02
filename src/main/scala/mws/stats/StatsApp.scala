@@ -1,7 +1,9 @@
 package .stats
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.{ActorRef, ActorSystem, Props}
+import .stats.Template.HomeContext
 import org.mashupbots.socko.events.HttpResponseStatus
+import org.mashupbots.socko.handlers.{StaticContentHandler, StaticContentHandlerConfig, StaticResourceRequest}
 import org.mashupbots.socko.routes._
 import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 
@@ -28,15 +30,21 @@ object StatsApp extends App {
 
   {
     val config = WebServerConfig(hostname = hostname, port = httpPort)
+    val wsUrl = "/webscoket"
+    val staticHandler = system.actorOf(Props(new StaticContentHandler(StaticContentHandlerConfig())), "static-handler")
     val routes = Routes({
-      case HttpRequest(httpRequest) => httpRequest match {
+      case HttpRequest(request) => request match {
         case GET(Path("/")) =>
-          httpRequest.response.write(html.home().toString, "text/html; charset=UTF-8")
+          val ctx = HomeContext(hostname, httpPort, wsUrl)
+          request.response.write(html.home(ctx).toString, "text/html; charset=UTF-8")
         case Path("/favicon.ico") =>
-          httpRequest.response.write(HttpResponseStatus.NOT_FOUND)
+          request.response.write(HttpResponseStatus.NOT_FOUND)
+        case GET(Path("/home.js")) => {
+          staticHandler ! new StaticResourceRequest(request, "public/home.js")
+        }
       }
       case WebSocketHandshake(wsHandshake) => wsHandshake match {
-        case Path("/websocket") => wsHandshake.authorize()
+        case Path(wsUrl) => wsHandshake.authorize()
       }
     })
     lazy val srv: WebServer = new WebServer(config, routes, system)
