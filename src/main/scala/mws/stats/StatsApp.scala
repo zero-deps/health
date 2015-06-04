@@ -3,7 +3,7 @@ package .stats
 import akka.actor.{ActorRef, ActorSystem, Props}
 import .stats.Template.HomeContext
 import org.mashupbots.socko.events.HttpResponseStatus
-import org.mashupbots.socko.handlers.{StaticContentHandler, StaticContentHandlerConfig, StaticResourceRequest}
+import org.mashupbots.socko.handlers._
 import org.mashupbots.socko.routes._
 import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 
@@ -15,6 +15,7 @@ object StatsApp extends App {
   var webServer: Option[WebServer] = None
 
   sys.addShutdownHook {
+    webServer foreach (_.webSocketConnections.closeAll())
     webServer foreach (_.stop())
     udpListener foreach (_ ! "close")
     system.shutdown()
