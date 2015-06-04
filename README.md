@@ -4,7 +4,7 @@ Stats aggregates and displays some statistics.
 
 ## Build
 
-Do: `sbt twirlCompileTemplates`
+Do `sbt twirlCompileTemplates` to compile templates.
 
 ## Run
 
