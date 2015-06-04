@@ -40,9 +40,16 @@ object StatsApp extends App {
           request.response.write(html.home(ctx).toString, "text/html; charset=UTF-8")
         case Path("/favicon.ico") =>
           request.response.write(HttpResponseStatus.NOT_FOUND)
-        case GET(Path("/home.js")) => {
+        case GET(Path("/bootstrap/bootstrap.min.css")) =>
+          staticHandler ! new StaticResourceRequest(request, "public/bootstrap/bootstrap.min.css")
+        case GET(Path("/home.css")) =>
+          staticHandler ! new StaticResourceRequest(request, "public/home.css")
+        case GET(Path("/react/react.min.js")) =>
+          staticHandler ! new StaticResourceRequest(request, "public/react/react.min.js")
+        case GET(Path("/react/JSXTransformer.js")) =>
+          staticHandler ! new StaticResourceRequest(request, "public/react/JSXTransformer.js")
+        case GET(Path("/home.js")) =>
           staticHandler ! new StaticResourceRequest(request, "public/home.js")
-        }
       }
       case WebSocketHandshake(wsHandshake) => wsHandshake match {
         case Path(wsUrl) => wsHandshake.authorize()
