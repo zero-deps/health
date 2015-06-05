@@ -12,28 +12,26 @@ Do `sbt run`
 
 ## Deploy
 
-Do `sbt deploy`
+Do `sbt deploy` to deploy to `nb-` server.
 
 ## Configuration
 
 Default ports are:
 
-UDP port: `50123`
+UDP: `50123`
 
-HTTP port: `9010`
+HTTP: `9010`
 
 ## Input
 
-Format: `<node-name>#<param-name>#<timestamp>#<param-value>`
+Data format: `<system-name>#<node-name>#<param-name>#<timestamp>#<param-value>`
 
-Example: `127.0.0.1:8080#cpu#1423219008203#1.09`
+Data example: `#127.0.0.1:8080#cpu#1423219008203#1.09`
 
 Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
-Example: `echo -n "127.0.0.1:4244#cpu#1423219008203^1.09" >/dev/udp/localhost/50123`
+Send example: `echo -n "#127.0.0.1:4244#cpu#1423219008203^1.09" >/dev/udp/localhost/50123`
 
 ## Output
 
-GET request: `<stats-server>:9010/get`
-
-Response example: `{"127.0.0.1:4244":{"heap":{"time":"1423219008203","value":"62.57"},"cpu":{"time":"1423219008203","value":"1.09"}}}`
+To get data open WebSocket connection to /websocket. You will receive data in same format.
