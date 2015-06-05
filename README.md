@@ -22,6 +22,8 @@ UDP: `50123`
 
 HTTP: `9010`
 
+To change hostname set env variable `HOST_IP`.
+
 ## Input
 
 Data format: `<system-name>#<node-name>#<param-name>#<timestamp>#<param-value>`
@@ -34,4 +36,4 @@ Send example: `echo -n "#127.0.0.1:4244#cpu#1423219008203^1.09" >/dev/udp/localh
 
 ## Output
 
-To get data open WebSocket connection to /websocket. You will receive data in same format.
+To get data open WebSocket connection to `/websocket`. You will receive data in same format.
