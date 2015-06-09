@@ -28,11 +28,11 @@ To change hostname set env variable `HOST_IP`.
 
 Data format: `<system-name>#<node-name>#<param-name>#<timestamp>#<param-value>`
 
-Data example: `#127.0.0.1:8080#cpu#1423219008203#1.09`
+Data example: `#127.0.0.1:8080#CPU#1423219008203#0.04`
 
 Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
-Send example: `echo -n "#127.0.0.1:4244#cpu#1423219008203^1.09" >/dev/udp/localhost/50123`
+Send example: `echo -n "#127.0.0.1:4244#CPU#1423219008203#0.04" >/dev/udp/localhost/50123`
 
 ## Output
 
