@@ -1,11 +1,12 @@
 var data = {};
 
-//todo Array.prototype._
-var flatMap = function(arrays) {
-  return [].concat.apply([], arrays)
+Array.prototype.flatMap = function() {
+  return [].concat.apply([], this);
 };
-var unique = function(v, i, a) {
-  return a.indexOf(v) == i;
+Array.prototype.distinct = function() {
+  return this.filter(function(v, i, a) {
+    return a.indexOf(v) == i;
+  });
 };
 
 var ws = new WebSocket(wsUrl)
@@ -46,9 +47,9 @@ var Table = React.createClass({
   render: function() {
     var nameData = this.props.nameData;
 
-    var params = flatMap(Object.keys(nameData).map(function(node) {
+    var params = Object.keys(nameData).map(function(node) {
       return Object.keys(nameData[node]["param"]);
-    })).filter(unique).sort();
+    }).flatMap().distinct().sort();
 
     var header = params.map(function(param) {
       return <th>{param}</th>;
