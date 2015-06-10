@@ -48,6 +48,8 @@ object StatsApp extends App {
           staticHandler ! new StaticResourceRequest(request, "public/react/react.min.js")
         case GET(Path("/react/JSXTransformer.js")) =>
           staticHandler ! new StaticResourceRequest(request, "public/react/JSXTransformer.js")
+        case GET(Path("/util.js")) =>
+          staticHandler ! new StaticResourceRequest(request, "public/util.js")
         case GET(Path("/home.js")) =>
           staticHandler ! new StaticResourceRequest(request, "public/home.js")
       }
