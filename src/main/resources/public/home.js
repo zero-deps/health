@@ -1,45 +1,33 @@
-var data = [];
+var data = {};
+
+//todo Array.prototype._
+var flatMap = function(arrays) {
+  return [].concat.apply([], arrays)
+};
+var unique = function(v, i, a) {
+  return a.indexOf(v) == i;
+};
 
 var ws = new WebSocket(wsUrl)
 ws.onmessage = function(event) {
   // data: "{name}#{node}#{param}#{time}#{value}"
   var arr = event.data.split('#');
-  //todo multidimensional array
-  data[Array(arr[0], arr[1], arr[2]).join('#')] = arr[4];
-  data[Array(arr[0], arr[1]).join('#')] = new Date();
+  data[arr[0]] = data[arr[0]] || {};
+  data[arr[0]][arr[1]] = data[arr[0]][arr[1]] || {};
+  data[arr[0]][arr[1]]["param"] = data[arr[0]][arr[1]]["param"] || {};
+  data[arr[0]][arr[1]]["param"][arr[2]] = arr[4];
+  data[arr[0]][arr[1]]["time"] = new Date();
   React.render(<TabbedTable data={data} />, document.getElementById("tableContainer"));
 };
 
 var TabbedTable = React.createClass({
   render: function() {
-    var names = Object.keys(this.props.data).map(function(key) {
-      return key.split('#')[0];
-    }).filter(function(v, i, a) {
-      return a.indexOf(v) == i;
-    }).sort();
-
-    var unique = function(v, i, a) {
-      return a.indexOf(v) == i;
-    };
-
+    var names = Object.keys(this.props.data).sort();
     var activeName = names[0];
-
-    var nodes = Object.keys(this.props.data).filter(function(key) {
-      return key.split('#')[0] === activeName;
-    }).map(function(key) {
-      return key.split('#')[1];
-    }).filter(unique).sort();
-
-    var params = Object.keys(this.props.data).filter(function(key) {
-      return key.split('#')[0] === activeName;
-    }).map(function(key) {
-      return key.split('#')[2];
-    }).filter(unique).sort();
-
     return (
       <div>
         <Tabs names={names} />
-        <Table name={activeName} nodes={nodes} params={params} data={data} />
+        <Table nameData={data[activeName]} />
       </div>
     );
   }
@@ -50,25 +38,26 @@ var Tabs = React.createClass({
     var tabs = this.props.names.map(function(name) {
       return <li role="presentation" className="active"><a href="#">{name}</a></li>;
     });
-    return (
-      <ul className="nav nav-pills">
-        {tabs}
-      </ul>
-    );
+    return <ul className="nav nav-pills">{tabs}</ul>;
   }
 });
 
 var Table = React.createClass({
   render: function() {
-    var header = this.props.params.map(function(param) {
+    var nameData = this.props.nameData;
+
+    var params = flatMap(Object.keys(nameData).map(function(node) {
+      return Object.keys(nameData[node]["param"]);
+    })).filter(unique).sort();
+
+    var header = params.map(function(param) {
       return <th>{param}</th>;
     });
-    var name = this.props.name;
-    var params = this.props.params;
-    var data = this.props.data;
-    var rows = this.props.nodes.map(function(node) {
-      return <Row name={name} node={node} params={params} data={data} />
+
+    var rows = Object.keys(nameData).map(function(node) {
+      return <Row node={node} params={params} nodeData={nameData[node]} />
     });
+
     return (
       <table className="table">
         <thead>
@@ -98,27 +87,28 @@ var Row = React.createClass({
     this.setState({ time: new Date() });
   },
   render: function() {
-    var data = this.props.data;
-    var name = this.props.name;
     var node = this.props.node;
-    var paramCells = this.props.params.map(function(param) {
-      var value = data[Array(name, node, param).join('#')];
-      return <td>{value}</td>;
+    var params = this.props.params;
+    var nodeData = this.props.nodeData;
+
+    var paramCells = params.map(function(param) {
+      return <td>{nodeData["param"][param]}</td>;
     });
 
     var lastUpdated, className;
-    var elapsed = Math.floor((this.state.time - data[Array(name, node).join('#')]) / 1000);
+    var elapsed = Math.floor((this.state.time - nodeData["time"]) / 1000);
     if (elapsed < 3) {
       lastUpdated = "just now";
       className = "success";
     } else {
+      //todo format time
       lastUpdated = elapsed + " seconds ago";
       className = "danger";
     }
 
     return (
       <tr className={className}>
-        <td>{this.props.node}</td>
+        <td>{node}</td>
         {paramCells}
         <td>{lastUpdated}</td>
       </tr>
