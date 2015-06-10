@@ -1,36 +1,64 @@
-var data = {};
-
-var ws = new WebSocket(wsUrl)
-ws.onmessage = function(event) {
-  // data: "{name}#{node}#{param}#{time}#{value}"
-  var arr = event.data.split('#');
-  data[arr[0]] = data[arr[0]] || {};
-  data[arr[0]][arr[1]] = data[arr[0]][arr[1]] || {};
-  data[arr[0]][arr[1]]["param"] = data[arr[0]][arr[1]]["param"] || {};
-  data[arr[0]][arr[1]]["param"][arr[2]] = arr[4];
-  data[arr[0]][arr[1]]["time"] = new Date();
-  React.render(<TabbedTable data={data} />, document.getElementById("tableContainer"));
-};
-
 var TabbedTable = React.createClass({
+  getInitialState: function() {
+    return { data: {}, activeName: null };
+  },
+  componentDidMount: function() {
+    var ws = new WebSocket(this.props.wsUrl);
+    ws.onmessage = function(event) {
+      // event.data: "{name}#{node}#{param}#{time}#{value}"
+      var arr = event.data.split('#');
+      var data = this.state.data;
+      data[arr[0]] = data[arr[0]] || {};
+      data[arr[0]][arr[1]] = data[arr[0]][arr[1]] || {};
+      data[arr[0]][arr[1]]["param"] = data[arr[0]][arr[1]]["param"] || {};
+      data[arr[0]][arr[1]]["param"][arr[2]] = arr[4];
+      data[arr[0]][arr[1]]["time"] = new Date();
+      if (this.isMounted())
+        this.setState({
+          data: data,
+          activeName: this.state.activeName || arr[0]
+        });
+    }.bind(this);
+  },
+  handleChoose: function(tab) {
+    console.log("clicked2");
+    this.setState({activeName: tab.props.name});
+  },
   render: function() {
-    var names = Object.keys(this.props.data).sort();
-    var activeName = names[0];
-    return (
-      <div>
-        <Tabs names={names} />
-        <Table nameData={data[activeName]} />
-      </div>
-    );
+    var names = Object.keys(this.state.data).sort();
+    if (names.length === 0) return <div>No data yet :(</div>
+    else
+      return (
+        <div>
+          <Tabs names={names} active={this.state.activeName} onChoose={this.handleChoose} />
+          <Table nameData={this.state.data[this.state.activeName]} />
+        </div>
+      );
   }
 });
 
 var Tabs = React.createClass({
   render: function() {
     var tabs = this.props.names.map(function(name) {
-      return <li role="presentation" className="active"><a href="#">{name}</a></li>;
-    });
+      var active = name === this.props.active;
+      return <Tab name={name} active={active} onChoose={this.props.onChoose} />;
+    }.bind(this));
     return <ul className="nav nav-pills">{tabs}</ul>;
+  }
+});
+
+var Tab = React.createClass({
+  handleChoose: function() {
+    console.log("clicked1");
+    this.props.onChoose(this);
+  },
+  render: function() {
+    var className = this.props.active ? "active" : "";
+    return (
+      <li role="presentation" className={className}>
+        <a href="#" onClick={this.handleChoose}>{this.props.name}</a>
+      </li>
+    );
   }
 });
 
@@ -106,3 +134,5 @@ var Row = React.createClass({
     );
   }
 });
+
+React.render(<TabbedTable wsUrl={wsUrl} />, document.getElementById("tableContainer"));
