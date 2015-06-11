@@ -10,18 +10,19 @@ import sbt._
 object AppBuild extends Build {
 
   override lazy val settings = super.settings ++ Seq(
-    organization := "com.",
+    organization := "com..",
     version := "0.1-SNAPSHOT",
     scalaVersion := Deps.Versions.scala
   )
 
-  lazy val defaultSettings = Defaults.coreDefaultSettings ++ Seq(
-    scalacOptions ++= Seq("-feature", "-deprecation"),
-    fork := true,
-    publishMavenStyle := false,
-    publishArtifact in (Compile, packageSrc) := false,
-    publishArtifact in (Compile, packageDoc) := false
-  )
+  lazy val defaultSettings = Defaults.coreDefaultSettings ++
+    Seq(
+      scalacOptions ++= Seq("-feature", "-deprecation"),
+      fork := true,
+      publishMavenStyle := false,
+      publishArtifact in (Compile, packageSrc) := false,
+      publishArtifact in (Compile, packageDoc) := false
+    )
 
   lazy val stats = Project(
     id = "stats",
@@ -30,6 +31,7 @@ object AppBuild extends Build {
       Templates.settings ++
       Package.settings ++
       Deploy.settings ++
+      Resolvers.settings ++
       Seq(
         mainClass in (Compile, run) := Some(".stats.Boot"),
         libraryDependencies ++=
@@ -39,9 +41,6 @@ object AppBuild extends Build {
           Deps.kvs ++
           Deps.sql ++
           Deps.logging,
-        resolvers ++= Seq(
-          "spray repo" at "http://repo.spray.io"
-        ),
         Deploy.deploy <<= deploySshTask
       )
   ).enablePlugins(SbtTwirl, JavaAppPackaging, DeploySSH)

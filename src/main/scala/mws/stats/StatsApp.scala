@@ -8,7 +8,9 @@ import org.mashupbots.socko.routes._
 import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 
 object StatsApp extends App {
-  val system = ActorSystem("stats")
+  System.setProperty("java.library.path", System.getProperty("java.library.path") + ":native")
+
+  val system = ActorSystem("Stats")
   val config = system.settings.config
 
   var udpListener: Option[ActorRef] = None
@@ -28,6 +30,9 @@ object StatsApp extends App {
   val httpPort = config.getInt("http.port")
 
   udpListener = Some(system.actorOf(UdpListener.props(hostname, udpPort), "udp-listener"))
+
+  val stats = system.actorOf(StatsClient.props)
+  system.actorOf(MetricsListener.props(stats))
 
   {
     val config = WebServerConfig(hostname = hostname, port = httpPort)
