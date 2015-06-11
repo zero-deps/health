@@ -117,13 +117,10 @@ var Row = React.createClass({
 
     var lastUpdated, className;
     var elapsed = Math.floor((this.state.time - nodeData["time"]) / 1000);
-    if (elapsed < 3) {
-      lastUpdated = "just now";
-      className = "success";
-    } else {
-      lastUpdated = elapsed.toUnits() + " ago";
-      className = "danger";
-    }
+    if (elapsed < 1) lastUpdated = "just now";
+    else lastUpdated = elapsed.toUnits() + " ago";
+    if (elapsed < 3) className = "success";
+    else className = "danger";
 
     return (
       <tr className={className}>
