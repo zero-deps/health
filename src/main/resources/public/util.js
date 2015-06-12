@@ -10,13 +10,10 @@ Array.prototype.distinct = function() {
 
 Number.prototype.toUnits = function() {
   var units = [
-    [                  1, "second", "seconds"],
-    [                 60, "minute", "minutes"],
-    [               3600,   "hour",   "hours"],
-    [          24 * 3600,    "day",    "days"],
-    [      7 * 24 * 3600,   "week",   "weeks"],
-    [30.4368 * 24 * 3600,  "month",  "months"],
-    [365.242 * 24 * 3600,   "year",   "years"]
+    [        1, "second", "seconds"],
+    [       60, "minute", "minutes"],
+    [     3600,   "hour",   "hours"],
+    [24 * 3600,    "day",    "days"]
   ];
   var that = this;
   return units.reverse().reduce(function(acc, data) {
