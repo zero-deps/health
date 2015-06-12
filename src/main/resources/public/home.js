@@ -21,7 +21,6 @@ var TabbedTable = React.createClass({
     }.bind(this);
   },
   handleChoose: function(tab) {
-    console.log("clicked2");
     this.setState({activeName: tab.props.name});
   },
   render: function() {
@@ -49,7 +48,6 @@ var Tabs = React.createClass({
 
 var Tab = React.createClass({
   handleChoose: function() {
-    console.log("clicked1");
     this.props.onChoose(this);
   },
   render: function() {
@@ -94,9 +92,6 @@ var Table = React.createClass({
 });
 
 var Row = React.createClass({
-  getInitialState: function() {
-    return { time: new Date() };
-  },
   componentDidMount: function() {
     this.timer = setInterval(this.tick, 1000);
   },
@@ -104,7 +99,7 @@ var Row = React.createClass({
     clearInterval(this.timer);
   },
   tick: function() {
-    this.setState({ time: new Date() });
+    this.forceUpdate();
   },
   render: function() {
     var node = this.props.node;
@@ -116,7 +111,7 @@ var Row = React.createClass({
     });
 
     var lastUpdated, className;
-    var elapsed = Math.floor((this.state.time - nodeData["time"]) / 1000);
+    var elapsed = Math.floor((new Date() - nodeData["time"]) / 1000);
     if (elapsed < 1) lastUpdated = "just now";
     else lastUpdated = elapsed.toUnits() + " ago";
     if (elapsed < 3) className = "success";
