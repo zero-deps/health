@@ -48,6 +48,6 @@ class MetricsListener extends Actor with ActorLogging {
     val node = s"${address.host.getOrElse("")}:${address.port.getOrElse("")}"
     val time = System.currentTimeMillis
     val data = s"$name#$node#$param#$time#$value"
-    StatsApp.webServer foreach (_.webSocketConnections.writeText(data))
+    system.eventStream.publish(Metric(data))
   }
 }

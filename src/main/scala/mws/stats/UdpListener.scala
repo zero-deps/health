@@ -21,7 +21,7 @@ class UdpListener(host: String, port: Int) extends Actor with ActorLogging {
   def ready(socket: ActorRef): Receive = {
     case Udp.Received(data, _) =>
       val decoded = data.decodeString("UTF-8")
-      StatsApp.webServer foreach (_.webSocketConnections.writeText(decoded))
+      system.eventStream.publish(Metric(decoded))
     case "close" =>
       socket ! Udp.Unbind
     case Udp.Unbound =>

@@ -64,5 +64,7 @@ object StatsApp extends App {
     lazy val srv: WebServer = new WebServer(config, routes, system)
     webServer = Some(srv)
     srv.start()
+
+    system.actorOf(WebSocketWriter.props(srv.webSocketConnections))
   }
 }
