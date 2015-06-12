@@ -1,18 +1,20 @@
 package .stats
 
-import akka.actor.{Actor, ActorLogging, ActorRef, Props}
+import akka.actor._
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.CurrentClusterState
 import akka.cluster.metrics.StandardMetrics.{Cpu, HeapMemory}
 import akka.cluster.metrics.{ClusterMetricsChanged, ClusterMetricsExtension, NodeMetrics}
 
 object MetricsListener {
-  def props(stats: ActorRef): Props = Props(new MetricsListener(stats))
+  def props: Props = Props(new MetricsListener)
 }
 
-class MetricsListener(stats: ActorRef) extends Actor with ActorLogging {
-  val selfAddress = Cluster(context.system).selfAddress
-  val metrics = ClusterMetricsExtension(context.system)
+class MetricsListener extends Actor with ActorLogging {
+  import context.system
+
+  val selfAddress = Cluster(system).selfAddress
+  val metrics = ClusterMetricsExtension(system)
 
   override def preStart(): Unit = metrics.subscribe(self)
 
@@ -30,14 +32,22 @@ class MetricsListener(stats: ActorRef) extends Actor with ActorLogging {
   def heap(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
     case HeapMemory(address, _, used, _, _) =>
       val heap = "%.2f".format(used.doubleValue / 1024 / 1024)
-      stats ! StatsClient.Data(address, "Heap", heap)
+      publish(address, "Heap", heap)
     case _ =>
   }
 
   def cpu(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
     case Cpu(address, _, Some(systemLoadAverage), _, _, _) =>
       val cpu = "%.2f".format(systemLoadAverage)
-      stats ! StatsClient.Data(address, "CPU", cpu)
+      publish(address, "CPU", cpu)
     case _ =>
+  }
+
+  def publish(address: Address, param: String, value: String): Unit = {
+    val name = system.name
+    val node = s"${address.host.getOrElse("")}:${address.port.getOrElse("")}"
+    val time = System.currentTimeMillis
+    val data = s"$name#$node#$param#$time#$value"
+    StatsApp.webServer foreach (_.webSocketConnections.writeText(data))
   }
 }

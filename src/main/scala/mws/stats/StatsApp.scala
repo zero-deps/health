@@ -31,8 +31,7 @@ object StatsApp extends App {
 
   udpListener = Some(system.actorOf(UdpListener.props(hostname, udpPort), "udp-listener"))
 
-  val stats = system.actorOf(StatsClient.props)
-  system.actorOf(MetricsListener.props(stats))
+  system.actorOf(MetricsListener.props)
 
   {
     val config = WebServerConfig(hostname = hostname, port = httpPort)
