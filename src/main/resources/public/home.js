@@ -22,11 +22,12 @@ var TabbedTable = React.createClass({
       initial[obj.name][obj.node]["param"][obj.param] = obj.value;
       initial[obj.name][obj.node]["time"] = currentTime ? new Date() : obj.time;
     });
-    var activeName = activeName || Object.keys(initial).sort()[0];
+    if (Object.keys(initial).indexOf(activeName) == -1)
+      activeName = Object.keys(initial).sort()[0];
     return { data: initial, activeName: activeName };
   },
   getInitialState: function() {
-    return this.packData(this.parseData(this.props.lastData), {}, null, false);
+    return this.packData(this.parseData(this.props.lastData), {}, this.props.activeName, false);
   },
   componentDidMount: function() {
     var ws = new WebSocket(this.props.wsUrl);
@@ -38,7 +39,9 @@ var TabbedTable = React.createClass({
     }.bind(this);
   },
   handleChoose: function(tab) {
-    this.setState({activeName: tab.props.name});
+    var activeName = tab.props.name;
+    localStorage["activeName"] = activeName;
+    this.setState({activeName: activeName});
   },
   render: function() {
     var names = Object.keys(this.state.data).sort();
@@ -143,5 +146,5 @@ var Row = React.createClass({
   }
 });
 
-React.render(<TabbedTable wsUrl={wsUrl} lastData={lastData} />,
+React.render(<TabbedTable wsUrl={wsUrl} lastData={lastData} activeName={localStorage["activeName"]} />,
   document.getElementById("tableContainer"));
