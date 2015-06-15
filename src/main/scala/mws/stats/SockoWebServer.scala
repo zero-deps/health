@@ -1,17 +1,22 @@
 package .stats
 
 import akka.actor._
+import akka.pattern.ask
+import akka.util.Timeout
 import .stats.Template.HomeContext
 import org.mashupbots.socko.events.HttpResponseStatus
-import org.mashupbots.socko.handlers.{StaticContentHandler, StaticContentHandlerConfig, StaticResourceRequest}
+import org.mashupbots.socko.handlers._
 import org.mashupbots.socko.routes._
 import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration._
+import scala.language.postfixOps
 
 object SockoWebServer {
-  def props: Props = Props(new SockoWebServer)
+  def props(lastData: ActorRef): Props = Props(new SockoWebServer(lastData))
 }
 
-class SockoWebServer extends Actor with ActorLogging {
+class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
   import context.system
 
   val config = system.settings.config
@@ -23,14 +28,23 @@ class SockoWebServer extends Actor with ActorLogging {
   var webServer: Option[WebServer] = None
   var staticHandler: Option[ActorRef] = None
 
+  implicit val timeout: Timeout = 1 minute
+
   override def preStart: Unit = {
     val static = system.actorOf(Props(new StaticContentHandler(StaticContentHandlerConfig())), "static-handler")
     staticHandler = Some(static)
     val routes = Routes({
       case HttpRequest(request) => request match {
         case GET(Path("/")) =>
-          val ctx = HomeContext(hostname, httpPort, wsUrl)
-          request.response.write(html.home(ctx).toString, "text/html; charset=UTF-8")
+          val data = lastData ? LastData.Get onComplete {
+            case util.Success(LastData.Values(it)) =>
+              val ctx = HomeContext(hostname, httpPort, wsUrl, it.toList)
+              request.response.write(html.home(ctx).toString, "text/html; charset=UTF-8")
+            case util.Failure(e) =>
+              log.error(e.getMessage, e)
+              request.response.write("It doesn't work")
+            case _ =>
+          }
         case Path("/favicon.ico") =>
           request.response.write(HttpResponseStatus.NOT_FOUND)
         case GET(Path("/bootstrap/bootstrap.min.css")) =>
