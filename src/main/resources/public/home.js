@@ -1,23 +1,40 @@
 var TabbedTable = React.createClass({
+  parseData: function(data) {
+    var list = [].concat(data);
+    var objects = list.map(function(data) {
+      var arr = data.split('#');
+      var obj = {
+        name:  arr[0],
+        node:  arr[1],
+        param: arr[2],
+        time:  arr[3],
+        value: arr[4]
+      };
+      return obj;
+    });
+    return objects;
+  },
+  packData: function(objects, initial, activeName, currentTime) {
+    objects.forEach(function(obj) {
+      initial[obj.name] = initial[obj.name] || {};
+      initial[obj.name][obj.node] = initial[obj.name][obj.node] || {};
+      initial[obj.name][obj.node]["param"] = initial[obj.name][obj.node]["param"] || {};
+      initial[obj.name][obj.node]["param"][obj.param] = obj.value;
+      initial[obj.name][obj.node]["time"] = currentTime ? new Date() : obj.time;
+    });
+    var activeName = activeName || Object.keys(initial).sort()[0];
+    return { data: initial, activeName: activeName };
+  },
   getInitialState: function() {
-    return { data: {}, activeName: null };
+    return this.packData(this.parseData(this.props.lastData), {}, null, false);
   },
   componentDidMount: function() {
     var ws = new WebSocket(this.props.wsUrl);
     ws.onmessage = function(event) {
-      // event.data: "{name}#{node}#{param}#{time}#{value}"
-      var arr = event.data.split('#');
-      var data = this.state.data;
-      data[arr[0]] = data[arr[0]] || {};
-      data[arr[0]][arr[1]] = data[arr[0]][arr[1]] || {};
-      data[arr[0]][arr[1]]["param"] = data[arr[0]][arr[1]]["param"] || {};
-      data[arr[0]][arr[1]]["param"][arr[2]] = arr[4];
-      data[arr[0]][arr[1]]["time"] = new Date();
-      if (this.isMounted())
-        this.setState({
-          data: data,
-          activeName: this.state.activeName || arr[0]
-        });
+      if (this.isMounted()) {
+        var state = this.packData(this.parseData(event.data), this.state.data, this.state.activeName, true);
+        this.setState(state);
+      }
     }.bind(this);
   },
   handleChoose: function(tab) {
@@ -63,7 +80,6 @@ var Tab = React.createClass({
 var Table = React.createClass({
   render: function() {
     var nameData = this.props.nameData;
-
     var params = Object.keys(nameData).map(function(node) {
       return Object.keys(nameData[node]["param"]);
     }).flatMap().distinct().sort();
@@ -127,4 +143,5 @@ var Row = React.createClass({
   }
 });
 
-React.render(<TabbedTable wsUrl={wsUrl} />, document.getElementById("tableContainer"));
+React.render(<TabbedTable wsUrl={wsUrl} lastData={lastData} />,
+  document.getElementById("tableContainer"));
