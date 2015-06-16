@@ -30,8 +30,7 @@ var TabbedTable = React.createClass({
     return this.packData(this.parseData(this.props.lastData), {}, this.props.activeName, false);
   },
   componentDidMount: function() {
-    var ws = new WebSocket(this.props.wsUrl);
-    ws.onmessage = function(event) {
+    this.props.ws.onmessage = function(event) {
       if (this.isMounted()) {
         var state = this.packData(this.parseData(event.data), this.state.data, this.state.activeName, true);
         this.setState(state);
@@ -43,14 +42,23 @@ var TabbedTable = React.createClass({
     localStorage["activeName"] = activeName;
     this.setState({activeName: activeName});
   },
+  handleRemove: function(node) {
+    //this.props.ws send delete node from kvs
+    var data = this.state.data;
+    delete data[this.state.activeName][node];
+    this.setState({data: data});
+  },
   render: function() {
     var names = Object.keys(this.state.data).sort();
     if (names.length === 0) return <div>No data yet :(</div>
     else
       return (
         <div>
-          <Tabs names={names} active={this.state.activeName} onChoose={this.handleChoose} />
-          <Table nameData={this.state.data[this.state.activeName]} />
+          <Tabs names={names}
+                active={this.state.activeName}
+                onChoose={this.handleChoose} />
+          <Table nameData={this.state.data[this.state.activeName]}
+                 onRemove={this.handleRemove} />
         </div>
       );
   }
@@ -91,8 +99,12 @@ var Table = React.createClass({
       return <th>{param}</th>;
     });
 
+    var self = this;
     var rows = Object.keys(nameData).map(function(node) {
-      return <Row node={node} params={params} nodeData={nameData[node]} />
+      return <Row node={node}
+                  params={params}
+                  nodeData={nameData[node]}
+                  onRemove={self.props.onRemove} />
     });
 
     return (
@@ -120,6 +132,9 @@ var Row = React.createClass({
   tick: function() {
     this.forceUpdate();
   },
+  handleRemove: function() {
+    this.props.onRemove(this.props.node);
+  },
   render: function() {
     var node = this.props.node;
     var params = this.props.params;
@@ -141,10 +156,24 @@ var Row = React.createClass({
         <td>{node}</td>
         {paramCells}
         <td>{lastUpdated}</td>
+        <RemoveCell onRemove={this.handleRemove} />
       </tr>
     );
   }
 });
 
-React.render(<TabbedTable wsUrl={wsUrl} lastData={lastData} activeName={localStorage["activeName"]} />,
+var RemoveCell = React.createClass({
+  handleRemove: function() {
+    this.props.onRemove();
+  },
+  render: function() {
+    return <td onClick={this.handleRemove}>remove</td>
+  }
+});
+
+var ws = new WebSocket(wsUrl);
+
+React.render(<TabbedTable ws={ws}
+                          lastData={lastData}
+                          activeName={localStorage["activeName"]} />,
   document.getElementById("tableContainer"));
