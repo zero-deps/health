@@ -9,6 +9,7 @@ object LastData {
 
   case object Get
   case class Values(it: Iterator[String])
+  case class Delete(key: String)
 
   private class KvsWrapper(val kvs: Kvs) extends Kvs.Wrapper {
     val bucket = "last"
@@ -48,6 +49,7 @@ class LastData(kvs: KvsWrapper) extends Actor with ActorLogging {
               kvs.put("last", key)
           }
       }
+
     case LastData.Get =>
       val it = Iterator.iterate {
         val k = kvs.get("first")
@@ -63,6 +65,25 @@ class LastData(kvs: KvsWrapper) extends Actor with ActorLogging {
         case (k, v) => v.get.data
       }
       sender ! LastData.Values(it)
+
+    case LastData.Delete(key) =>
+      getEntry(key) map { case Entry(_, prev, next) =>
+        prev match {
+          case Some(prev) =>
+            getEntry(prev) map { entry =>
+              kvs.put(prev, entry.copy(next = next))
+            }
+          case _ =>
+        }
+        next match {
+          case Some(next) =>
+            getEntry(next) map { entry =>
+              kvs.put(next, entry.copy(prev = prev))
+            }
+          case _ =>
+        }
+        kvs.delete(key)
+      }
   }
 
   def getEntry(key: String): Option[Entry] =

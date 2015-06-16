@@ -43,9 +43,16 @@ var TabbedTable = React.createClass({
     this.setState({activeName: activeName});
   },
   handleRemove: function(node) {
-    //this.props.ws send delete node from kvs
+    var ws = this.props.ws;
     var data = this.state.data;
-    delete data[this.state.activeName][node];
+    var name = this.state.activeName;
+    // Remove on server
+    var params = Object.keys(data[name][node]["param"]);
+    params.forEach(function(param) {
+      ws.send(name + "#" + node + "#" + param);
+    });
+    // Remove on client
+    delete data[name][node];
     this.setState({data: data});
   },
   render: function() {

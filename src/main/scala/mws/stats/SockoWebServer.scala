@@ -54,6 +54,9 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
       case WebSocketHandshake(wsHandshake) => wsHandshake match {
         case Path(wsUrl) => wsHandshake.authorize()
       }
+      case WebSocketFrame(frame) =>
+        val key = frame.readText
+        lastData ! LastData.Delete(key);
     })
     val server = new WebServer(serverConfig, routes, system)
     webServer = Some(server)
