@@ -114,6 +114,7 @@ var Table = React.createClass({
             <th>Node</th>
             {header}
             <th>Last updated</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>{rows}</tbody>
@@ -123,6 +124,9 @@ var Table = React.createClass({
 });
 
 var Row = React.createClass({
+  getInitialState: function() {
+    return { hover: false };
+  },
   componentDidMount: function() {
     this.timer = setInterval(this.tick, 1000);
   },
@@ -134,6 +138,12 @@ var Row = React.createClass({
   },
   handleRemove: function() {
     this.props.onRemove(this.props.node);
+  },
+  mouseOver: function() {
+    this.setState({hover: true});
+  },
+  mouseOut: function() {
+    this.setState({hover: false});
   },
   render: function() {
     var node = this.props.node;
@@ -152,11 +162,13 @@ var Row = React.createClass({
     else className = "danger";
 
     return (
-      <tr className={className}>
+      <tr className={className}
+          onMouseOver={this.mouseOver}
+          onMouseOut={this.mouseOut}>
         <td>{node}</td>
         {paramCells}
         <td>{lastUpdated}</td>
-        <RemoveCell onRemove={this.handleRemove} />
+        <RemoveCell onRemove={this.handleRemove} visible={this.state.hover} />
       </tr>
     );
   }
@@ -167,7 +179,15 @@ var RemoveCell = React.createClass({
     this.props.onRemove();
   },
   render: function() {
-    return <td onClick={this.handleRemove}>remove</td>
+    return (
+      <td>
+        <span className={this.props.visible ? "" : "invisible"}
+              onClick={this.handleRemove}>
+          <span className="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
+        </span>
+        <span className="sr-only">Remove</span>
+      </td>
+    );
   }
 });
 

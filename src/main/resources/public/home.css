@@ -5,3 +5,11 @@ body {
 .table {
   width: auto;
 }
+
+.invisible {
+  visibility: hidden;
+}
+
+.glyphicon {
+  cursor: pointer;
+}

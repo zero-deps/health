@@ -24,6 +24,7 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
   val httpPort = config.getInt("http.port")
   val serverConfig = WebServerConfig(hostname = hostname, port = httpPort)
   val wsUrl = "/webscoket"
+  val exts = List("js", "css", "ico", "eot", "svg", "ttf", "woff", "woff2") map ('.' + _)
 
   var webServer: Option[WebServer] = None
   var staticHandler: Option[ActorRef] = None
@@ -45,20 +46,10 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
               request.response.write("It doesn't work")
             case _ =>
           }
-        case Path("/favicon.ico") =>
+        case GET(Path("/favicon.ico")) =>
           request.response.write(HttpResponseStatus.NOT_FOUND)
-        case GET(Path("/bootstrap/bootstrap.min.css")) =>
-          static ! new StaticResourceRequest(request, "public/bootstrap/bootstrap.min.css")
-        case GET(Path("/home.css")) =>
-          static ! new StaticResourceRequest(request, "public/home.css")
-        case GET(Path("/react/react.min.js")) =>
-          static ! new StaticResourceRequest(request, "public/react/react.min.js")
-        case GET(Path("/react/JSXTransformer.js")) =>
-          static ! new StaticResourceRequest(request, "public/react/JSXTransformer.js")
-        case GET(Path("/util.js")) =>
-          static ! new StaticResourceRequest(request, "public/util.js")
-        case GET(Path("/home.js")) =>
-          static ! new StaticResourceRequest(request, "public/home.js")
+        case GET(Path(path)) if exts.find(path.endsWith).isDefined =>
+          static ! new StaticResourceRequest(request, s"public$path")
       }
       case WebSocketHandshake(wsHandshake) => wsHandshake match {
         case Path(wsUrl) => wsHandshake.authorize()
