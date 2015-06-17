@@ -98,21 +98,21 @@ var Tab = React.createClass({
 var Table = React.createClass({
   render: function() {
     var nameData = this.props.nameData;
+
     var params = Object.keys(nameData).map(function(node) {
       return Object.keys(nameData[node]["param"]);
-    }).flatMap().distinct().sort();
+    }).flatten().distinct().sort();
 
     var header = params.map(function(param) {
       return <th>{param}</th>;
     });
 
-    var self = this;
     var rows = Object.keys(nameData).map(function(node) {
       return <Row node={node}
                   params={params}
                   nodeData={nameData[node]}
-                  onRemove={self.props.onRemove} />
-    });
+                  onRemove={this.props.onRemove} />
+    }.bind(this));
 
     return (
       <table className="table">
@@ -157,27 +157,30 @@ var Row = React.createClass({
     var params = this.props.params;
     var nodeData = this.props.nodeData;
 
+    var elapsed = Math.floor((new Date() - nodeData["time"]) / 1000);
+
     var paramCells = params.map(function(param) {
       return <td>{nodeData["param"][param]}</td>;
     });
 
-    var lastUpdated, className;
-    var elapsed = Math.floor((new Date() - nodeData["time"]) / 1000);
-    if (elapsed < 1) lastUpdated = "just now";
-    else lastUpdated = elapsed.toUnits() + " ago";
-    if (elapsed < 3) className = "success";
-    else className = "danger";
-
     return (
-      <tr className={className}
+      <tr className={elapsed < 3 ? "success" : "danger"}
           onMouseOver={this.mouseOver}
           onMouseOut={this.mouseOut}>
         <td>{node}</td>
         {paramCells}
-        <td>{lastUpdated}</td>
+        <LastUpdatedCell elapsed={elapsed} />
         <RemoveCell onRemove={this.handleRemove} visible={this.state.hover} />
       </tr>
     );
+  }
+});
+
+var LastUpdatedCell = React.createClass({
+  render: function() {
+    var elapsed = this.props.elapsed;
+    var text = elapsed < 1 ? "just now" : elapsed.toUnits() + " ago";
+    return <td>{text}</td>;
   }
 });
 
