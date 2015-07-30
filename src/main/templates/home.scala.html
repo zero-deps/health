@@ -13,6 +13,7 @@
     <script src='@resource("util.js")'></script>
     <script>
       var wsUrl = "ws://@ctx.hostname:@ctx.port@ctx.wsUrl";
+      var lastData = "@ctx.lastData.mkString(",")".split(',');
     </script>
     <script type="text/jsx" src='@resource("home.js")'></script>
   </head>

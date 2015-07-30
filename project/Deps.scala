@@ -15,7 +15,7 @@ object Deps {
   }
 
   val akka = Seq(
-    "com.typesafe.akka" %% "akka-actor" % Versions.akka
+    "com.." %% "akka-cluster-metrics" % "1.0"
   )
 
   val socko = Seq(
