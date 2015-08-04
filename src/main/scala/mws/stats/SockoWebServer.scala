@@ -71,7 +71,8 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
   }
 
   def receive: Receive = {
-    case Metric(data) =>
+    case m @ Metric(name, node, param, time, value) =>
+      val data = m.serialize
       webServer foreach (_.webSocketConnections.writeText(data))
     case "stop" =>
       webServer foreach (_.webSocketConnections.closeAll())

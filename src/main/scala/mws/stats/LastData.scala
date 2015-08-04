@@ -28,8 +28,9 @@ class LastData(kvs: KvsWrapper) extends Actor with ActorLogging {
     system.eventStream.unsubscribe(self, classOf[Metric])
 
   def receive: Receive = {
-    case Metric(data) =>
-      val key = data.split('#').take(3).mkString("#")
+    case m @ Metric(name, node, param, time, value) =>
+      val key = s"$name#$node#$param"
+      val data = m.serialize
       getEntry(key) match {
         case Some(Entry(_, prev, next)) =>
           kvs.put(key, Entry(data, prev, next))
@@ -49,6 +50,8 @@ class LastData(kvs: KvsWrapper) extends Actor with ActorLogging {
               kvs.put("last", key)
           }
       }
+
+    case Message(casino, user, msg, time) => //todo
 
     case LastData.Get =>
       val it = Iterator.iterate {

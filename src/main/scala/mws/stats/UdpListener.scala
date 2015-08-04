@@ -26,7 +26,14 @@ class UdpListener extends Actor with ActorLogging {
   def ready(socket: ActorRef): Receive = {
     case Udp.Received(data, _) =>
       val decoded = data.decodeString("UTF-8")
-      system.eventStream.publish(Metric(decoded))
+      log.debug(s"Received: $decoded")
+      decoded.split("::").toList match {
+        case "metric" :: name :: node :: param :: time :: value :: Nil =>
+          system.eventStream.publish(Metric(name, node, param, time, value))
+        case "message" :: casino :: user :: msg :: time :: Nil =>
+          system.eventStream.publish(Message(casino, user, msg, time))
+        case _ =>
+      }
     case "close" =>
       socket ! Udp.Unbind
     case Udp.Unbound =>
