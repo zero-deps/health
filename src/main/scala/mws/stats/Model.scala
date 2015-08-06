@@ -1,9 +1,11 @@
 package .stats
 
 case class Metric(name: String, node: String, param: String, time: String, value: String) {
-  def serialize(): String = s"$name#$node#$param#$time#$value"
+  lazy val key = s"$name#$node#$param"
+  lazy val serialize = s"$name#$node#$param#$time#$value"
 }
 
 case class Message(casino: String, user: String, msg: String, time: String) {
-  def serialize(): String = s"$casino#$user#$msg#$time"
+  lazy val key = ???
+  lazy val serialize = s"$casino#$user#$msg#$time"
 }
