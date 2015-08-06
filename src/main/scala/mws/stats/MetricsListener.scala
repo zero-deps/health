@@ -46,8 +46,7 @@ class MetricsListener extends Actor with ActorLogging {
   def publish(address: Address, param: String, value: String): Unit = {
     val name = system.name
     val node = s"${address.host.getOrElse("")}:${address.port.getOrElse("")}"
-    val time = System.currentTimeMillis
-    val data = s"$name#$node#$param#$time#$value"
-    system.eventStream.publish(Metric(data))
+    val time = System.currentTimeMillis.toString
+    system.eventStream.publish(Metric(name, node, param, time, value))
   }
 }
