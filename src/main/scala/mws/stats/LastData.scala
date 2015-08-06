@@ -51,6 +51,8 @@ class LastData(kvs: KvsWrapper) extends Actor with ActorLogging {
           }
       }
 
+    case Message(casino, user, msg, time) => //todo
+
     case LastData.Get =>
       val it = Iterator.iterate {
         val k = kvs.get("first")

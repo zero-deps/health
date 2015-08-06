@@ -30,6 +30,8 @@ class UdpListener extends Actor with ActorLogging {
       decoded.split("::").toList match {
         case "metric" :: name :: node :: param :: time :: value :: Nil =>
           system.eventStream.publish(Metric(name, node, param, time, value))
+        case "message" :: casino :: user :: msg :: time :: Nil =>
+          system.eventStream.publish(Message(casino, user, msg, time))
         case _ =>
       }
     case "close" =>
