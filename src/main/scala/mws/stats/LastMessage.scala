@@ -6,7 +6,7 @@ import .stats.LastMessage.LastMessageKvs
 
 case class Message(casino: String, user: String, msg: String, time: String) 
     extends Kvs.Data {
-  lazy val key = s"$casino#$user"
+  lazy val key       = s"$casino#$user#$msg#$time"
   lazy val serialize = s"$casino#$user#$msg#$time"
 }
 
@@ -30,6 +30,6 @@ class LastMessage(kvs: LastMessageKvs) extends Actor with ActorLogging {
     case m: Message =>
       kvs.putToList(m)
     case LastMessage.Get =>
-      sender ! LastMetric.Values(kvs.iterator)
+      sender ! LastMessage.Values(kvs.iterator)
   }
 }

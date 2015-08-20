@@ -27,3 +27,7 @@ Number.prototype.toUnits = function() {
     else return acc.concat(integer, plural);
   }, []).join(' ');
 };
+
+var nonEmpty = function(value) {
+  return value !== ""
+}

@@ -25,7 +25,7 @@ object StatsApp extends App {
   val lastMetric = system.actorOf(LastMetric.props(kvs.get), name = "last-metric")
   val lastMsg = system.actorOf(LastMessage.props(kvs.get), name = "last-msg")
 
-  webServer = Some(system.actorOf(SockoWebServer.props(lastMetric), "web-server"))
+  webServer = Some(system.actorOf(SockoWebServer.props(lastMetric, lastMsg), "web-server"))
   udpListener = Some(system.actorOf(UdpListener.props, "udp-listener"))
 
   system.actorOf(MetricsListener.props)

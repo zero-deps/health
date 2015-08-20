@@ -13,14 +13,16 @@
     <script src='@resource("util.js")'></script>
     <script>
       var wsUrl = "ws://@ctx.hostname:@ctx.port@ctx.wsUrl";
-      var lastData = "@ctx.lastData.mkString(",")".split(',').filter(function(value) {
-        return value !== ""
-      });
+      var lastMetric = "@ctx.lastMetric.mkString("::")".split('::').filter(nonEmpty);
+      var lastMsg = "@ctx.lastMsg.mkString("::")".split('::').filter(nonEmpty);
     </script>
+    <script type="text/jsx" src='@resource("metrics.js")'></script>
+    <script type="text/jsx" src='@resource("messages.js")'></script>
     <script type="text/jsx" src='@resource("home.js")'></script>
   </head>
   <body>
     <h1>Dashboard</h1>
     <div id="tableContainer"></div>
+    <div id="userHistory"></div>
   </body>
 </html>

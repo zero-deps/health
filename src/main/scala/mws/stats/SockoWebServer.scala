@@ -3,6 +3,7 @@ package .stats
 import akka.actor._
 import akka.pattern.ask
 import akka.util.Timeout
+import concurrent.Future
 import .stats.Template.HomeContext
 import org.mashupbots.socko.events.HttpResponseStatus
 import org.mashupbots.socko.handlers._
@@ -11,12 +12,14 @@ import org.mashupbots.socko.webserver.{WebServer, WebServerConfig}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import util.Success
 
 object SockoWebServer {
-  def props(lastData: ActorRef): Props = Props(new SockoWebServer(lastData))
+  def props(lastData: ActorRef, lastMsg: ActorRef): Props =
+    Props(new SockoWebServer(lastData, lastMsg))
 }
 
-class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
+class SockoWebServer(lastMetric: ActorRef, lastMsg: ActorRef) extends Actor with ActorLogging {
   import context.system
 
   val config = system.settings.config
@@ -37,14 +40,14 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
     val routes = Routes({
       case HttpRequest(request) => request match {
         case GET(Path("/")) =>
-          val data = lastData ? LastMetric.Get onComplete {
-            case util.Success(LastMetric.Values(it)) =>
-              val ctx = HomeContext(hostname, httpPort, wsUrl, it.toList)
+          val f1 = lastMetric ? LastMetric.Get
+          val f2 = lastMsg ? LastMessage.Get
+          Future.sequence(f1 :: f2 :: Nil) onComplete {
+            case Success(List(LastMetric.Values(it1), LastMessage.Values(it2))) =>
+              val ctx = HomeContext(hostname, httpPort, wsUrl, it1.toList, it2.toList)
               request.response.write(html.home(ctx).toString, "text/html; charset=UTF-8")
-            case util.Failure(e) =>
-              log.error(e.getMessage, e)
-              request.response.write("It doesn't work")
-            case _ =>
+            case x =>
+              request.response.write(s"Unexpected response: $x")
           }
         case GET(Path("/favicon.ico")) =>
           request.response.write(HttpResponseStatus.NOT_FOUND)
@@ -56,23 +59,26 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
       }
       case WebSocketFrame(frame) =>
         val key = frame.readText
-        lastData ! LastMetric.Delete(key);
+        lastMetric ! LastMetric.Delete(key);
     })
     val server = new WebServer(serverConfig, routes, system)
     webServer = Some(server)
     server.start()
 
     system.eventStream.subscribe(self, classOf[Metric])
+    system.eventStream.subscribe(self, classOf[Message])
   }
 
   override def postStop(): Unit = {
     staticHandler foreach (_ ! PoisonPill)
-    system.eventStream.unsubscribe(self, classOf[Metric])
+    system.eventStream.unsubscribe(self)
   }
 
   def receive: Receive = {
     case m: Metric =>
-      webServer foreach (_.webSocketConnections.writeText(m.serialize))
+      webServer foreach (_.webSocketConnections.writeText("metric#" + m.serialize))
+    case m: Message =>
+      webServer foreach (_.webSocketConnections.writeText("msg#" + m.serialize))
     case "stop" =>
       webServer foreach (_.webSocketConnections.closeAll())
       webServer foreach (_.stop())

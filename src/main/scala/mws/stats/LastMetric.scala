@@ -5,7 +5,7 @@ import .stats.LastMetric.LastMetricKvs
 
 case class Metric(name: String, node: String, param: String, time: String, value: String) 
     extends Kvs.Data {
-  lazy val key = s"$name#$node#$param"
+  lazy val key       = s"$name#$node#$param"
   lazy val serialize = s"$name#$node#$param#$time#$value"
 }
 
