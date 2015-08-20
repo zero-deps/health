@@ -22,7 +22,7 @@ object StatsApp extends App {
   }
 
   kvs = Some(LeveldbKvs(config.getConfig("leveldb")))
-  val lastData = system.actorOf(LastData.props(kvs.get), name = "last-data")
+  val lastData = system.actorOf(LastMetric.props(kvs.get), name = "last-metric")
 
   webServer = Some(system.actorOf(SockoWebServer.props(lastData), "web-server"))
   udpListener = Some(system.actorOf(UdpListener.props, "udp-listener"))

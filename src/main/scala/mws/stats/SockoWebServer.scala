@@ -37,8 +37,8 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
     val routes = Routes({
       case HttpRequest(request) => request match {
         case GET(Path("/")) =>
-          val data = lastData ? LastData.Get onComplete {
-            case util.Success(LastData.Values(it)) =>
+          val data = lastData ? LastMetric.Get onComplete {
+            case util.Success(LastMetric.Values(it)) =>
               val ctx = HomeContext(hostname, httpPort, wsUrl, it.toList)
               request.response.write(html.home(ctx).toString, "text/html; charset=UTF-8")
             case util.Failure(e) =>
@@ -56,7 +56,7 @@ class SockoWebServer(lastData: ActorRef) extends Actor with ActorLogging {
       }
       case WebSocketFrame(frame) =>
         val key = frame.readText
-        lastData ! LastData.Delete(key);
+        lastData ! LastMetric.Delete(key);
     })
     val server = new WebServer(serverConfig, routes, system)
     webServer = Some(server)
