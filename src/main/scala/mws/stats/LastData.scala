@@ -85,6 +85,16 @@ class LastData(kvs: KvsWrapper) extends Actor with ActorLogging {
             }
           case _ =>
         }
+        (kvs.get("first"), kvs.get("last")) match {
+          case (Some(`key`), Some(`key`)) =>
+            kvs.delete("first")
+            kvs.delete("last")
+          case (Some(`key`), _) =>
+            kvs.put("first", next.get)
+          case (_, Some(`key`)) =>
+            kvs.put("last", prev.get)
+          case _ =>
+        }
         kvs.delete(key)
       }
   }
