@@ -26,7 +26,9 @@ To change hostname set env variable `HOST_IP`.
 
 ## Input
 
-Data format: `metric::<system-name>::<node-name>::<param-name>::<timestamp>::<param-value>`
+Metric: `metric::<system-name>::<node-name>::<param-name>::<timestamp>::<param-value>`
+
+Message: `message::<casino>::<user>::<msg>::<timestamp>`
 
 Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
