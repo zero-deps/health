@@ -56,17 +56,11 @@ class LastData(kvs: KvsWrapper) extends Actor with ActorLogging {
     case LastData.Get =>
       val it = Iterator.iterate {
         val k = kvs.get("first")
-        val v = k.flatMap(getEntry)
-        (k, v)
-      } { case (_, _v) =>
+        k.flatMap(getEntry)
+      } { _v =>
         val k = _v.flatMap(_.next)
-        val v = k.flatMap(getEntry)
-        (k, v)
-      } takeWhile {
-        case (k, v) => k.isDefined && v.isDefined
-      } map {
-        case (k, v) => v.get.data
-      }
+        k.flatMap(getEntry)
+      } takeWhile(_.isDefined) map(_.get.data)
       sender ! LastData.Values(it)
 
     case LastData.Delete(key) =>
