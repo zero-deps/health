@@ -17,8 +17,8 @@ object Message {
 }
 case class Message(casino: String, user: String, msg: String, time: Duration)
     extends Kvs.Data {
-  lazy val key       = s"$casino::$user::$msg::$time"
-  lazy val serialize = s"$casino::$user::$msg::$time"
+  lazy val key       = s"$casino::$user::$msg::${time.toMillis}"
+  lazy val serialize = s"$casino::$user::$msg::${time.toMillis}"
 }
 
 object LastMessage {
