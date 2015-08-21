@@ -2,7 +2,7 @@ var TabbedTable = React.createClass({
   parseData: function(data) {
     var list = [].concat(data);
     var objects = list.map(function(data) {
-      var arr = data.split('#');
+      var arr = data.split('::');
       var obj = {
         name:  arr[0],
         node:  arr[1],
@@ -49,7 +49,7 @@ var TabbedTable = React.createClass({
     // Remove on server
     var params = Object.keys(data[name][node]["param"]);
     params.forEach(function(param) {
-      ws.send(name + "#" + node + "#" + param);
+      ws.send(name + "::" + node + "::" + param);
     });
     // Remove on client
     delete data[name][node];

@@ -76,9 +76,9 @@ class SockoWebServer(lastMetric: ActorRef, lastMsg: ActorRef) extends Actor with
 
   def receive: Receive = {
     case m: Metric =>
-      webServer foreach (_.webSocketConnections.writeText("metric#" + m.serialize))
+      webServer foreach (_.webSocketConnections.writeText("metric::" + m.serialize))
     case m: Message =>
-      webServer foreach (_.webSocketConnections.writeText("msg#" + m.serialize))
+      webServer foreach (_.webSocketConnections.writeText("msg::" + m.serialize))
     case "stop" =>
       webServer foreach (_.webSocketConnections.closeAll())
       webServer foreach (_.stop())

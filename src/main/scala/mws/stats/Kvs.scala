@@ -53,7 +53,7 @@ object Kvs {
       }
     }
 
-    def iterator: Iterator[String] = 
+    def values: Iterator[String] =
       Iterator.iterate {
         val k = kvs.get(First)
         k.flatMap(getEntry)
@@ -80,16 +80,20 @@ object Kvs {
         }
         (kvs.get(First), kvs.get(Last)) match {
           case (Some(`key`), Some(`key`)) =>
-            kvs.deleteFromList(First)
-            kvs.deleteFromList(Last)
+            kvs.delete(First)
+            kvs.delete(Last)
           case (Some(`key`), _) =>
             kvs.put(First, next.get)
           case (_, Some(`key`)) =>
             kvs.put(Last, prev.get)
           case _ =>
         }
-        kvs.deleteFromList(key)
+        kvs.delete(key)
       }
+    
+    def first: Option[String] = kvs.get(First).flatMap(getEntry).map(_.data)
+
+    def last: Option[String] = kvs.get(Last).flatMap(getEntry).map(_.data)
 
     private def getEntry(key: String): Option[Entry] =
       kvs.get(key) map { entry =>

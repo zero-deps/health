@@ -27,11 +27,11 @@ class UdpListener extends Actor with ActorLogging {
     case Udp.Received(data, _) =>
       val decoded = data.decodeString("UTF-8")
       log.debug(s"Received: $decoded")
-      decoded.split("::").toList match {
-        case "metric" :: name :: node :: param :: time :: value :: Nil =>
-          system.eventStream.publish(Metric(name, node, param, time, value))
-        case "message" :: casino :: user :: msg :: time :: Nil =>
-          system.eventStream.publish(Message(casino, user, msg, time))
+      decoded.split("::", 2).toList match {
+        case "metric" :: m :: Nil =>
+          system.eventStream.publish(Metric(m))
+        case "message" :: m :: Nil =>
+          system.eventStream.publish(Message(m))
         case _ =>
       }
     case "close" =>

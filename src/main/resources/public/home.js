@@ -5,10 +5,10 @@ var handlers = {
 };
 ws.onmessage = function(event) {
   var newData = event.data;
-  if (newData.indexOf("metric#") == 0)
-    handlers.metric(newData.replace("metric#", ""))
-  if (newData.indexOf("msg#") == 0)
-    handlers.msg(newData.replace("msg#", ""))
+  if (newData.indexOf("metric::") == 0)
+    handlers.metric(newData.replace("metric::", ""))
+  if (newData.indexOf("msg::") == 0)
+    handlers.msg(newData.replace("msg::", ""))
 };
 
 React.render(<TabbedTable ws={ws} handlers={handlers}

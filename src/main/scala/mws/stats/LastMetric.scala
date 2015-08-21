@@ -3,10 +3,19 @@ package .stats
 import akka.actor.{Actor, ActorLogging, Props}
 import .stats.LastMetric.LastMetricKvs
 
+object Metric {
+  def apply(str: String): Metric = {
+    str.split("::").toList match {
+      case name :: node :: param :: time :: value :: Nil =>
+        new Metric(name, node, param, time, value)
+      case _ => throw new IllegalArgumentException(str)
+    }
+  }
+}
 case class Metric(name: String, node: String, param: String, time: String, value: String) 
     extends Kvs.Data {
-  lazy val key       = s"$name#$node#$param"
-  lazy val serialize = s"$name#$node#$param#$time#$value"
+  lazy val key       = s"$name::$node::$param"
+  lazy val serialize = s"$name::$node::$param::$time::$value"
 }
 
 object LastMetric {
@@ -30,7 +39,7 @@ class LastMetric(kvs: LastMetricKvs) extends Actor with ActorLogging {
     case m: Metric =>
       kvs.putToList(m)
     case LastMetric.Get =>
-      sender ! LastMetric.Values(kvs.iterator)
+      sender ! LastMetric.Values(kvs.values)
     case LastMetric.Delete(key) =>
       kvs.deleteFromList(key)
   }

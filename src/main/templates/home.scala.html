@@ -13,8 +13,8 @@
     <script src='@resource("util.js")'></script>
     <script>
       var wsUrl = "ws://@ctx.hostname:@ctx.port@ctx.wsUrl";
-      var lastMetric = "@ctx.lastMetric.mkString("::")".split('::').filter(nonEmpty);
-      var lastMsg = "@ctx.lastMsg.mkString("::")".split('::').filter(nonEmpty);
+      var lastMetric = [@Html(ctx.lastMetric.mkString("\"", "\", \"", "\""))].filter(nonEmpty);
+      var lastMsg = [@Html(ctx.lastMsg.mkString("\"", "\", \"", "\""))].filter(nonEmpty);
     </script>
     <script type="text/jsx" src='@resource("metrics.js")'></script>
     <script type="text/jsx" src='@resource("messages.js")'></script>

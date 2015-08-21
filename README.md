@@ -32,7 +32,11 @@ Message: `message::<casino>::<user>::<msg>::<timestamp>`
 
 Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
-Example: `echo -n "metric::::127.0.0.1:4245::Heap::1439988973155::153.97" >/dev/udp/localhost/50123`
+Examples:
+```
+echo -n "metric::::127.0.0.1:4245::Heap::1439988973155::153.97" >/dev/udp/localhost/50123
+echo -n "message::casino1::user1::LoginRequest::1439988973155" >/dev/udp/localhost/50123
+```
 
 ## Output
 

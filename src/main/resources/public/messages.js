@@ -2,7 +2,7 @@ var UserHistory = React.createClass({
   parseData: function(data) {
     var list = [].concat(data);
     return list.map(function(item) {
-      var arr = item.split('#');
+      var arr = item.split('::');
       return {
         casino: arr[0],
         user:   arr[1],
@@ -22,12 +22,13 @@ var UserHistory = React.createClass({
   },
   render: function() {
     var rows = this.state.data.reverse().map(function(item) {
+      var time = new Date(parseInt(item.time)).toString();
       return (
         <tr>
           <td>{item.casino}</td>
           <td>{item.user}</td>
           <td>{item.msg}</td>
-          <td>{item.time}</td>
+          <td>{time}</td>
         </tr>
       );
     });
