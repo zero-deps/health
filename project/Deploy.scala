@@ -9,17 +9,18 @@ import sbt._
 object Deploy {
   lazy val deploy = TaskKey[Unit]("deploy", "Build, package, deploy and restart app")
 
-  val remoteDir = "/home//apps/stats"
+  val username = "andreyza"
+  val remoteDir = s"/home/$username/apps/stats"
   val pidPath = s"$remoteDir/pid"
   val scriptRelativePath = s"bin/${Package.scriptName}"
 
   lazy val settings = Seq(
     deployConfigs += ServerConfig(
-      name = "devcore1",
-      host = "172.29.49.43",
-      user = Some("")
+      name = "dev",
+      host = "nb-",
+      user = Some(username)
     ),
-    deploySshServersNames += "devcore1",
+    deploySshServersNames += "dev",
     deployArtifacts ++= Seq(
       ArtifactSSH(path = (stage in Universal).value, remoteDir)
     ),

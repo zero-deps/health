@@ -12,7 +12,7 @@ Do `sbt run`
 
 ## Deploy
 
-Do `sbt deploy` to deploy to `nb-` server.
+Do `sbt deploy`
 
 ## Configuration
 
