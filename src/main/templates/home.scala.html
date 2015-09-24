@@ -12,7 +12,7 @@
     <script src='@resource("react/JSXTransformer.js")'></script>
     <script src='@resource("util.js")'></script>
     <script>
-      var wsUrl = "ws://@ctx.hostname:@ctx.port@ctx.wsUrl";
+      var wsUrl = "ws://" + window.location.hostname + ":@ctx.port@ctx.wsUrl";
       var lastMetric = [@Html(ctx.lastMetric.mkString("\"", "\", \"", "\""))].filter(nonEmpty);
       var lastMsg = [@Html(ctx.lastMsg.mkString("\"", "\", \"", "\""))].filter(nonEmpty);
     </script>

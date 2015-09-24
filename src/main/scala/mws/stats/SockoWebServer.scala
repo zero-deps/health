@@ -44,7 +44,7 @@ class SockoWebServer(lastMetric: ActorRef, lastMsg: ActorRef) extends Actor with
           val f2 = lastMsg ? LastMessage.Get
           Future.sequence(f1 :: f2 :: Nil) onComplete {
             case Success(List(LastMetric.Values(it1), LastMessage.Values(it2))) =>
-              val ctx = HomeContext(hostname, httpPort, wsUrl, it1.toList, it2.toList)
+              val ctx = HomeContext(httpPort, wsUrl, it1.toList, it2.toList)
               request.response.write(html.home(ctx).toString, "text/html; charset=UTF-8")
             case x =>
               request.response.write(s"Unexpected response: $x")
