@@ -1,0 +1,39 @@
+\section*{Build}
+
+sbt twirlCompileTemplates to compile templates.
+
+\section*{Run}
+
+sbt run
+
+\section*{Deploy}
+
+sbt deploy
+
+\section*{Configuration}
+
+Default ports are:
+UDP: 50123
+HTTP: 9010
+
+To change hostname set env variable HOST_IP.
+
+\section*{Input}
+
+Metric:
+\verb|metric::<system-name>::<node-name>::<param-name>::<timestamp>::<param-value>|
+
+Message: 
+\verb|message::<casino>::<user>::<msg>::<timestamp>|
+
+Send: 
+\verb|echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>|
+
+Examples:
+\begin{lstlisting}
+echo -n "metric::::127.0.0.1:4245::Heap::1439988973155::153.97" >/dev/udp/localhost/50123
+echo -n "message::casino1::user1::LoginRequest::1439988973155" >/dev/udp/localhost/50123
+\end{lstlisting}
+
+\section*{Output}
+To get data open WebSocket connection to /websocket. You will receive data in same format.
