@@ -33,7 +33,7 @@ object AppBuild extends Build {
       Deploy.settings ++
       Resolvers.settings ++
       Seq(
-        mainClass in (Compile, run) := Some(".stats.Boot"),
+        mainClass in (Compile, run) := Some(".stats.StatsApp"),
         libraryDependencies ++=
           Deps.akka ++
           Deps.socko ++
