@@ -36,7 +36,6 @@ object AppBuild extends Build {
         mainClass in (Compile, run) := Some(".stats.StatsApp"),
         libraryDependencies ++=
           Deps.akka ++
-          Deps.socko ++
           Deps.stream ++
           Deps.json ++
           Deps.kvs ++

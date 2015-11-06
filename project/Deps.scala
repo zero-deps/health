@@ -6,7 +6,6 @@ object Deps {
   object Versions {
     val scala = "2.11.6"
     val akka = "2.3.11"
-    val socko = "0.6.0"
     val stream = "1.0"
     val leveldbPort = "0.7"
     val leveldbNative = "1.8"
@@ -17,10 +16,6 @@ object Deps {
 
   val akka = Seq(
     "com.." %% "akka-cluster-metrics" % "1.0"
-  )
-
-  val socko = Seq(
-    "org.mashupbots.socko" %% "socko-webserver" % Versions.socko
   )
 
   val stream = Seq(
