@@ -7,6 +7,7 @@ object Deps {
     val scala = "2.11.6"
     val akka = "2.3.11"
     val socko = "0.6.0"
+    val stream = "1.0"
     val leveldbPort = "0.7"
     val leveldbNative = "1.8"
     val sqlite = "3.8.6"
@@ -20,6 +21,11 @@ object Deps {
 
   val socko = Seq(
     "org.mashupbots.socko" %% "socko-webserver" % Versions.socko
+  )
+
+  val stream = Seq(
+    "com.typesafe.akka" %% "akka-stream-experimental" % Versions.stream,
+    "com.typesafe.akka" %% "akka-http-core-experimental" % Versions.stream
   )
 
   val json = Seq(

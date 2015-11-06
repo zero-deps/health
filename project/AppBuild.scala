@@ -37,6 +37,7 @@ object AppBuild extends Build {
         libraryDependencies ++=
           Deps.akka ++
           Deps.socko ++
+          Deps.stream ++
           Deps.json ++
           Deps.kvs ++
           Deps.sql ++

@@ -2,6 +2,10 @@ package .stats
 
 import akka.actor.{Actor, ActorLogging, Props}
 import .stats.LastMetric.LastMetricKvs
+import akka.stream.actor.{ActorSubscriber,ActorSubscriberMessage,WatermarkRequestStrategy}
+import akka.stream.actor.ActorSubscriber._
+import akka.stream.actor.ActorSubscriberMessage._
+
 
 object Metric {
   def apply(str: String): Metric = {
@@ -28,14 +32,19 @@ object LastMetric {
   def props(kvs: Kvs): Props = Props(new LastMetric(new LastMetricKvs(kvs, list = "lastmetric")))
 }
 
-class LastMetric(kvs: LastMetricKvs) extends Actor with ActorLogging {
+class LastMetric(kvs: LastMetricKvs) extends ActorSubscriber with ActorLogging {
   import context.system
+
+  val requestStrategy = WatermarkRequestStrategy(50)
 
   override def preStart: Unit = system.eventStream.subscribe(self, classOf[Metric])
 
   override def postStop: Unit = system.eventStream.unsubscribe(self, classOf[Metric])
 
   def receive: Receive = {
+    case OnNext(msg)=> self ! LastMetric.Delete(msg.toString)
+    case OnError(e) => context.stop(self)
+    case OnComplete => context.stop(self)
     case m: Metric =>
       kvs.putToList(m)
     case LastMetric.Get =>
