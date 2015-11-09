@@ -71,11 +71,11 @@ class LastMetric(kvs: LastMetricKvs, router:ActorRef) extends ActorSubscriber
     case OnNext(msg)=> self ! LastMetric.Delete(msg.toString)
     case OnError(e) => {
       log.error(e.getMessage)
-      context.stop(self)
+      //context.stop(self)
     }
     case OnComplete => {
       log.info(s"subscriber complete $this")
-      context.stop(self)
+      //context.stop(self)
     }
     case LastMetric.Get =>
       sender ! LastMetric.Values(kvs.values)
@@ -92,7 +92,7 @@ class LastMetric(kvs: LastMetricKvs, router:ActorRef) extends ActorSubscriber
     case Request(amount) => deliver()
     case Cancel => {
       log.info(s"publisher canceled $this") 
-      context.stop(self)
+      //context.stop(self)
     }
   }
 

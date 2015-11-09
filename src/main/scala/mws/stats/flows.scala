@@ -15,10 +15,12 @@ object Flows {
       val last      = b.add(Sink.actorSubscriber(LastMetric.props(kvs, router)))
       val stat      = b.add(Source.actorPublisher(LastMetric.props(kvs, router)))
       val toMsg     = b.add(Flow[String].map[TextMessage](TextMessage.Strict))
+      val log1      = b.add(Flow[String].map[String]{x => println(s"> $x");x})
+      val log2      = b.add(Flow[String].map[String]{x => println(s"< $x");x})
 
       // connect the graph
-      collect ~> last
-      stat ~> toMsg
+      collect ~> log1 ~> last
+      stat    ~> log2 ~> toMsg
 
       (collect.inlet, toMsg.outlet)
   }}
