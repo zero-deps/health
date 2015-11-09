@@ -23,23 +23,30 @@ object StatsApp extends App {
   val udpListener: Option[ActorRef] = Some(system.actorOf(UdpListener.props, "udp-listener"))
   val lastMsg = system.actorOf(LastMessage.props(kvs.get), name = "last-msg")
 
-  val router: ActorRef = system.actorOf(Props(new Actor{
-    var routees = Set[Routee]()
-    def receive = {
-      case ar: AddRoutee => routees = routees + ar.routee
-      case rr: RemoveRoutee => routees = routees - rr.routee
-      case msg => routees.foreach(_.send(msg, sender))
-    }
-  }))
 
   def handleStats(req:HttpRequest) = req.header[UpgradeToWebsocket] match {
-    case Some(upg) => upg.handleMessages(Flows.stats(router, kvs.get))
+    case Some(upg) => {
+      val router: ActorRef = implicitly[ActorSystem].actorOf(Props(new Actor{
+        var routees = Set[Routee]()
+        def receive = {
+          case ar: AddRoutee => routees = routees + ar.routee
+          case rr: RemoveRoutee => routees = routees - rr.routee
+          case msg => routees.foreach(_.send(msg, sender)) }}))
+
+      upg.handleMessages(Flows.stats(router, kvs.get))
+    }
     case None => HttpResponse(BadRequest)
   }
 
   import .stats.Template._
-  val index = HttpResponse(entity=HttpEntity(`text/html`,
-      html.home(HomeContext(c.getInt("http.port"), "/websocket", List.empty, List.empty)).toString))
+  val index = {
+    val s = implicitly[ActorSystem]
+    val cfg = s.settings.config
+    val p = cfg.getInt("http.port")
+
+    HttpResponse(entity=HttpEntity(`text/html`,
+      html.home(HomeContext(p, "/websocket", List.empty, List.empty)).toString))
+  }
 
   system.actorOf(MetricsListener.props)
 
