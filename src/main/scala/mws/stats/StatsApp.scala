@@ -3,12 +3,13 @@ package .stats
 import akka.actor.{ActorRef,ActorSystem,Actor,Props}
 import akka.routing.{ActorRefRoutee,RoundRobinRoutingLogic,Router,Routee,RemoveRoutee,AddRoutee}
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.{HttpRequest,HttpResponse}
+import akka.http.scaladsl.model.{HttpRequest,HttpResponse,HttpEntity}
 import akka.http.scaladsl.model.StatusCodes.BadRequest
 import akka.http.scaladsl.model.ws.UpgradeToWebsocket
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
 import com.typesafe.config.ConfigFactory
+import akka.http.scaladsl.model.MediaTypes.`text/html`
 
 
 object StatsApp extends App {
@@ -35,6 +36,10 @@ object StatsApp extends App {
     case Some(upg) => upg.handleMessages(Flows.stats(router, kvs.get))
     case None => HttpResponse(BadRequest)
   }
+
+  import .stats.Template._
+  val index = HttpResponse(entity=HttpEntity(`text/html`,
+      html.home(HomeContext(c.getInt("http.port"), "/websocket", List.empty, List.empty)).toString))
 
   system.actorOf(MetricsListener.props)
 
