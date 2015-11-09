@@ -10,7 +10,7 @@ abstract class RouteDelegate[-Q,+S](delegate: PartialFunction[Q,S]) extends Part
 }
 
 object Route extends RouteDelegate[HttpRequest,HttpResponse]({
-  case req @ HttpRequest(GET, Path(Root / "websocket"),_,_,_) => StatsApp.handle(req)
+  case req @ HttpRequest(GET, Path(Root / "websocket"),_,_,_) => StatsApp.handleStats(req)
   case HttpRequest(GET, u @ Path(Root / request),_,_,_) => chunks(Some("public"),request)
   case HttpRequest(GET, u @ Path(Root / "react" / request),_,_,_) => chunks(Some("public/react"),request)
   case HttpRequest(GET, u @ Path(Root / "bootstrap" / request),_,_,_) => chunks(Some("public/bootstrap"),request)
