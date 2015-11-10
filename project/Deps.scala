@@ -6,7 +6,7 @@ object Deps {
   object Versions {
     val scala = "2.11.6"
     val akka = "2.3.11"
-    val stream = "1.0"
+    val stream = "2.0-M1"
     val leveldbPort = "0.7"
     val leveldbNative = "1.8"
     val sqlite = "3.8.6"

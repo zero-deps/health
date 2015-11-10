@@ -4,11 +4,13 @@ import akka.actor.{ActorRef,Props}
 import akka.http.scaladsl.model.ws.{UpgradeToWebsocket,Message=>WsMessage,TextMessage}
 import akka.http.scaladsl.model.ws.TextMessage.Strict
 import akka.http.scaladsl.model.HttpRequest
+import akka.stream.FlowShape
 import akka.stream.scaladsl.{Flow,Source,Sink,FlowGraph}
+import akka.stream.scaladsl.FlowGraph._
 
 object Flows {
-  def stats(router:ActorRef, kvs:Kvs): Flow[WsMessage, WsMessage, Unit] = {
-    Flow() { implicit b =>
+  def stats(router:ActorRef, kvs:Kvs): Flow[WsMessage, WsMessage, Unit] = Flow.fromGraph({
+    FlowGraph.create() { implicit b =>
       import FlowGraph.Implicits._
 
       val collect   = b.add(Flow[WsMessage].collect[String]{case TextMessage.Strict(t) => t})
@@ -22,6 +24,6 @@ object Flows {
       collect ~> log1 ~> last
       stat    ~> log2 ~> toMsg
 
-      (collect.inlet, toMsg.outlet)
-  }}
+      FlowShape(collect.inlet, toMsg.outlet)
+  }})
 }

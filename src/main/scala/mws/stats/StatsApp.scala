@@ -1,6 +1,6 @@
 package .stats
 
-import akka.actor.{ActorRef,ActorSystem,Actor,Props}
+import akka.actor.{ActorRef,ActorRefFactory,ActorSystem,Actor,Props}
 import akka.routing.{ActorRefRoutee,RoundRobinRoutingLogic,Router,Routee,RemoveRoutee,AddRoutee}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse,HttpEntity}
@@ -13,20 +13,22 @@ import akka.http.scaladsl.model.MediaTypes.`text/html`
 
 
 object StatsApp extends App {
+  println("START STATS")
   System.setProperty("java.library.path", System.getProperty("java.library.path") + ":native")
 
   implicit val system = ActorSystem("Stats")
   implicit val materializer = ActorMaterializer()
   val c = system.settings.config
 
-  val kvs: Option[Kvs] = Some(LeveldbKvs(c.getConfig("leveldb")))
+  val kvs: Kvs = LeveldbKvs(c.getConfig("leveldb"))
   val udpListener: Option[ActorRef] = Some(system.actorOf(UdpListener.props, "udp-listener"))
   val lastMsg = system.actorOf(LastMessage.props(kvs.get), name = "last-msg")
 
 
-  def handleStats(req:HttpRequest) = req.header[UpgradeToWebsocket] match {
+  def handleStats(req:HttpRequest)(implicit fa:ActorRefFactory) = req.header[UpgradeToWebsocket] match {
     case Some(upg) => {
-      val router: ActorRef = implicitly[ActorSystem].actorOf(Props(new Actor{
+      println(s"upgrade ws with $kvs")
+      val router: ActorRef = fa.actorOf(Props(new Actor{
         var routees = Set[Routee]()
         def receive = {
           case ar: AddRoutee => routees = routees + ar.routee
@@ -39,13 +41,15 @@ object StatsApp extends App {
   }
 
   import .stats.Template._
-  val index = {
-    val s = implicitly[ActorSystem]
-    val cfg = s.settings.config
+
+  def index()(implicit fa:ActorRefFactory):HttpResponse = {
+    val cfg = ConfigFactory.load
     val p = cfg.getInt("http.port")
+    println(s"actor factory $fa")
 
     HttpResponse(entity=HttpEntity(`text/html`,
-      html.home(HomeContext(p, "/websocket", List.empty, List.empty)).toString))
+      html.home(HomeContext(p, "/websocket", List.empty, List.empty)).toString)
+    )
   }
 
   system.actorOf(MetricsListener.props)
