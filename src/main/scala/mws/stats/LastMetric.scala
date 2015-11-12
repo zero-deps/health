@@ -1,14 +1,13 @@
 package .stats
 
 import akka.actor.{Actor,ActorRef,ActorLogging,Props}
-import .stats.LastMetric.LastMetricKvs
+import .kvs.{LastMetricKvs,StKvs}
 import akka.stream.actor.{ActorSubscriber,ActorSubscriberMessage,WatermarkRequestStrategy,ActorPublisher}
 import akka.stream.actor.ActorSubscriber._
 import akka.stream.actor.ActorSubscriberMessage._
 import akka.stream.actor.ActorPublisherMessage._
 
 import akka.routing.{ActorRefRoutee,RemoveRoutee,AddRoutee}
-
 
 import scala.collection.mutable
 import scala.annotation.tailrec
@@ -24,7 +23,7 @@ object Metric {
   }
 }
 case class Metric(name: String, node: String, param: String, time: String, value: String) 
-    extends Kvs.Data {
+    extends StKvs.Data {
   lazy val key       = s"$name::$node::$param"
   lazy val serialize = s"$name::$node::$param::$time::$value"
 }
@@ -35,9 +34,7 @@ object LastMetric {
   case class Delete(key: String)
   case class QueueUpdated()
 
-  class LastMetricKvs(kvs: Kvs, list: String) extends Kvs.Wrapper(kvs, list) with Kvs.Iterable
-
-  def props(kvs: Kvs, router:ActorRef): Props = Props(new LastMetric(new LastMetricKvs(kvs, list = "lastmetric"),router))
+  def props(kvs: StKvs, router:ActorRef): Props = Props(new LastMetric(new LastMetricKvs(kvs, list = "lastmetric"),router))
 }
 
 class LastMetric(kvs: LastMetricKvs, router:ActorRef) extends ActorSubscriber

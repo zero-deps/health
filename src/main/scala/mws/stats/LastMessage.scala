@@ -2,7 +2,8 @@ package .stats
 
 import akka.actor.{Actor, ActorLogging, Props}
 import language.implicitConversions
-import .stats.LastMessage.{DeleteOldData, LastMessageKvs}
+import .stats.LastMessage.DeleteOldData
+import .kvs.{LastMessageKvs,StKvs}
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration._
 
@@ -16,7 +17,7 @@ object Message {
   }
 }
 case class Message(casino: String, user: String, msg: String, time: Duration)
-    extends Kvs.Data {
+    extends StKvs.Data {
   lazy val key       = s"$casino::$user::$msg::${time.toMillis}"
   lazy val serialize = s"$casino::$user::$msg::${time.toMillis}"
 }
@@ -26,9 +27,7 @@ object LastMessage {
   case class Values(it: Iterator[String])
   private case object DeleteOldData
 
-  class LastMessageKvs(kvs: Kvs, list: String) extends Kvs.Wrapper(kvs, list) with Kvs.Iterable
-
-  def props(kvs: Kvs): Props = Props(new LastMessage(new LastMessageKvs(kvs, list = "lastmsg")))
+  def props(kvs: StKvs): Props = Props(new LastMessage(new LastMessageKvs(kvs, list = "lastmsg")))
 }
 
 class LastMessage(kvs: LastMessageKvs) extends Actor with ActorLogging {

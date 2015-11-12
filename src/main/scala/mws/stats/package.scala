@@ -50,27 +50,5 @@ package object stats {
       case Some(stream) => HttpResponse(entity=HttpEntity.Chunked(Mime(r), IsSource(() => stream).map(ChunkStreamPart.apply)))
       case None => HttpResponse(NotFound) }
 
-
-  import akka.actor.{ExtensionKey,Extension,ExtendedActorSystem}
-
-  object Rt extends ExtensionKey[Rt]{
-    override def lookup = Rt
-    override def createExtension(system: ExtendedActorSystem): Rt = new Rt(system)
-  }
-  class Rt(val system:ExtendedActorSystem) extends Extension {
-    import scala.collection.JavaConverters._
-    import akka.actor.DynamicAccess
-    import scala.util.Success
-
-    type Hr = HttpRequest
-    type Hs = HttpResponse
-    type R = PartialFunction[Hr,Hs]
-
-    lazy val c = system.settings.config
-    lazy val ni:R = {case x:Hr => HttpResponse(status=NotImplemented)}
-
-    val routesCfg = c.getStringList(".routes").asScala
-    val routes = routesCfg.map(system.dynamicAccess.getObjectFor[R](_)).collect{case Success(f)=>f}
-    val route:R = routes.foldLeft[R](ni)((b:R, f:R)=> f orElse b)
-  }
+  lazy val notImplemented:PartialFunction[HttpRequest,HttpResponse] = {case x:HttpRequest => HttpResponse(status=NotImplemented)}
 }

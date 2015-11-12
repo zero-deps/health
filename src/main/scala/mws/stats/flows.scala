@@ -7,9 +7,10 @@ import akka.http.scaladsl.model.HttpRequest
 import akka.stream.FlowShape
 import akka.stream.scaladsl.{Flow,Source,Sink,FlowGraph}
 import akka.stream.scaladsl.FlowGraph._
+import .kvs.StKvs
 
 object Flows {
-  def stats(router:ActorRef, kvs:Kvs): Flow[WsMessage, WsMessage, Unit] = Flow.fromGraph({
+  def stats(router:ActorRef, kvs:StKvs): Flow[WsMessage, WsMessage, Unit] = Flow.fromGraph({
     FlowGraph.create() { implicit b =>
       import FlowGraph.Implicits._
 
