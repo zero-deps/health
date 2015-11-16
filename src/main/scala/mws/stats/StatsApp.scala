@@ -20,17 +20,46 @@ object StatsApp extends App {
   implicit val materializer = ActorMaterializer()
   val c = system.settings.config
   val hp = c.getInt("http.port")
+  val ex = Rt(system)
 
-  println(s"config $c")
-  val kvs: StKvs = LeveldbKvs(c.getConfig("leveldb"))
+  val routes = ex.route
+  implicit val kvs:StKvs = ex.kvs
 
-  val udpListener: Option[ActorRef] = Some(system.actorOf(UdpListener.props, "udp-listener"))
-  val lastMsg = system.actorOf(LastMessage.props(kvs), name = "last-msg")
-
-  system.actorOf(MetricsListener.props)
-
-  val routes = Rt(system).route
   println(s"routes collected $routes")
+
+  def init()(implicit fa:ActorRefFactory,kvs:StKvs) = {
+    fa.actorOf(LastMessage.props(kvs), name = "last-msg")
+    fa.actorOf(MetricsListener.props)
+  }
+
+  def handleStats(req:HttpRequest)(implicit fa:ActorRefFactory,kvs:StKvs) = req.header[UpgradeToWebsocket] match {
+    case Some(upg) => {
+      val router: ActorRef = fa.actorOf(Props(new Actor{
+        var routees = Set[Routee]()
+        def receive = {
+          case ar: AddRoutee => routees = routees + ar.routee
+          case rr: RemoveRoutee => routees = routees - rr.routee
+          case msg => routees.foreach(_.send(msg, sender)) }}))
+
+      upg.handleMessages(Flows.stats(router,kvs))
+    }
+    case None => HttpResponse(BadRequest)
+  }
+
+  import .stats.Template._
+
+  def index()(implicit fa:ActorRefFactory): HttpResponse = {
+    val cfg = ConfigFactory.load
+    val p = cfg.getInt("http.port")
+
+    HttpResponse(entity=HttpEntity(`text/html`,
+      html.home(HomeContext(p, "/websocket", List.empty, List.empty)).toString)
+    )
+  }
+
+  init()
+
+  val udpListener:Option[ActorRef] = Some(system.actorOf(UdpListener.props, "udp-listener"))
 
   val f = Flow.fromGraph(
     FlowGraph.create(){ implicit b =>
@@ -50,32 +79,5 @@ object StatsApp extends App {
     bf.flatMap(_.unbind()).onComplete(_ => system.shutdown())
     system.awaitTermination()
     println("Bye!")
-  }
-
-  def handleStats(req:HttpRequest)(implicit fa:ActorRefFactory) = req.header[UpgradeToWebsocket] match {
-    case Some(upg) => {
-      val router: ActorRef = fa.actorOf(Props(new Actor{
-        var routees = Set[Routee]()
-        def receive = {
-          case ar: AddRoutee => routees = routees + ar.routee
-          case rr: RemoveRoutee => routees = routees - rr.routee
-          case msg => routees.foreach(_.send(msg, sender)) }}))
-
-      upg.handleMessages(Flows.stats(router, kvs))
-    }
-    case None => HttpResponse(BadRequest)
-  }
-
-  import .stats.Template._
-
-  def index()(implicit fa:ActorRefFactory): HttpResponse = {
-    println("index loaded")
-    val cfg = ConfigFactory.load
-    val p = cfg.getInt("http.port")
-    println(s"actor factory $fa")
-
-    HttpResponse(entity=HttpEntity(`text/html`,
-      html.home(HomeContext(p, "/websocket", List.empty, List.empty)).toString)
-    )
   }
 }

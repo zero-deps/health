@@ -8,13 +8,15 @@ import akka.http.scaladsl.model.HttpMethods.GET
 import akka.http.scaladsl.model.MediaTypes.`text/html`
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse,HttpEntity}
 
+import .kvs.StKvs
+
 trait RouteGrip[-Q,+S] extends PartialFunction[Q,S]{
   val route:PartialFunction[Q,S]
   def apply(t: Q) = route.apply(t)
   def isDefinedAt(t: Q) = route.isDefinedAt(t)
 }
 
-case class Route(implicit val fa:ActorRefFactory) extends RouteGrip[HttpRequest,HttpResponse]{
+case class Route(implicit val fa:ActorRefFactory,kvs:StKvs) extends RouteGrip[HttpRequest,HttpResponse]{
   val route:PartialFunction[HttpRequest,HttpResponse] = {
     case req @ HttpRequest(GET, Path(Root / "websocket"),_,_,_) => StatsApp.handleStats(req)
     case HttpRequest(GET, Path(Root / request),_,_,_)

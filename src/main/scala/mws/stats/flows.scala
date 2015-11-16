@@ -10,10 +10,10 @@ import akka.stream.scaladsl.FlowGraph._
 import .kvs.StKvs
 
 object Flows {
-  def stats(router:ActorRef, kvs:StKvs): Flow[WsMessage, WsMessage, Unit] = Flow.fromGraph({
+  def stats(router:ActorRef,kvs:StKvs): Flow[WsMessage, WsMessage, Unit] = Flow.fromGraph({
     FlowGraph.create() { implicit b =>
       import FlowGraph.Implicits._
-
+      println(s"in da flow $kvs")
       val collect   = b.add(Flow[WsMessage].collect[String]{case TextMessage.Strict(t) => t})
       val last      = b.add(Sink.actorSubscriber(LastMetric.props(kvs, router)))
       val stat      = b.add(Source.actorPublisher(LastMetric.props(kvs, router)))

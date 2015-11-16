@@ -3,6 +3,8 @@ package .stats
 import akka.actor.{ExtensionKey,Extension,ExtendedActorSystem,ActorRefFactory}
 import akka.http.scaladsl.model.StatusCodes.NotImplemented
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse}
+import .kvs.StKvs
+import com.typesafe.config.Config
 
 object Rt extends ExtensionKey[Rt]{
   override def lookup = Rt
@@ -20,13 +22,18 @@ class Rt(val system:ExtendedActorSystem) extends Extension {
   lazy val c = system.settings.config
   lazy val ni:R = {case x:Hr => HttpResponse(status=NotImplemented)}
 
+  import scala.collection._
+
+  val kvs:StKvs = system.dynamicAccess.createInstanceFor[StKvs](".kvs.LeveldbKvs",
+    immutable.Seq(classOf[Config] -> c.getConfig("leveldb"))).get
+  println(s"implicit kvs: $kvs")
+
   val fqcns = c.getStringList(".routes").asScala
   println(s"routes to create $fqcns")
 
-  import scala.collection._
-
   val routes = fqcns.map(
-    system.dynamicAccess.createInstanceFor[R](_,immutable.Seq(classOf[ActorRefFactory]->system))
+    system.dynamicAccess.createInstanceFor[R](_,immutable.Seq(classOf[ActorRefFactory]->system,classOf[StKvs]->kvs))
   ).collect{case Success(f)=> f}
+
   val route:R = routes.foldLeft[R](ni)((b:R, f:R)=> f orElse b)
 }
