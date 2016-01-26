@@ -8,7 +8,6 @@ import sbt.Keys._
 import sbt._
 
 object AppBuild extends Build {
-  lazy val kvs = RootProject(uri("http://gitlab.ee..corp//kvs.git"))
 
   override lazy val settings = super.settings ++ Seq(
     organization := "com..",
@@ -37,12 +36,11 @@ object AppBuild extends Build {
         mainClass in (Compile, run) := Some(".stats.StatsApp"),
         libraryDependencies ++=
           Deps.akka ++
-          Deps.stream ++
+          Deps.ftier ++
           Deps.json ++
           Deps.sql ++
           Deps.logging,
         Deploy.deploy <<= deploySshTask
       )
-  ).dependsOn(kvs)
-  .enablePlugins(SbtTwirl, JavaAppPackaging, DeploySSH)
+  ).enablePlugins(SbtTwirl, JavaAppPackaging, DeploySSH)
 }

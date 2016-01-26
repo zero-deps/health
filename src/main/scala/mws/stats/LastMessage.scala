@@ -3,7 +3,8 @@ package .stats
 import akka.actor.{Actor, ActorLogging, Props}
 import language.implicitConversions
 import .stats.LastMessage.DeleteOldData
-import .kvs.{LastMessageKvs,StKvs}
+import .kvs._
+import .kvs.stats.LastMessageKvs
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration._
 
@@ -16,8 +17,7 @@ object Message {
     }
   }
 }
-case class Message(casino: String, user: String, msg: String, time: Duration)
-    extends StKvs.Data {
+case class Message(casino: String, user: String, msg: String, time: Duration) extends Data {
   lazy val key       = s"$casino::$user::$msg::${time.toMillis}"
   lazy val serialize = s"$casino::$user::$msg::${time.toMillis}"
 }
@@ -27,11 +27,12 @@ object LastMessage {
   case class Values(it: Iterator[String])
   private case object DeleteOldData
 
-  def props(kvs: StKvs): Props = Props(new LastMessage(new LastMessageKvs(kvs, list = "lastmsg")))
+  def props(): Props = Props(new LastMessage("lastmsg"))
 }
 
-class LastMessage(kvs: LastMessageKvs) extends Actor with ActorLogging {
+class LastMessage(val container:String) extends Actor with ActorLogging {
   import context.system
+  implicit val kvs:Kvs = new LastMessageKvs(container)
 
   val cfg = system.settings.config
   val timeDiff = Duration(cfg.getString("kvs.message.time-diff"))
@@ -47,15 +48,15 @@ class LastMessage(kvs: LastMessageKvs) extends Actor with ActorLogging {
 
   def receive: Receive = {
     case m: Message =>
-      kvs.putToList(m)
+      kvs.add(container,m)
     case LastMessage.Get =>
-      sender ! LastMessage.Values(kvs.values)
+      sender ! LastMessage.Values(kvs.entries)
     case DeleteOldData =>
-      kvs.last.map(Message(_)).map { case last =>
-        kvs.values.map(Message(_)).foreach { msg =>
-          if (last.time - msg.time > timeDiff)
-            kvs.deleteFromList(msg.key)
-        }
-      }
+      //kvs.last.map(Message(_)).map { case last =>
+      //  kvs.entries.map(Message(_)).foreach { msg =>
+      //    if (last.time - msg.time > timeDiff)
+      //      kvs.remove(container,msg)
+      //  }
+      //}
   }
 }

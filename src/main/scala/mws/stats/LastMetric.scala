@@ -1,7 +1,9 @@
 package .stats
 
 import akka.actor.{Actor,ActorRef,ActorLogging,Props}
-import .kvs.{LastMetricKvs,StKvs}
+import .kvs.Kvs
+import .kvs.stats.LastMetricKvs
+import .kvs._
 import akka.stream.actor.{ActorSubscriber,ActorSubscriberMessage,WatermarkRequestStrategy,ActorPublisher}
 import akka.stream.actor.ActorSubscriber._
 import akka.stream.actor.ActorSubscriberMessage._
@@ -22,8 +24,7 @@ object Metric {
     }
   }
 }
-case class Metric(name: String, node: String, param: String, time: String, value: String) 
-    extends StKvs.Data {
+case class Metric(name: String, node: String, param: String, time: String, value: String) extends Data {
   lazy val key       = s"$name::$node::$param"
   lazy val serialize = s"$name::$node::$param::$time::$value"
 }
@@ -34,14 +35,16 @@ object LastMetric {
   case class Delete(key: String)
   case class QueueUpdated()
 
-  def props(kvs: StKvs, router:ActorRef): Props = Props(new LastMetric(new LastMetricKvs(kvs, list = "lastmetric"),router))
+  def props(router:ActorRef): Props = Props(new LastMetric("lastmetric",router))
 }
 
-class LastMetric(kvs: LastMetricKvs, router:ActorRef) extends ActorSubscriber
+class LastMetric(container:String, router:ActorRef) extends ActorSubscriber
   with ActorPublisher[String]
   with ActorLogging {
   import context.system
   import LastMetric.QueueUpdated
+
+  implicit val kvs:Kvs = new LastMetricKvs(container)
 
   val requestStrategy = WatermarkRequestStrategy(50)
   val MaxBufferSize = 50
@@ -61,7 +64,7 @@ class LastMetric(kvs: LastMetricKvs, router:ActorRef) extends ActorSubscriber
 
   def receive: Receive = {
     case m: Metric  => {
-      kvs.putToList(m)
+      kvs.add(container,m)
       self ! "metric::" + m.serialize
     }
     case m: Message => self ! "msg::" + m.serialize
@@ -75,9 +78,9 @@ class LastMetric(kvs: LastMetricKvs, router:ActorRef) extends ActorSubscriber
       context.stop(self)
     }
     case LastMetric.Get =>
-      sender ! LastMetric.Values(kvs.values)
+      sender ! LastMetric.Values(kvs.entries)
     case LastMetric.Delete(key) =>
-      kvs.deleteFromList(key)
+      kvs.remove(container,key)
     case stats: String =>
       if (queue.size == MaxBufferSize) queue.dequeue()
       queue += stats
