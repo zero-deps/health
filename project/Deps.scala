@@ -11,7 +11,7 @@ object Deps {
     val sqlite = "3.8.6"
     val jackson = "2.5.2"
     val logback = "1.1.3"
-    val ftier= "0.1.53.gf8ab8ab"
+    val ftier= "d66bc53"
   }
 
   val akka = Seq(
@@ -23,7 +23,7 @@ object Deps {
     "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
   )
 
-  val ftier = Seq("com...ftier" %% "ftier-ws" % Versions.ftier)
+  val ftier = Seq("com.." %% "ftier-ws" % Versions.ftier)
 
   val sql = Seq(
     "org.xerial" % "sqlite-jdbc" % Versions.sqlite
