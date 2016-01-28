@@ -9,7 +9,7 @@ import akka.http.scaladsl.model.{HttpRequest,HttpResponse,HttpEntity}
 import akka.http.scaladsl.model.StatusCodes.BadRequest
 import akka.http.scaladsl.model.ws.UpgradeToWebsocket
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Flow, Source, FlowGraph}
+import akka.stream.scaladsl.{Flow, Source}
 import akka.stream.{FlowShape,ClosedShape}
 import com.typesafe.config.ConfigFactory
 import akka.http.scaladsl.model.MediaTypes.`text/html`
@@ -23,7 +23,7 @@ object StatsApp extends App {
   implicit val kvs:Kvs = ws.kvs
 
   def init()(implicit fa:ActorSystem,kvs:Kvs) = {
-    fa.actorOf(LastMessage.props(), name = "last-msg")
+    fa.actorOf(LastMessage.props(kvs), name = "last-msg")
     fa.actorOf(MetricsListener.props)
   }
 

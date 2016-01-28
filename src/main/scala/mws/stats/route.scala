@@ -1,19 +1,19 @@
 package .stats
 
 import akka.actor.ActorSystem
-
 import akka.http.scaladsl.model.HttpMethods.GET
-
 import akka.http.scaladsl.model.MediaTypes.`text/html`
 import akka.http.scaladsl.model.{HttpRequest,HttpResponse,HttpEntity}
-
-import akka.stream.io.{InputStreamSource => IsSource}
 import akka.http.scaladsl.model.HttpEntity.ChunkStreamPart
 import akka.http.scaladsl.model.StatusCodes.NotFound
-
 import .kvs.Kvs
 import ftier.ws._
+import java.io.InputStream
+import akka.stream.scaladsl.StreamConverters
 
+object IsSource{
+  def apply(func: () => InputStream) = StreamConverters.fromInputStream(func)
+}
 case class Route(implicit val system:ActorSystem,kvs:Kvs) extends RouteGrip[HttpRequest,HttpResponse]{
   def chunks(d:Option[String],r:String) =
     Option(getClass.getClassLoader.getResourceAsStream(d match {case None=>r;case Some(p)=>p+"/"+r})) match {

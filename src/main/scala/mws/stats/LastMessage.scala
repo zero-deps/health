@@ -1,24 +1,34 @@
 package .stats
 
-import akka.actor.{Actor, ActorLogging, Props}
+import akka.actor.{ Actor, ActorLogging, Props }
 import language.implicitConversions
 import .stats.LastMessage.DeleteOldData
 import .kvs._
-import .kvs.stats.LastMessageKvs
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.duration._
+import .kvs.handle.`package`.En
 
 object Message {
-  def apply(str: String): Message = {
-    str.split("::").toList match {
+  val FID = "stats::message"
+  type MessageEntry = En[String]
+
+  def apply(msg: String): Message = {
+    msg.split("::").toList match {
       case casino :: user :: msg :: time :: Nil =>
-        new Message(casino, user, msg, Duration(time + "ms"))
-      case _ => throw new IllegalArgumentException(str)
+        new Message(casino, user, Duration(s"$time nanos"), msg)
+      case _ => throw new IllegalArgumentException(msg)
     }
   }
+
+  def apply(msg: MessageEntry): Message = apply(msg.data)
+
+  implicit def messageToEntry(msg: Message): MessageEntry = {
+    val fid = FID
+    val id = s"${msg.casino}::${msg.user}::${msg.time.toNanos} :: ${msg.msg}"
+    En[String](fid, id, data = msg.serialize)
+  }
 }
-case class Message(casino: String, user: String, msg: String, time: Duration) extends Data {
-  lazy val key       = s"$casino::$user::$msg::${time.toMillis}"
+case class Message(casino: String, user: String, time: Duration, msg: String) {
   lazy val serialize = s"$casino::$user::$msg::${time.toMillis}"
 }
 
@@ -27,12 +37,13 @@ object LastMessage {
   case class Values(it: Iterator[String])
   private case object DeleteOldData
 
-  def props(): Props = Props(new LastMessage("lastmsg"))
+  def props(kvs: Kvs): Props = Props(classOf[LastMessage], kvs)
 }
 
-class LastMessage(val container:String) extends Actor with ActorLogging {
+class LastMessage(kvs: Kvs) extends Actor with ActorLogging {
   import context.system
-  implicit val kvs:Kvs = new LastMessageKvs(container)
+  import Message._
+  import .kvs.handle.Handler._
 
   val cfg = system.settings.config
   val timeDiff = Duration(cfg.getString("kvs.message.time-diff"))
@@ -48,15 +59,20 @@ class LastMessage(val container:String) extends Actor with ActorLogging {
 
   def receive: Receive = {
     case m: Message =>
-      kvs.add(container,m)
+      kvs.add[MessageEntry](m)
     case LastMessage.Get =>
-      sender ! LastMessage.Values(kvs.entries)
+      sender ! {
+        kvs.entries[MessageEntry](FID, None, Some(1)) match {
+          case Left(err) => err
+          case Right(entries) => entries.headOption
+        }
+      }
     case DeleteOldData =>
-      //kvs.last.map(Message(_)).map { case last =>
-      //  kvs.entries.map(Message(_)).foreach { msg =>
-      //    if (last.time - msg.time > timeDiff)
-      //      kvs.remove(container,msg)
-      //  }
-      //}
+    //kvs.last.map(Message(_)).map { case last =>
+    //  kvs.entries.map(Message(_)).foreach { msg =>
+    //    if (last.time - msg.time > timeDiff)
+    //      kvs.remove(container,msg)
+    //  }
+    //}
   }
 }

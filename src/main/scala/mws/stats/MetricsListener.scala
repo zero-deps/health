@@ -5,6 +5,7 @@ import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.CurrentClusterState
 import akka.cluster.metrics.StandardMetrics.{Cpu, HeapMemory}
 import akka.cluster.metrics.{ClusterMetricsChanged, ClusterMetricsExtension, NodeMetrics}
+import scala.concurrent.duration.Duration
 
 object MetricsListener {
   def props: Props = Props(new MetricsListener)
@@ -46,7 +47,7 @@ class MetricsListener extends Actor with ActorLogging {
   def publish(address: Address, param: String, value: String): Unit = {
     val name = system.name
     val node = s"${address.host.getOrElse("")}:${address.port.getOrElse("")}"
-    val time = System.currentTimeMillis.toString
+    val time = Duration(s"${System.currentTimeMillis.toString} ms")
     system.eventStream.publish(Metric(name, node, param, time, value))
   }
 }
