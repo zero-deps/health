@@ -47,7 +47,7 @@ object StatsApp extends App {
     val cfg = ConfigFactory.load
     val p = cfg.getInt("http.port")
 
-    HttpResponse(entity=HttpEntity(`text/html`,
+    HttpResponse(entity=HttpEntity(akka.http.scaladsl.model.ContentTypes.`text/html(UTF-8)`,
       html.home(HomeContext(p, "/websocket", List.empty, List.empty)).toString)
     )
   }
