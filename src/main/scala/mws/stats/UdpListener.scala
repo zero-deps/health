@@ -1,24 +1,39 @@
-package .stats
+package 
+package stats
 
-import  akka.actor.{Actor, ActorLogging, ActorRef, Props}
-import akka.io.{IO, Udp}
+import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
+import akka.io.{ IO, Udp }
 import java.net.InetSocketAddress
+import akka.stream.actor.ActorPublisher
+import scala.annotation.tailrec
+import akka.stream.actor.ActorPublisherMessage._
+import scala.collection.mutable
 
 object UdpListener {
-  def props: Props = Props(new UdpListener)
+  case object QueueUpdated
+
+  def props: Props = Props(classOf[UdpListener])
 }
 
-class UdpListener extends Actor with ActorLogging {
+class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
   import context.system
+  import UdpListener._
+
+  val MaxBufferSize = 50
+  val queue = mutable.Queue[Data]()
+  var queueUpdated = false;
 
   val config = system.settings.config
   val hostname = config.getString("hostname")
   val udpPort = config.getInt("udp.port")
 
+  println(s"Starting UDP listener on $hostname:$udpPort...")
+
   IO(Udp) ! Udp.Bind(self, new InetSocketAddress(hostname, udpPort))
 
   def receive: Receive = {
-    case Udp.Bound(_) =>
+    case msg @ Udp.Bound(_) =>
+      println(s"Received Udp.Bound: $msg...")
       val socket = sender
       context become (ready(sender))
   }
@@ -26,17 +41,44 @@ class UdpListener extends Actor with ActorLogging {
   def ready(socket: ActorRef): Receive = {
     case Udp.Received(data, _) =>
       val decoded = data.decodeString("UTF-8")
+      println(s"!!!!!!$decoded!!!!!!!!!!")
       log.debug(s"Received: $decoded")
-      decoded.split("::", 2).toList match {
+      val message = decoded.split("::", 2).toList match {
         case "metric" :: m :: Nil =>
-          system.eventStream.publish(Metric(m))
+          Some(Metric(m))
         case "message" :: m :: Nil =>
-          system.eventStream.publish(Message(m))
+          Some(Message(m))
         case _ =>
+          None
+      }
+
+      message map { msg =>
+        if (queue.size == MaxBufferSize) queue.dequeue()
+        queue += msg
+        if (!queueUpdated) {
+          queueUpdated = true
+          self ! QueueUpdated
+        }
       }
     case "close" =>
       socket ! Udp.Unbind
     case Udp.Unbound =>
       context.stop(self)
+    case QueueUpdated => deliver()
+    case Request(amount) => deliver()
+    case Cancel => {
+      log.info(s"publisher canceled $this")
+      context.stop(self)
+    }
+  }
+
+  @tailrec final def deliver(): Unit = {
+    if (totalDemand == 0) log.info(s"No more demand for: $this")
+    if (queue.size == 0 && totalDemand != 0) {
+      queueUpdated = false
+    } else if (totalDemand > 0 && queue.size > 0) {
+      onNext(queue.dequeue())
+      deliver()
+    }
   }
 }

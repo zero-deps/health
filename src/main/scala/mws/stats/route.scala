@@ -10,18 +10,20 @@ import .kvs.Kvs
 import ftier.ws._
 import java.io.InputStream
 import akka.stream.scaladsl.StreamConverters
+import akka.actor.ExtendedActorSystem
 
 object IsSource{
   def apply(func: () => InputStream) = StreamConverters.fromInputStream(func)
 }
-case class Route(implicit val system:ActorSystem,kvs:Kvs) extends RouteGrip[HttpRequest,HttpResponse]{
+case class Route(implicit val system:ExtendedActorSystem,kvs:Kvs) extends RouteGrip[HttpRequest,HttpResponse]{
   def chunks(d:Option[String],r:String) =
     Option(getClass.getClassLoader.getResourceAsStream(d match {case None=>r;case Some(p)=>p+"/"+r})) match {
       case Some(stream) => HttpResponse(entity=HttpEntity.Chunked(Mime(r), IsSource(() => stream).map(ChunkStreamPart.apply)))
       case None => HttpResponse(NotFound) }
 
   val route:PartialFunction[HttpRequest,HttpResponse] = {
-    case req @ HttpRequest(GET, Path(Root / "websocket"),_,_,_) => StatsApp.handleStats(req)
+    case req @ HttpRequest(GET, Path(Root / "websocket"),_,_,_) =>   
+      StatsApp.handleStats(req)
     case HttpRequest(GET, Path(Root / request),_,_,_)
       if Seq("home.css", "home.js","messages.js","util.js","metrics.js").filter(_ == request).size == 1 =>
       chunks(Some("public"),request)

@@ -11,7 +11,7 @@ object Deps {
     val sqlite = "3.8.6"
     val jackson = "2.5.2"
     val logback = "1.1.3"
-    val ftier= "d66bc53"
+    val ftier= "487b2a6"
   }
 
   val akka = Seq(
