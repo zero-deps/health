@@ -35,7 +35,7 @@ object StatsApp extends App {
   }
 
   def handleStats(req: HttpRequest)(implicit fa: ActorSystem, kvs: Kvs) = req.header[UpgradeToWebsocket] match {
-    case Some(upg) => 
+    case Some(upg) =>
       println(s"Run stream for websocket: $upg")
       upg.handleMessages(flows.stats)
     case None => HttpResponse(BadRequest)

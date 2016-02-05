@@ -8,6 +8,7 @@ import akka.stream.actor.ActorPublisher
 import scala.annotation.tailrec
 import akka.stream.actor.ActorPublisherMessage._
 import scala.collection.mutable
+import scala.concurrent.duration.Duration
 
 object UdpListener {
   case object QueueUpdated
@@ -44,10 +45,10 @@ class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
       println(s"!!!!!!$decoded!!!!!!!!!!")
       log.debug(s"Received: $decoded")
       val message = decoded.split("::", 2).toList match {
-        case "metric" :: m :: Nil =>
-          Some(Metric(m))
-        case "message" :: m :: Nil =>
-          Some(Message(m))
+        case "metric" :: name :: node :: param :: value :: Nil =>
+          Some(Metric(name, node, param, Duration(s"${System.currentTimeMillis.toString} ms"),  value))
+        case "message" :: casino :: user :: msg :: Nil =>
+          Some(Message(casino, user, Duration(s"${System.currentTimeMillis.toString} ms"), msg))
         case _ =>
           None
       }

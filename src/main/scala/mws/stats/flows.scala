@@ -17,8 +17,8 @@ import .kvs.handle.`package`.En
 import .stats.actors.DataSource.SourceMsg
 
 case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
-  def logIn[T] = Flow[T].map[T] { x => println(s"> $x"); x }
-  def logOut[T] = Flow[T].map[T] { x => println(s"< $x"); x }
+  def logIn[T] = Flow[T].map[T] { x => println(s"IN: $x"); x }
+  def logOut[T] = Flow[T].map[T] { x => println(s"OUT: $x"); x }
 
   private val udpPublisher = Source.actorPublisher(UdpListener.props)
   private val updated = Source.actorPublisher(DataSource.props(kvs))
@@ -30,19 +30,17 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
       println(s"in da flow $kvs")
       val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
 
-      val toMsg = b.add(Flow[Data].map[TextMessage] { x =>
-        val wsMsg = x match {
-          case message: Message => s"msg::${message.casino}::${message.user}::${message.time.toMillis}::${message.msg}"
-          case metric: Metric => s"metric::${metric.name}::${metric.node}::${metric.param}::${metric.time}::${metric.value}"
-        }
-        TextMessage.Strict(wsMsg)
+      val toMsg = b.add(Flow[Data].map[String] { 
+          case Message(casino, user, time, msg) => s"msg::${casino}::${user}::${time.toMillis}::${msg}"
+          case Metric(name, node, param, time, value) => s"metric::${name}::${node}::${param}::${time.toMillis}::${value}"
       })
+      
+      val toWsMsg = b.add(Flow[String].map[TextMessage] {TextMessage.Strict})
 
-      // connect the graph
       collect ~> logIn[String] ~> Sink.ignore
-      updated ~> logOut[Data] ~> toMsg
+      updated ~> toMsg ~> logOut[String] ~> toWsMsg
 
-      FlowShape(collect.in, toMsg.out)
+      FlowShape(collect.in, toWsMsg.out)
     })
 
   def saveDataFromUdp = RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
