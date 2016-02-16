@@ -34,9 +34,11 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   kvsActor ! KvsActor.REQ.GetMessages(0) //Get LAST 10 messages from KVS
 
   def receive: Receive = {
-    case KvsActor.RES.DataList(list) => list map { x => self ! SourceMsg(x) }
+    case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }
     case KvsActor.RES.Error(msg: String) => println(msg)
-    case SourceMsg(data) => publishData(data)
+    case SourceMsg(data) => 
+      println(s"!!!!!$data!!!!!!!!!!!")
+      publishData(data)
     case QueueUpdated => deliver()
     case Request(amount) => deliver()
     case Cancel =>
