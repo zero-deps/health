@@ -22,8 +22,6 @@ object StatsApp extends App {
 
   val ws = Ws(system)
 
-  println(system.settings.config)
-
   implicit val kvs: Kvs = ws.kvs
 
   val flows = Flows(kvs)

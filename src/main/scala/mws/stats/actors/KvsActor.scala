@@ -44,14 +44,10 @@ class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
   def receive = {
     case REQ.SaveData(data: Data) =>
       kvs.treeAdd[String](data) match {
-        case Right(en) =>
-          println(s"added $en")
-          sender ! RES.DataSaved(data)
-        case Left(error) =>
-          sender ! RES.Error(error.msg)
+        case Right(en) => sender ! RES.DataSaved(data)
+        case Left(error) => sender ! RES.Error(error.msg)
       }
     case req @ REQ.GetData(count, fid, treeKey) =>
-      println(s"Getting fid ${fid}...")
       ////////////////////////////
       def _entryToData(entry: En[String]): Option[Data] = {
         (req match {
@@ -59,7 +55,10 @@ class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
           case _: REQ.GetMetrcis => entryToMetric(entry)
         }) match {
           case Success(data) => Some(data)
-          case Failure(ex) => println(s"~~~~~~~~~~~${ex.getMessage}"); println(kvs.remove(entry)); None
+          case Failure(ex) =>
+            log.warning(s"~~~~~~~~~~~${ex.getMessage}")
+            println(kvs.remove(entry))
+            None
         }
       }
       ///////////////////////////

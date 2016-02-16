@@ -28,7 +28,6 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
     Flow.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
 
-      println(s"in da flow $kvs")
       val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
 
       val toMsg = b.add(Flow[Data].map[String] { 
@@ -50,11 +49,8 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
     val saveToKvs = b.add(Flow[Data].map[Data] { data =>
       println(s"Saveng data $data....")
       kvs.treeAdd[String](data) match {
-        case Right(en) =>
-          println(s"added $en")
-          data
+        case Right(en) => data
         case Left(error) =>
-          println(s"Error:$error")
           throw new Exception(error.msg)
       } 
     })

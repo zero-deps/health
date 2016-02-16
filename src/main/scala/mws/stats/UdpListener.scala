@@ -28,13 +28,13 @@ class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
   val hostname = config.getString("hostname")
   val udpPort = config.getInt("udp.port")
 
-  println(s"Starting UDP listener on $hostname:$udpPort...")
+  log.info(s"Starting UDP listener on $hostname:$udpPort...")
 
   IO(Udp) ! Udp.Bind(self, new InetSocketAddress(hostname, udpPort))
 
   def receive: Receive = {
     case msg @ Udp.Bound(_) =>
-      println(s"Received Udp.Bound: $msg...")
+      log.info(s"Received Udp.Bound: $msg...")
       val socket = sender
       context become (ready(sender))
   }
@@ -42,7 +42,6 @@ class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
   def ready(socket: ActorRef): Receive = {
     case Udp.Received(data, _) =>
       val decoded = data.decodeString("UTF-8")
-      println(s"!!!!!!$decoded!!!!!!!!!!")
       log.debug(s"Received: $decoded")
       val message = decoded.split("::").toList match {
         case "metric" :: name :: node :: param :: value :: Nil =>
