@@ -6,8 +6,8 @@ var UserHistory = React.createClass({
       return {
         casino: arr[0],
         user:   arr[1],
-        msg:    arr[2],
-        time:   arr[3],
+        time:   arr[2],
+        msg:    arr[3]
       };
     });
   },

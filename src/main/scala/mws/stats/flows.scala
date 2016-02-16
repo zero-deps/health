@@ -17,6 +17,7 @@ import .kvs.handle.`package`.En
 import .stats.actors.DataSource.SourceMsg
 
 case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
+  import TreeStorage._
   def logIn[T] = Flow[T].map[T] { x => println(s"IN: $x"); x }
   def logOut[T] = Flow[T].map[T] { x => println(s"OUT: $x"); x }
 
@@ -31,7 +32,7 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
       val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
 
       val toMsg = b.add(Flow[Data].map[String] { 
-          case Message(casino, user, time, msg) => s"msg::${casino}::${user}::${time.toMillis}::${msg}"
+          case History(casino, user, time, action) => s"msg::${casino}::${user}::${time.toMillis}::${action}"
           case Metric(name, node, param, time, value) => s"metric::${name}::${node}::${param}::${time.toMillis}::${value}"
       })
       
@@ -47,14 +48,15 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
     import GraphDSL.Implicits._
 
     val saveToKvs = b.add(Flow[Data].map[Data] { data =>
-      kvs.add[En[String]](data) match {
+      println(s"Saveng data $data....")
+      kvs.treeAdd[String](data) match {
         case Right(en) =>
           println(s"added $en")
           data
         case Left(error) =>
           println(s"Error:$error")
           throw new Exception(error.msg)
-      }
+      } 
     })
 
     val publishEvent = Sink.foreach[Data] { data =>

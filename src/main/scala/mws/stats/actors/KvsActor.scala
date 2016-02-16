@@ -7,17 +7,23 @@ import .kvs.Kvs
 import .kvs.handle.`package`.En
 import scala.util.{ Success, Failure, Try }
 import scala.concurrent.duration.Duration
+import TreeStorage._
 
 object KvsActor {
   object REQ {
+    object GetData {
+      def unapply(data: GetData): Option[(Int, String, Option[TreeKey])] = Some((data.count, data.fid, data.key))
+    }
+
     sealed trait GetData {
       val count: Int
       val fid: String
+      val key: Option[TreeKey]
     }
 
     case class SaveData(data: Data)
-    case class GetMessages(count: Int) extends GetData { val fid = Message.FID }
-    case class GetMetrcis(count: Int) extends GetData { val fid = Metric.FID }
+    case class GetMessages(count: Int, key: Option[TreeKey] = None) extends GetData { val fid = History.FID }
+    case class GetMetrcis(count: Int, key: Option[TreeKey] = None) extends GetData { val fid = Metric.FID }
 
   }
   object RES {
@@ -32,34 +38,50 @@ object KvsActor {
 class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
   import KvsActor._
   import .stats._
+  import TreeStorage._
+  import .kvs.handle.Handler._
 
   def receive = {
     case REQ.SaveData(data: Data) =>
-      kvs.add[En[String]](data) match {
+      kvs.treeAdd[String](data) match {
         case Right(en) =>
           println(s"added $en")
           sender ! RES.DataSaved(data)
         case Left(error) =>
           sender ! RES.Error(error.msg)
       }
-    case req: REQ.GetData =>
-      println(s"Getting fid ${req.fid}...")
-      val entries = kvs.entries[En[String]](req.fid, None, Some(req.count).filter(_ > 0))
-      println(s"$entries!!!!")
-      entries match {
-        case Right(entries) =>
-          val datas = req match {
-            case _: REQ.GetMessages => entries map entryToMessage
-            case _: REQ.GetMetrcis => entries map entryToMetric
+    case req @ REQ.GetData(count, fid, treeKey) =>
+      println(s"Getting fid ${fid}...")
+      ////////////////////////////
+      def _entryToData(entry: En[String]): Option[Data] = {
+        (req match {
+          case _: REQ.GetMessages => entryToHistory(entry)
+          case _: REQ.GetMetrcis => entryToMetric(entry)
+        }) match {
+          case Success(data) => Some(data)
+          case Failure(ex) => println(s"~~~~~~~~~~~${ex.getMessage}"); println(kvs.remove(entry)); None
+        }
+      }
+      ///////////////////////////
+      val dataList: List[Option[Data]] = treeKey match {
+        case Some(treeKey) =>
+          kvs.treeEntries[String](fid, treeKey, None, Some(count).filter(_ > 0)) map {
+            case Right(entry) => _entryToData(entry)
+            case Left(error) =>
+              sender ! RES.Error(error.msg)
+              None
           }
 
-          sender ! RES.DataList((datas collect {
-            case Success(data) => Some(data)
-            case Failure(err) => log.error(err, err.getMessage); None
-          }).flatten)
-        case Left(error) =>
-          sender ! RES.Error(error.msg)
+        case None =>
+          kvs.entries[En[String]](fid, None, Some(count).filter(_ > 0)) match {
+            case Left(error) =>
+              sender ! RES.Error(error.msg)
+              List.empty
+            case Right(entries) =>
+              entries map _entryToData
+          }
       }
+      sender ! RES.DataList(dataList.flatten)
   }
 
   def entryToMetric(entry: En[String]): Try[Metric] = Try {
@@ -70,10 +92,10 @@ class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
     }
   }
 
-  def entryToMessage(entry: En[String]): Try[Message] = Try {
+  def entryToHistory(entry: En[String]): Try[History] = Try {
     entry.data.split("::").toList match {
-      case casino :: user :: msg :: time :: Nil =>
-        Message(casino, user, Duration(time), msg)
+      case casino :: user :: time :: action :: Nil =>
+        History(casino, user, Duration(time), action)
       case other => throw new IllegalArgumentException(entry.toString)
     }
   }
@@ -82,8 +104,8 @@ class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
     val (fid, entry) = fid_entry
     fid match {
       case Metric.FID => entryToMetric(entry)
-      case Message.FID => entryToMessage(entry)
-      case other => Failure(new IllegalArgumentException(fid))
+      case History.FID => entryToHistory(entry)
+      case other => Failure(new IllegalArgumentException(fid_entry.toString))
     }
   }
 }

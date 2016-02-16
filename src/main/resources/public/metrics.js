@@ -32,7 +32,7 @@ var TabbedTable = React.createClass({
   componentDidMount: function() {
     this.props.handlers.metric = function(newData) {
       if (this.isMounted()) {
-        var state = this.packData(this.parseData(newData), this.state.data, this.state.activeName, true);
+        var state = this.packData(this.parseData(newData), this.state.data, this.state.activeName, false);
         this.setState(state);
       }
     }.bind(this);

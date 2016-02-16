@@ -11,26 +11,25 @@ object Deps {
     val sqlite = "3.8.6"
     val jackson = "2.5.2"
     val logback = "1.1.3"
-    val ftier= "487b2a6"
+    val ftier = "7bfb7cd"
+    val scalaTest = "2.2.4"
   }
 
   val akka = Seq(
-    "com.." %% "akka-cluster-metrics" % "1.0"
-  )
+    "com.." %% "akka-cluster-metrics" % "1.0")
 
   val json = Seq(
-    "com.fasterxml.jackson.core"    % "jackson-databind"     % Versions.jackson,
-    "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson
-  )
+    "com.fasterxml.jackson.core" % "jackson-databind" % Versions.jackson,
+    "com.fasterxml.jackson.module" %% "jackson-module-scala" % Versions.jackson)
 
   val ftier = Seq("com.." %% "ftier-ws" % Versions.ftier)
 
   val sql = Seq(
-    "org.xerial" % "sqlite-jdbc" % Versions.sqlite
-  )
+    "org.xerial" % "sqlite-jdbc" % Versions.sqlite)
 
   val logging = Seq(
     "com.typesafe.akka" %% "akka-slf4j" % Versions.akka,
-    "ch.qos.logback" % "logback-classic" % Versions.logback
-  )
+    "ch.qos.logback" % "logback-classic" % Versions.logback)
+
+  val test = Seq("org.scalatest" %% "scalatest" % Versions.scalaTest % "test")
 }

@@ -39,7 +39,8 @@ object AppBuild extends Build {
           Deps.ftier ++
           Deps.json ++
           Deps.sql ++
-          Deps.logging,
+          Deps.logging ++
+          Deps.test,
         Deploy.deploy <<= deploySshTask
       )
   ).enablePlugins(SbtTwirl, JavaAppPackaging, DeploySSH)

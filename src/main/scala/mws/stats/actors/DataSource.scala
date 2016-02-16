@@ -11,6 +11,7 @@ import scala.annotation.tailrec
 import akka.stream.actor.ActorPublisherMessage._
 import akka.actor.actorRef2Scala
 import .kvs.Kvs
+import TreeStorage._
 
 object DataSource {
   case class SourceMsg(data: Data)
@@ -30,8 +31,10 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   val queue = mutable.Queue[Data]()
   var queueUpdated = false;
 
-  kvsActor ! KvsActor.REQ.GetMetrcis(0) //Get LAST 10 metrics from KVS
-  kvsActor ! KvsActor.REQ.GetMessages(0) //Get LAST 10 messages from KVS
+  println("sending message for last 10 metrics")
+  kvsActor ! KvsActor.REQ.GetMetrcis(10) //Get LAST 10 metrics from KVS
+  println("sending message for last 10 messages")
+  kvsActor ! KvsActor.REQ.GetMessages(10) //Get LAST 10 messages from KVS
 
   def receive: Receive = {
     case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }

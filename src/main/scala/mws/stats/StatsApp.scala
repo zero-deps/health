@@ -29,7 +29,7 @@ object StatsApp extends App {
   val flows = Flows(kvs)
 
   def init()(implicit fa: ActorSystem) = {
-    fa.actorOf(MetricsListener.props)
+   //fa.actorOf(MetricsListener.props)
 
     flows.saveDataFromUdp.run()
   }
@@ -55,7 +55,7 @@ object StatsApp extends App {
 
   val bf = ws.bindAndHandle
 
-  println("ENTER to stop...")
+  //println("ENTER to stop...")
   //scala.io.StdIn.readLine()
   //sys.exit
 }
