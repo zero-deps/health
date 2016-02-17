@@ -32,7 +32,7 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   var queueUpdated = false;
 
   kvsActor ! KvsActor.REQ.GetMetrcis(10) //Get LAST 10 metrics from KVS
-  kvsActor ! KvsActor.REQ.GetMessages(10) //Get LAST 10 messages from KVS
+  kvsActor ! KvsActor.REQ.GetHistory(10) //Get LAST 10 messages from KVS
 
   def receive: Receive = {
     case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }

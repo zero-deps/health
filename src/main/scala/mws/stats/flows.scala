@@ -16,8 +16,11 @@ import .stats.actors.DataSource
 import .kvs.handle.`package`.En
 import .stats.actors.DataSource.SourceMsg
 
+
 case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
   import TreeStorage._
+  import handlers.DataHandler
+  
   def logIn[T] = Flow[T].map[T] { x => println(s"IN: $x"); x }
   def logOut[T] = Flow[T].map[T] { x => println(s"OUT: $x"); x }
 
@@ -45,14 +48,14 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
 
   def saveDataFromUdp = RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
     import GraphDSL.Implicits._
-
+    import handlers._
+    
     val saveToKvs = b.add(Flow[Data].map[Data] { data =>
       println(s"Saveng data $data....")
-      val (fid, treeKey) = getTreeKeyAndFid(data)
-
+     
       (data match {
-        case data: Metric => kvs.treeAdd[Metric](fid, treeKey, data)
-        case data: History => kvs.treeAdd[History](fid, treeKey, data)
+        case data: Metric => metricHandler.saveToKvs(data)(kvs)
+        case data: History => historyHandler.saveToKvs(data)(kvs)
 
       }) match {
         case Right(en) => data
