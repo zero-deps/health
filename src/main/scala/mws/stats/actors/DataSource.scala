@@ -2,16 +2,12 @@ package .stats
 package actors
 
 import scalaz._
-import akka.actor.ActorLogging
-import akka.actor.Actor
-import akka.actor.Props
+import akka.actor.{ActorLogging, Actor, Props}
 import akka.stream.actor.ActorPublisher
 import scala.collection.mutable
 import scala.annotation.tailrec
 import akka.stream.actor.ActorPublisherMessage._
-import akka.actor.actorRef2Scala
 import .kvs.Kvs
-import TreeStorage._
 
 object DataSource {
   case class SourceMsg(data: Data)

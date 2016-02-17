@@ -1,14 +1,9 @@
 package .stats
 package actors
 
-import akka.actor.{ Actor, ActorLogging }
-import akka.actor.Props
+import akka.actor.{ Actor, ActorLogging, Props }
 import .kvs.Kvs
-import .kvs.handle.`package`.En
-import scala.util.{ Success, Failure, Try }
-import scala.concurrent.duration.Duration
-import TreeStorage._
-import .kvs.`package`.Dbe
+import TreeStorage.TreeKey
 
 object KvsActor {
   object REQ {

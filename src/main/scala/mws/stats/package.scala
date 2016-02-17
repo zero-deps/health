@@ -1,12 +1,6 @@
 package 
 
 import scala.concurrent.duration.Duration
-import .kvs.handle.`package`.En
-import scala.language.implicitConversions
-import scala.util.Try
-import scala.util.Success
-import scala.util.Failure
-import .kvs.handle.EnHandler
 
 package object stats {
   sealed trait Data
