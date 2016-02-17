@@ -41,6 +41,7 @@ package object handlers {
     def deSerialize(str: String) = str.split("::").toList match {
       case name :: node :: param :: time :: value :: Nil =>
         Metric(name, node, param, Duration(time), value)
+      case _ => throw new IllegalArgumentException(str)
     }
   }
 
