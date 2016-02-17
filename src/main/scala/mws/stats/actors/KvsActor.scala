@@ -8,6 +8,7 @@ import .kvs.handle.`package`.En
 import scala.util.{ Success, Failure, Try }
 import scala.concurrent.duration.Duration
 import TreeStorage._
+import .kvs.`package`.Dbe
 
 object KvsActor {
   object REQ {
@@ -43,68 +44,39 @@ class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
 
   def receive = {
     case REQ.SaveData(data: Data) =>
-      kvs.treeAdd[String](data) match {
+      val (fid, treeKey) = getTreeKeyAndFid(data)
+
+      (data match {
+        case data: Metric => kvs.treeAdd[Metric](fid, treeKey, data)
+        case data: History => kvs.treeAdd[History](fid, treeKey, data)
+      }) match {
         case Right(en) => sender ! RES.DataSaved(data)
         case Left(error) => sender ! RES.Error(error.msg)
       }
     case req @ REQ.GetData(count, fid, treeKey) =>
-      ////////////////////////////
-      def _entryToData(entry: En[String]): Option[Data] = {
-        (req match {
-          case _: REQ.GetMessages => entryToHistory(entry)
-          case _: REQ.GetMetrcis => entryToMetric(entry)
-        }) match {
-          case Success(data) => Some(data)
-          case Failure(ex) =>
-            log.warning(s"~~~~~~~~~~~${ex.getMessage}")
-            println(kvs.remove(entry))
-            None
-        }
+      val dataList = treeKey map { getEntries(fid, _, Some(count).filter(_ > 0)) } getOrElse getEntries(fid, Some(count).filter(_ > 0)) map {
+        case Left(error) =>
+          sender ! RES.Error(error.msg)
+          None
+        case Right(data) => Some(data)
       }
-      ///////////////////////////
-      val dataList: List[Option[Data]] = treeKey match {
-        case Some(treeKey) =>
-          kvs.treeEntries[String](fid, treeKey, None, Some(count).filter(_ > 0)) map {
-            case Right(entry) => _entryToData(entry)
-            case Left(error) =>
-              sender ! RES.Error(error.msg)
-              None
-          }
 
-        case None =>
-          kvs.entries[En[String]](fid, None, Some(count).filter(_ > 0)) match {
-            case Left(error) =>
-              sender ! RES.Error(error.msg)
-              List.empty
-            case Right(entries) =>
-              entries map _entryToData
-          }
-      }
       sender ! RES.DataList(dataList.flatten)
   }
 
-  def entryToMetric(entry: En[String]): Try[Metric] = Try {
-    entry.data.split("::").toList match {
-      case name :: node :: param :: time :: value :: Nil =>
-        Metric(name, node, param, Duration(time), value)
-      case other => throw new IllegalArgumentException(entry.toString)
-    }
+  def getEntries(fid: String, treeKey: TreeKey, count: Option[Int]): List[Either[Dbe, Data]] = {
+    (fid match {
+      case History.FID => kvs.treeEntries[History](fid, treeKey, None, count)
+      case Metric.FID => kvs.treeEntries[Metric](fid, treeKey, None, count)
+    }) map { _.right map { _.data } }
   }
 
-  def entryToHistory(entry: En[String]): Try[History] = Try {
-    entry.data.split("::").toList match {
-      case casino :: user :: time :: action :: Nil =>
-        History(casino, user, Duration(time), action)
-      case other => throw new IllegalArgumentException(entry.toString)
-    }
-  }
-
-  def entryToData(fid_entry: (String, En[String])): Try[Data] = {
-    val (fid, entry) = fid_entry
-    fid match {
-      case Metric.FID => entryToMetric(entry)
-      case History.FID => entryToHistory(entry)
-      case other => Failure(new IllegalArgumentException(fid_entry.toString))
-    }
+  def getEntries(fid: String, count: Option[Int]): List[Either[Dbe, Data]] = {
+    (fid match {
+      case History.FID => kvs.entries[En[History]](fid, None, count)
+      case Metric.FID => kvs.entries[En[Metric]](fid, None, count)
+    }) fold (
+      error => List(Left(error)),
+      entries => entries map { x => Right(x.data) })
   }
 }

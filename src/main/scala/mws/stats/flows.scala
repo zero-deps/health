@@ -30,12 +30,12 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
 
       val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
 
-      val toMsg = b.add(Flow[Data].map[String] { 
-          case History(casino, user, time, action) => s"msg::${casino}::${user}::${time.toMillis}::${action}"
-          case Metric(name, node, param, time, value) => s"metric::${name}::${node}::${param}::${time.toMillis}::${value}"
+      val toMsg = b.add(Flow[Data].map[String] {
+        case History(casino, user, time, action) => s"msg::${casino}::${user}::${time.toMillis}::${action}"
+        case Metric(name, node, param, time, value) => s"metric::${name}::${node}::${param}::${time.toMillis}::${value}"
       })
-      
-      val toWsMsg = b.add(Flow[String].map[TextMessage] {TextMessage.Strict})
+
+      val toWsMsg = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
 
       collect ~> logIn[String] ~> Sink.ignore
       updated ~> toMsg ~> logOut[String] ~> toWsMsg
@@ -48,11 +48,17 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
 
     val saveToKvs = b.add(Flow[Data].map[Data] { data =>
       println(s"Saveng data $data....")
-      kvs.treeAdd[String](data) match {
+      val (fid, treeKey) = getTreeKeyAndFid(data)
+
+      (data match {
+        case data: Metric => kvs.treeAdd[Metric](fid, treeKey, data)
+        case data: History => kvs.treeAdd[History](fid, treeKey, data)
+
+      }) match {
         case Right(en) => data
         case Left(error) =>
           throw new Exception(error.msg)
-      } 
+      }
     })
 
     val publishEvent = Sink.foreach[Data] { data =>
