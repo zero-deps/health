@@ -41,15 +41,8 @@ object StatsApp extends App {
 
   import .stats.Template._
 
-  def index()(implicit fa: ActorSystem): HttpResponse = {
-    val cfg = ConfigFactory.load
-    val p = cfg.getInt("http.port")
-
-    HttpResponse(entity = HttpEntity(akka.http.scaladsl.model.ContentTypes.`text/html(UTF-8)`,
-      html.home(HomeContext(p, "/websocket", List.empty, List.empty)).toString))
-  }
-
+  
   init()
-
+  
   val bf = ws.bindAndHandle
 }
