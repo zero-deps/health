@@ -5,7 +5,7 @@ import sbt._
 
 object Resolvers {
   val settings = Seq(
-    resolvers ++= Seq(
+    resolvers ++= Resolver.mavenLocal +: Seq(
       " nexus releases" at "http://ua--nexus01.ee..corp/nexus/content/repositories/releases"
     )
   )

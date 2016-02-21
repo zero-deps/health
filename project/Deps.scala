@@ -4,14 +4,14 @@ import sbt._
 
 object Deps {
   object Versions {
-    val scala = "2.11.6"
-    val akka = "2.3.11"
+    val scala = "2.11.7"
+    val akka = "2.3.14"
     val leveldbPort = "0.7"
     val leveldbNative = "1.8"
     val sqlite = "3.8.6"
     val jackson = "2.5.2"
     val logback = "1.1.3"
-    val ftier = "96e0c86"
+    val ftier = "0-187-g0d8b25f"
     val scalaTest = "2.2.4"
   }
 

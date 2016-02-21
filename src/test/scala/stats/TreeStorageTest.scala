@@ -22,14 +22,14 @@ class TreeStorageTest extends TestKit(ActorSystem("Test", TreeStorageTest.config
   import TreeStorage._
   import .kvs.handle.Handler._
 
-  type EnType = (String, String)
+  type EnType = String
 
   val kvs = Kvs(system)
   val fid = "testfeed"
 
-  val data1: EnType = ("data1", "1")
-  val data2: EnType = ("data2", "2")
-  val data3: EnType = ("data3", "3")
+  val data1: EnType = "data1"
+  val data2: EnType = "data2"
+  val data3: EnType = "data3"
 
   "Tree storage should" - {
     "be empty at creation" in {
