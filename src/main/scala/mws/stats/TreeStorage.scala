@@ -93,10 +93,10 @@ object TreeStorage {
     def treeRemove[T](en: En[T])(implicit enHandler: EnHandler[T]) = {
       val fids = TreeFids(en.fid)
 
-      val res = kvs_get[String](fids.places, en.id)
+      val res = kvs.get[String](fids.places, en.id)
       res.right map { place =>
         TreeKey(place.data).treeKeys map { key =>
-          kvs_get[Link](fids.treeFidForKey(key), en.id).right map { x => kvs.remove(x) }
+          kvs.get[Link](fids.treeFidForKey(key), en.id).right map { x => kvs.remove(x)}
           kvs.remove(place)
         }
       }
@@ -112,15 +112,10 @@ object TreeStorage {
       kvs.entries[En[Link]](fids.treeFidForKey(treeKey.longestKey), fromEntry, count) fold (
         l => List(Left(l)),
         enlist => enlist map { x =>
-          kvs_get[T](fids.entries, x.data.linkTo)
+          kvs.get[T](fids.entries, x.data.linkTo)
         })
     }
 
     def treeEntries[T](fid: String, treeKey: TreeKey)(implicit enHandler: EnHandler[T]): List[Either[.kvs.Dbe, En[T]]] = treeEntries[T](fid, treeKey, None, None)
-
-    private def kvs_get[T](fid:String,id:String)(implicit h: Handler[En[T]]):Either[Err,En[T]] = {
-      import .kvs.Dbe,kvs.dba
-      h.entries(fid,None,None).right.flatMap(_.find(_.id == id).toRight(Dbe(msg="not found")))
-    }
   }
 }

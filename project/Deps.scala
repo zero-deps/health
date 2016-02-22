@@ -11,7 +11,7 @@ object Deps {
     val sqlite = "3.8.6"
     val jackson = "2.5.2"
     val logback = "1.1.3"
-    val ftier = "0-187-g0d8b25f"
+    val ftier = "0-190-g2a349fc"
     val scalaTest = "2.2.4"
   }
 
