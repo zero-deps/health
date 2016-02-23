@@ -12,10 +12,8 @@ ws.onmessage = function(event) {
 };
 
 React.render(<TabbedTable ws={ws} handlers={handlers}
-                          lastData={lastMetric}
                           activeName={localStorage["activeName"]} />,
   document.getElementById("tableContainer"));
 
-React.render(<UserHistory ws={ws} handlers={handlers}
-                          data={lastMsg} />,
+React.render(<UserHistory ws={ws} handlers={handlers}/>,
   document.getElementById("userHistory"));

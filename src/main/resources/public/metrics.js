@@ -1,8 +1,8 @@
 var TabbedTable = React.createClass({
-  parseData: function(data) {
-    var list = [].concat(data);
-    var objects = list.map(function(data) {
-      var arr = data.split('::');
+  parseData: function(rawData) {
+    var list = [].concat(rawData);
+    var data = list.map(function(rawData) {
+      var arr = rawData.split('::');
       var obj = {
         name:  arr[0],
         node:  arr[1],
@@ -12,27 +12,25 @@ var TabbedTable = React.createClass({
       };
       return obj;
     });
-    return objects;
+    return data;
   },
-  packData: function(objects, initial, activeName, currentTime) {
-    objects.forEach(function(obj) {
-      initial[obj.name] = initial[obj.name] || {};
-      initial[obj.name][obj.node] = initial[obj.name][obj.node] || {};
-      initial[obj.name][obj.node]["param"] = initial[obj.name][obj.node]["param"] || {};
-      initial[obj.name][obj.node]["param"][obj.param] = obj.value;
-      initial[obj.name][obj.node]["time"] = currentTime ? new Date() : obj.time;
+  packData: function(newData, initData) {
+    newData.forEach(function(obj) {
+      initData[obj.name] = initData[obj.name] || {};
+      initData[obj.name][obj.node] = initData[obj.name][obj.node] || {};
+      initData[obj.name][obj.node]["param"] = initData[obj.name][obj.node]["param"] || {};
+      initData[obj.name][obj.node]["param"][obj.param] = obj.value;
+      initData[obj.name][obj.node]["time"] = obj.time;
     });
-    if (Object.keys(initial).indexOf(activeName) == -1)
-      activeName = Object.keys(initial).sort()[0];
-    return { data: initial, activeName: activeName };
+    return { data: initData, activeName: this.state.activeName };
   },
   getInitialState: function() {
-    return this.packData(this.parseData(this.props.lastData), {}, this.props.activeName, false);
+    return { data: {}, activeName: this.props.activeName };
   },
   componentDidMount: function() {
-    this.props.handlers.metric = function(newData) {
+    this.props.handlers.metric = function(newDataRaw) {
       if (this.isMounted()) {
-        var state = this.packData(this.parseData(newData), this.state.data, this.state.activeName, false);
+        var state = this.packData(this.parseData(newDataRaw), this.state.data);
         this.setState(state);
       }
     }.bind(this);
@@ -56,18 +54,22 @@ var TabbedTable = React.createClass({
     this.setState({data: data});
   },
   render: function() {
-    var names = Object.keys(this.state.data).sort();
+    var data = this.state.data;
+    var names = Object.keys(data).sort();
     if (names.length === 0) return <div>No data yet :(</div>
-    else
+    else {
+      var activeName = this.state.activeName;
+      if (names.indexOf(activeName) == -1) activeName = names[0];
       return (
         <div>
           <Tabs names={names}
-                active={this.state.activeName}
+                active={activeName}
                 onChoose={this.handleChoose} />
-          <Table nameData={this.state.data[this.state.activeName]}
+          <Table nameData={data[activeName]}
                  onRemove={this.handleRemove} />
         </div>
       );
+    }
   }
 });
 

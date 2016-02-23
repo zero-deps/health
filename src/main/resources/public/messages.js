@@ -12,7 +12,7 @@ var UserHistory = React.createClass({
     });
   },
   getInitialState: function() {
-    return {data: this.parseData(this.props.data)};
+    return {data:[]};
   },
   componentDidMount: function() {
     this.props.handlers.msg = function(newData) {
