@@ -3,3 +3,4 @@ logs/
 target/
 native/
 storage/
+.DS_Store
