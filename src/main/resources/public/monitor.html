@@ -5,16 +5,18 @@
     <title>Monitor</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="bootstrap/bootstrap.min.css"/>
-    <link rel="stylesheet" href="home.css"/>
+    <style>
+      body{padding-left: 20px;}
+      .table{width: auto;}
+      .invisible{visibility: hidden;}
+      .glyphicon{cursor: pointer;}
+    </style>
     <script src="react/react.min.js"></script>
     <script src="react/JSXTransformer.js"></script>
     <script src="util.js"></script>
-    <script>
-      var wsUrl = "ws://" + window.location.host + "/websocket";
-    </script>
     <script type="text/jsx" src="metrics.js"></script>
-    <script type="text/jsx" src="messages.js"></script>
-    <script type="text/jsx" src="home.js"></script>
+    <script type="text/jsx" src="history.js"></script>
+    <script type="text/jsx" src="monitor.js"></script>
   </head>
   <body>
     <h1>Dashboard</h1>

@@ -1,4 +1,4 @@
-var ws = new WebSocket(wsUrl);
+var ws = new WebSocket("ws://"+window.location.host+"/websocket");
 var handlers = {
   metric: function() {},
   msg: function() {}
@@ -11,8 +11,7 @@ ws.onmessage = function(event) {
     handlers.msg(newData.replace("msg::", ""))
 };
 
-React.render(<TabbedTable ws={ws} handlers={handlers}
-                          activeName={localStorage["activeName"]} />,
+React.render(<TabbedTable ws={ws} handlers={handlers} />,
   document.getElementById("tableContainer"));
 
 React.render(<UserHistory ws={ws} handlers={handlers}/>,

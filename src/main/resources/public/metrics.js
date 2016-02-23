@@ -25,7 +25,7 @@ var TabbedTable = React.createClass({
     return { data: initData, activeName: this.state.activeName };
   },
   getInitialState: function() {
-    return { data: {}, activeName: this.props.activeName };
+    return { data: {}, activeName: null };
   },
   componentDidMount: function() {
     this.props.handlers.metric = function(newDataRaw) {
@@ -36,9 +36,7 @@ var TabbedTable = React.createClass({
     }.bind(this);
   },
   handleChoose: function(tab) {
-    var activeName = tab.props.name;
-    localStorage["activeName"] = activeName;
-    this.setState({activeName: activeName});
+    this.setState({activeName: tab.props.name});
   },
   handleRemove: function(node) {
     var ws = this.props.ws;
