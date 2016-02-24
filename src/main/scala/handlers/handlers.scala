@@ -1,11 +1,7 @@
 package .stats
 
-import .kvs.handle.EnHandler
-import .kvs.handle.`package`.En
-import TreeStorage._
 import scala.concurrent.duration.Duration
-import .kvs.Kvs
-import .kvs.`package`.Dbe
+import .kvs._,handle._
 
 package object handlers {
   import TreeStorage._
@@ -49,11 +45,11 @@ package object handlers {
     val FID = s"$STATS_FID :: history"
 
     def treeKey(history: History) = history.casino ~ history.user
-    def socketMsg(history: History) = s"msg::${history.casino}::${history.user}::${history.time.toMillis}::${history.action}"
-    def serialize(history: History) = s"${history.casino}::${history.user}::${history.time}::${history.action}"
+    def socketMsg(history: History) = s"history::${history.casino}::${history.user}::${history.time.toMillis}::${history.action}::${history.cid}"
+    def serialize(history: History) = s"${history.casino}::${history.user}::${history.time}::${history.action}::${history.cid}"
     def deSerialize(str: String) = str.split("::").toList match {
-      case casino :: user :: time :: action :: Nil =>
-        History(casino, user, Duration(time), action)
+      case casino :: user :: time :: action :: cid :: Nil =>
+        History(casino, user, Duration(time), action, cid)
       case other => throw new IllegalArgumentException(str)
     }
   }

@@ -24,8 +24,8 @@ object Flows {
 
       val updated = Source.actorPublisher(DataSource.props(kvs))
       val toMsg = b.add(Flow[Data].map[String] {
-        case History(casino, user, time, action) => s"msg::${casino}::${user}::${time.toMillis}::${action}"
-        case Metric(name, node, param, time, value) => s"metric::${name}::${node}::${param}::${time.toMillis}::${value}"
+        case x:History => handlers.historyHandler.socketMsg(x)
+        case x:Metric => handlers.metricHandler.socketMsg(x)
       })
 
       val toWsMsg = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })

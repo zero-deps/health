@@ -28,7 +28,7 @@ To change hostname set env variable `HOST_IP`.
 
 Metric: `metric::<system-name>::<node-name>::<param-name>::<param-value>`
 
-Message: `message::<casino>::<user>::<msg>`
+Message: `history::<casino>::<user>::<msg>::<correlation-id>`
 
 Time is added automatically
 
@@ -36,8 +36,8 @@ Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
 Examples:
 ```
-echo -n "metric::::127.0.0.1:4245::Heap::153.97" >/dev/udp/localhost/50123
-echo -n "message::casino1::user1::LoginRequest" >/dev/udp/localhost/50123
+echo -n "metric::::127.0.0.1:4245::Heap::153.97" >/dev/udp/127.0.0.1/50123
+echo -n "history::casino1::user1::LoginRequest::1" >/dev/udp/127.0.0.1/50123
 ```
 
 ## Output

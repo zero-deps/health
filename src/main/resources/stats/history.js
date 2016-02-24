@@ -7,7 +7,8 @@ var UserHistory = React.createClass({
         casino: arr[0],
         user:   arr[1],
         time:   arr[2],
-        msg:    arr[3]
+        msg:    arr[3],
+        cid:    arr[4]
       };
     });
   },
@@ -23,12 +24,14 @@ var UserHistory = React.createClass({
   render: function() {
     var rows = this.state.data.reverse().map(function(item) {
       var time = new Date(parseInt(item.time)).toString();
+      var userStyle = timeStyle = { whiteSpace: 'nowrap' };
       return (
         <tr>
           <td>{item.casino}</td>
-          <td>{item.user}</td>
+          <td style={userStyle}>{item.user}</td>
           <td>{item.msg}</td>
-          <td>{time}</td>
+          <td>{item.cid}</td>
+          <td style={timeStyle}>{time}</td>
         </tr>
       );
     });
@@ -40,6 +43,7 @@ var UserHistory = React.createClass({
             <th>Casino</th>
             <th>User</th>
             <th>Message</th>
+            <th>Correlation</th>
             <th>Time</th>
           </tr>
         </thead>
