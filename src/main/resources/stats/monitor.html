@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Monitor</title>
+    <link rel="shortcut icon" href="stats/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="stats/bootstrap/bootstrap.min.css"/>
+    <style>
+      body{padding-left: 20px;}
+      .table{width: auto;}
+      .invisible{visibility: hidden;}
+      .glyphicon{cursor: pointer;}
+    </style>
+    <script src="stats/react/react.min.js"></script>
+    <script src="stats/react/JSXTransformer.js"></script>
+    <script src="stats/util.js"></script>
+    <script type="text/jsx" src="stats/metrics.js"></script>
+    <script type="text/jsx" src="stats/history.js"></script>
+    <script type="text/jsx" src="stats/monitor.js"></script>
+  </head>
+  <body>
+    <h1>Dashboard</h1>
+    <div id="tableContainer"></div>
+    <div id="userHistory"></div>
+  </body>
+</html>

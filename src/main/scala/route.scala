@@ -13,22 +13,24 @@ import akka.actor.ExtendedActorSystem
 case class Route(implicit val system:ExtendedActorSystem,kvs:Kvs) extends RouteGrip[HttpRequest,HttpResponse] {
   import system.log
 
-  val route: PartialFunction[HttpRequest, HttpResponse] = {
-    case req @ HttpRequest(GET,Path(Root/"websocket"),_,_,_) =>
+  val route:PartialFunction[HttpRequest,HttpResponse] = {
+    case req@HttpRequest(GET,Path(Root/"stats"/"ws"),_,_,_) =>
       req.header[UpgradeToWebsocket] match {
         case Some(upg) =>
           log.debug(s"Run stream for websocket: $upg")
           upg.handleMessages(Flows.stats)
         case None => HttpResponse(BadRequest)
       }
-    case HttpRequest(GET,Path(Root/request),_,_,_) =>
-      chunks(Some("public"),request)
-    case HttpRequest(GET,Path(Root/"react"/request),_,_,_) =>
-      chunks(Some("public/react"),request)
-    case HttpRequest(GET,Path(Root/"bootstrap"/request),_,_,_) => 
-      chunks(Some("public/bootstrap"),request)
-    case HttpRequest(GET,Path(Root/"bootstrap"/"fonts"/request),_,_,_) =>
-      chunks(Some("public/bootstrap/fonts"),request)
+    case HttpRequest(GET,Path(Root/"monitor.html"),_,_,_) =>
+      chunks(Some("stats"),"monitor.html")
+    case HttpRequest(GET,Path(Root/"stats"/request),_,_,_) =>
+      chunks(Some("stats"),request)
+    case HttpRequest(GET,Path(Root/"stats"/"react"/request),_,_,_) =>
+      chunks(Some("stats/react"),request)
+    case HttpRequest(GET,Path(Root/"stats"/"bootstrap"/request),_,_,_) =>
+      chunks(Some("stats/bootstrap"),request)
+    case HttpRequest(GET,Path(Root/"stats"/"bootstrap"/"fonts"/request),_,_,_) =>
+      chunks(Some("stats/bootstrap/fonts"),request)
   }
 
   def chunks(d:Option[String],r:String) =

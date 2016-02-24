@@ -1,4 +1,4 @@
-var ws = new WebSocket("ws://"+window.location.host+"/websocket");
+var ws = new WebSocket("ws://"+window.location.host+"/stats/ws");
 var handlers = {
   metric: function() {},
   msg: function() {}
