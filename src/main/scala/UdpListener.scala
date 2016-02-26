@@ -73,7 +73,7 @@ class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
   }
 
   @tailrec final def deliver(): Unit = {
-    if (totalDemand == 0) log.info(s"No more demand for: $this")
+    if (totalDemand == 0) log.debug(s"No more demand for: $this")
     if (queue.size == 0 && totalDemand != 0) {
       queueUpdated = false
     } else if (totalDemand > 0 && queue.size > 0) {

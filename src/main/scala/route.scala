@@ -22,7 +22,7 @@ case class Route(implicit val system:ExtendedActorSystem,kvs:Kvs) extends RouteG
         case None => HttpResponse(BadRequest)
       }
     case HttpRequest(GET,Path(Root/"monitor.html"),_,_,_) =>
-      chunks(Some("stats"),"monitor.html")
+      chunks(None,"monitor.html")
     case HttpRequest(GET,Path(Root/"stats"/request),_,_,_) =>
       chunks(Some("stats"),request)
     case HttpRequest(GET,Path(Root/"stats"/"react"/request),_,_,_) =>
@@ -32,10 +32,4 @@ case class Route(implicit val system:ExtendedActorSystem,kvs:Kvs) extends RouteG
     case HttpRequest(GET,Path(Root/"stats"/"bootstrap"/"fonts"/request),_,_,_) =>
       chunks(Some("stats/bootstrap/fonts"),request)
   }
-
-  def chunks(d:Option[String],r:String) =
-    Option(getClass.getClassLoader.getResourceAsStream(d match { case None => r; case Some(p) => p + "/" + r })) match {
-      case Some(stream) => HttpResponse(entity=HttpEntity.Chunked(Mime(r),StreamConverters.fromInputStream(()=>stream).map(ChunkStreamPart.apply)))
-      case None => HttpResponse(NotFound)
-    }
 }

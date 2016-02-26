@@ -37,7 +37,7 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
     case QueueUpdated => deliver()
     case Request(amount) => deliver()
     case Cancel =>
-      log.info(s"publisher canceled $this")
+      log.debug(s"publisher canceled $this")
       context.stop(self)
   }
 

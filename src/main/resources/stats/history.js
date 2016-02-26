@@ -1,28 +1,19 @@
 var UserHistory = React.createClass({
-  parseData: function(data) {
-    var list = [].concat(data);
-    return list.map(function(item) {
-      var arr = item.split('::');
-      return {
-        casino: arr[0],
-        user:   arr[1],
-        time:   arr[2],
-        msg:    arr[3],
-        cid:    arr[4]
-      };
-    });
+  parseIn: function(str) {
+    var arr = str.split('::');
+    return {casino:arr[0],user:arr[1],time:arr[2],msg:arr[3],cid:arr[4]};
   },
   getInitialState: function() {
-    return {data:[]};
+    return {data:Immutable.List()};
   },
   componentDidMount: function() {
-    this.props.handlers.msg = function(newData) {
+    this.props.handlers.msg = function(inStr) {
       if (this.isMounted())
-        this.setState({data: this.state.data.concat(this.parseData(newData))});
+        this.setState({data:this.state.data.unshift(this.parseIn(inStr))});
     }.bind(this);
   },
   render: function() {
-    var rows = this.state.data.reverse().map(function(item) {
+    var rows = this.state.data.map(function(item) {
       var time = new Date(parseInt(item.time)).toString();
       var userStyle = timeStyle = { whiteSpace: 'nowrap' };
       return (
