@@ -4,7 +4,11 @@ Stats aggregates and displays some statistics.
 
 ## Build
 
-Do `sbt twirlCompileTemplates` to compile templates.
+```
+npm install --global babel-cli
+npm install babel-preset-react
+babel --presets react "src/main/jsx" --watch --compact true --out-dir "src/main/resources/stats"
+```
 
 ## Run
 
@@ -15,12 +19,6 @@ Do `sbt run`
 Do `sbt deploy`
 
 ## Configuration
-
-Default ports are:
-
-UDP: `50123`
-
-HTTP: `8001`
 
 To change hostname set env variable `HOST_IP`.
 
@@ -42,4 +40,4 @@ echo -n "history::casino1::user1::LoginRequest::1" >/dev/udp/127.0.0.1/50123
 
 ## Output
 
-To get data open WebSocket connection to `/websocket`. You will receive data in same format.
+http://127.0.0.1:8002/monitor.html
