@@ -24,9 +24,16 @@ var UserHistory = React.createClass({
       return update(acc,{$push:[{strip:strip,item:item,i:i}]});
     },[]).map(function(x){
       var rowClass = x.strip ? 'active' : '';
-      var userStyle = timeStyle = { whiteSpace: 'nowrap' };
+      var userStyle = timeStyle = {whiteSpace:'nowrap'};
       var item = x.item;
-      var time = new Date(parseInt(item.time)).toString();
+      var time = new Date(parseInt(item.time));
+      time = ''+
+        ('0'+time.getDate()).slice(-2)+'.'+
+        ('0'+time.getMonth()).slice(-2)+'.'+
+             time.getFullYear()+' '+
+        ('0'+time.getHours()).slice(-2)+':'+
+        ('0'+time.getMinutes()).slice(-2)+':'+
+        ('0'+time.getSeconds()).slice(-2);
       return (
         <tr className={rowClass} key={x.i}>
           <td>{item.casino}</td>
