@@ -45,11 +45,11 @@ package object handlers {
     val FID = s"$STATS_FID :: history"
 
     def treeKey(history: History) = history.casino ~ history.user
-    def socketMsg(history: History) = s"history::${history.casino}::${history.user}::${history.time.toMillis}::${history.action}::${history.cid}"
-    def serialize(history: History) = s"${history.casino}::${history.user}::${history.time}::${history.action}::${history.cid}"
+    def socketMsg(history: History) = s"history::${history.casino}::${history.user}::${history.time.toMillis}::${history.action}"
+    def serialize(history: History) = s"${history.casino}::${history.user}::${history.time}::${history.action}"
     def deSerialize(str: String) = str.split("::").toList match {
-      case casino :: user :: time :: action :: cid :: Nil =>
-        History(casino, user, Duration(time), action, cid)
+      case casino :: user :: time :: action :: Nil =>
+        History(casino, user, Duration(time), action)
       case other => throw new IllegalArgumentException(str)
     }
   }

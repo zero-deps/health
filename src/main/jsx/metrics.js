@@ -60,6 +60,7 @@ var TabbedTable = React.createClass({
       if (names.indexOf(activeName) == -1) activeName = names[0];
       return (
         <div>
+          <h1>Metrics</h1>
           <Tabs names={names}
                 active={activeName}
                 onChoose={this.handleChoose} />
@@ -116,17 +117,19 @@ var Table = React.createClass({
     }.bind(this));
 
     return (
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Node</th>
-            {header}
-            <th>Last updated</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>{rows}</tbody>
-      </table>
+      <div className="table-responsive" style={{marginTop:'10px'}}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Node</th>
+              {header}
+              <th>Status</th>
+              <th style={{width:'14px'}}></th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
     );
   }
 });
@@ -180,7 +183,7 @@ var Row = React.createClass({
 var LastUpdatedCell = React.createClass({
   render: function() {
     var elapsed = this.props.elapsed;
-    var text = elapsed < 1 ? "just now" : elapsed.toUnits() + " ago";
+    var text = elapsed < 3 ? "OK" : elapsed.toUnits() + " ago";
     return <td>{text}</td>;
   }
 });
@@ -192,7 +195,7 @@ var RemoveCell = React.createClass({
   render: function() {
     return (
       <td>
-        <span className={this.props.visible ? "" : "invisible"}
+        <span style={{cursor:'pointer',visibility:(this.props.visible?'visible':'hidden')}}
               onClick={this.handleRemove}>
           <span className="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
         </span>

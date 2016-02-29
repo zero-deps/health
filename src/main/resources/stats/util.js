@@ -1,3 +1,7 @@
+function id(id) {
+  return document.getElementById(id);
+}
+
 Array.prototype.flatten = function() {
   return [].concat.apply([], this);
 };
@@ -15,17 +19,17 @@ Number.prototype.toUnits = function() {
     [     3600,   "hour",   "hours"],
     [24 * 3600,    "day",    "days"]
   ];
-  var that = this;
-  return units.reverse().reduce(function(acc, data) {
-    var seconds = data[0];
-    var singular = data[1];
-    var plural = data[2];
-    var integer = Math.floor(that / seconds);
-    that -= integer * seconds;
-    if (integer === 0) return acc;
-    else if (integer === 1) return acc.concat(1, singular);
-    else return acc.concat(integer, plural);
-  }, []).join(' ');
+  return units.reduceRight(function(prev,curr) {
+    var seconds = curr[0],
+        singular = curr[1],
+        plural = curr[2];
+    if (prev.words.length / 2 >= 2) return prev;
+    var count = Math.floor(prev.remainder / seconds);
+    remainder = prev.remainder - count * seconds;
+    if (count === 0) return {remainder:remainder,words:prev.words};
+    else if (count === 1) return {remainder:remainder,words:prev.words.concat(count,singular)};
+    else return {remainder:remainder,words:prev.words.concat(count,plural)};
+  },{remainder:this,words:[]}).words.join(' ');
 };
 
 var nonEmpty = function(value) {

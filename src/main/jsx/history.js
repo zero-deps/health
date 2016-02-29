@@ -3,7 +3,9 @@ var update = React.addons.update;
 var UserHistory = React.createClass({
   parseIn: function(str) {
     var arr = str.split('::');
-    return {casino:arr[0],user:arr[1],time:arr[2],msg:arr[3],cid:arr[4]};
+    var msg = JSON.parse(arr[3]);
+    var cid = msg["correlationId"];
+    return {casino:arr[0],user:arr[1],time:arr[2],msg:msg,cid:cid};
   },
   getInitialState: function() {
     return {data:[]};
@@ -38,26 +40,30 @@ var UserHistory = React.createClass({
         <tr className={rowClass} key={x.i}>
           <td>{item.casino}</td>
           <td style={userStyle}>{item.user}</td>
-          <td>{item.msg}</td>
+          <td>{item.msg.$type}</td>
           <td>{item.cid}</td>
           <td style={timeStyle}>{time}</td>
         </tr>
       );
     });
     return (
-      <table className="table table-hover">
-        <caption>User History</caption>
-        <thead>
-          <tr>
-            <th>Casino</th>
-            <th>User</th>
-            <th>Message</th>
-            <th>Correlation</th>
-            <th>Time</th>
-          </tr>
-        </thead>
-        <tbody>{rows}</tbody>
-      </table>
+      <div>
+        <h1>History</h1>
+        <div className="table-responsive">
+          <table className="table table-hover">
+            <thead>
+              <tr>
+                <th>Casino</th>
+                <th>User</th>
+                <th>Message</th>
+                <th title="Correlation ID" style={{cursor:'help'}}>CID</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>{rows}</tbody>
+          </table>
+        </div>
+      </div>
     );
   }
 });

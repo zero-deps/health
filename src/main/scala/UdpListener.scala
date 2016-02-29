@@ -45,9 +45,9 @@ class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
       log.debug(s"Received: $decoded")
       val message = decoded.split("::").toList match {
         case "metric" :: name :: node :: param :: value :: Nil =>
-          Some(Metric(name, node, param, Duration(s"${System.currentTimeMillis.toString} ms"),  value))
-        case "history" :: casino :: user :: action :: cid :: Nil =>
-          Some(History(casino, user, Duration(s"${System.currentTimeMillis.toString} ms"), action, cid))
+          Some(Metric(name, node, param, Duration(s"${System.currentTimeMillis.toString} ms"), value))
+        case "history" :: casino :: user :: action :: Nil =>
+          Some(History(casino, user, Duration(s"${System.currentTimeMillis.toString} ms"), action))
         case _ =>
           None
       }
