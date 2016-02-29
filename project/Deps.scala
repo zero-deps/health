@@ -7,7 +7,7 @@ object Deps {
     val scala = "2.11.7"
     val akka = "2.3.14"
     val logback = "1.1.3"
-    val ftier = "0-190-g2a349fc"
+    val ftier = "0-192-gb237cf5"
     val scalaTest = "2.2.4"
   }
 
