@@ -64,8 +64,7 @@ var TabbedTable = React.createClass({
           <Table nameData={data[activeName]} onRemove={this.handleRemove} />
         </div>;
     }
-    return <div><h1>Metrics</h1>{el}</div>
-    );
+    return <div><h1>Metrics</h1>{el}</div>;
   }
 });
 

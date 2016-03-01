@@ -10,11 +10,16 @@ var UserHistory = (function(){
       this.setState({details:!this.state.details});
     },
     render: function() {
-      var msg = this.state.details ?
-        <pre>{JSON.stringify(this.props.msg,null,' ')}</pre> :
-        this.props.msg.$type;
-      var cursor = this.state.details ? 'zoom-out' : 'zoom-in';
-      return <td style={{cursor:cursor}} onClick={this.handleToggleMsg}>{msg}</td>;
+      if (this.state.details)
+        return (
+          <td style={{cursor:'zoom-out'}} onClick={this.handleToggleMsg}>
+            <pre>{JSON.stringify(this.props.msg,null,' ')}</pre>
+          </td>);
+      else
+        return (
+          <td style={{cursor:'zoom-in'}} onClick={this.handleToggleMsg} title={JSON.stringify(this.props.msg)}>
+            {this.props.msg.$type}
+          </td>);
     }
   });
 
@@ -44,13 +49,14 @@ var UserHistory = (function(){
         return update(acc,{$push:[{strip:strip,item:item,i:i}]});
       },[]).map(function(x){
         var rowClass = x.strip ? 'active' : '';
-        var userStyle = timeStyle = {whiteSpace:'nowrap'};
+        var userStyle = {whiteSpace:'nowrap'};
+        var timeStyle = {whiteSpace:'pre'};
         var item = x.item;
         var time = new Date(parseInt(item.time));
         time = ''+
           ('0'+time.getDate()).slice(-2)+'.'+
           ('0'+time.getMonth()).slice(-2)+'.'+
-               time.getFullYear()+' '+
+               time.getFullYear()+'\n'+
           ('0'+time.getHours()).slice(-2)+':'+
           ('0'+time.getMinutes()).slice(-2)+':'+
           ('0'+time.getSeconds()).slice(-2);
