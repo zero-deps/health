@@ -54,21 +54,18 @@ var TabbedTable = React.createClass({
   render: function() {
     var data = this.state.data;
     var names = Object.keys(data).sort();
-    if (names.length === 0) return <div>No data yet :(</div>
+    if (names.length === 0) el = <div>Please wait...</div>
     else {
       var activeName = this.state.activeName;
       if (names.indexOf(activeName) == -1) activeName = names[0];
-      return (
+      el =
         <div>
-          <h1>Metrics</h1>
-          <Tabs names={names}
-                active={activeName}
-                onChoose={this.handleChoose} />
-          <Table nameData={data[activeName]}
-                 onRemove={this.handleRemove} />
-        </div>
-      );
+          <Tabs names={names} active={activeName} onChoose={this.handleChoose} />
+          <Table nameData={data[activeName]} onRemove={this.handleRemove} />
+        </div>;
     }
+    return <div><h1>Metrics</h1>{el}</div>
+    );
   }
 });
 
