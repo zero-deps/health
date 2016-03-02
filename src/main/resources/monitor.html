@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Monitor</title>
+    <link rel="shortcut icon" href="stats/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="stats/bootstrap/bootstrap.min.css"/>
+    <script src="stats/react/react-with-addons-0.14.7.js"></script>
+    <script src="stats/react/react-dom-0.14.7.js"></script>
+    <script src="stats/util.js"></script>
+    <script src="stats/metrics.js"></script>
+    <script src="stats/history.js"></script>
+  </head>
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col-sm-12">
+          <nav class="navbar navbar-default" style="margin-top:20px">
+            <div class="container">
+              <div class="navbar-header">
+                <span class="navbar-brand">Monitor</span>
+              </div>
+              <ul class="nav navbar-nav">
+                <li class="active"><a id="metrics-menu" href="#metrics">Metrics</a></li>
+                <li><a id="history-menu" href="#history">History</a></li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </div>
+      <div class="row">
+        <div class="tab-content">
+          <div class="tab-pane active" id="metrics-menu">
+            <div id="metrics" class="col-sm-9 col-md-7 col-lg-5"></div>
+          </div>
+          <div class="tab-pane" id="history-menu">
+            <div id="history" class="col-sm-12"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="stats/monitor.js"></script>
+  </body>
+</html>

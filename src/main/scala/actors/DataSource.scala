@@ -20,23 +20,23 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   import DataSource._
 
   override def preStart: Unit = system.eventStream.subscribe(self, classOf[SourceMsg])
-  override def postStop: Unit = system.eventStream.unsubscribe(self, classOf[SourceMsg])
+  override def postStop: Unit = system.eventStream.unsubscribe(self)
 
   val kvsActor = context.actorOf(KvsActor.props(kvs))
   val MaxBufferSize = 50
   val queue = mutable.Queue[Data]()
   var queueUpdated = false;
 
-  kvsActor ! KvsActor.REQ.GetHistory(10) //Get LAST 10 messages from KVS
+  kvsActor ! KvsActor.REQ.GetHistory(count=1000)
 
   def receive: Receive = {
     case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }
-    case KvsActor.RES.Error(msg: String) => log.error(msg)
+    case _:KvsActor.RES.Error => log.debug("No data")
     case SourceMsg(data) => publishData(data)
     case QueueUpdated => deliver()
     case Request(amount) => deliver()
     case Cancel =>
-      log.info(s"publisher canceled $this")
+      log.debug(s"publisher canceled $this")
       context.stop(self)
   }
 
@@ -49,10 +49,9 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
     }
   }
   @tailrec final def deliver(): Unit = {
-    if (totalDemand == 0) log.info(s"No more demand for: $this")
-    if (queue.size == 0 && totalDemand != 0) {
-      queueUpdated = false
-    } else if (totalDemand > 0 && queue.size > 0) {
+    if (totalDemand == 0) log.debug(s"No more demand for: $this")
+    else if (queue.isEmpty && totalDemand != 0) queueUpdated = false
+    else if (totalDemand > 0 && queue.nonEmpty) {
       onNext(queue.dequeue())
       deliver()
     }

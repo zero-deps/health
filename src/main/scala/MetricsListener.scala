@@ -6,7 +6,7 @@ import akka.cluster.ClusterEvent.CurrentClusterState
 import akka.cluster.metrics.StandardMetrics.{Cpu, HeapMemory}
 import akka.cluster.metrics.{ClusterMetricsChanged, ClusterMetricsExtension, NodeMetrics}
 import scala.concurrent.duration.Duration
-import .stats.actors.DataSource
+import actors.DataSource
 
 object MetricsListener {
   def props: Props = Props(new MetricsListener)

@@ -1,8 +1,8 @@
 var TabbedTable = React.createClass({
-  parseData: function(data) {
-    var list = [].concat(data);
-    var objects = list.map(function(data) {
-      var arr = data.split('::');
+  parseData: function(rawData) {
+    var list = [].concat(rawData);
+    var data = list.map(function(rawData) {
+      var arr = rawData.split('::');
       var obj = {
         name:  arr[0],
         node:  arr[1],
@@ -12,35 +12,31 @@ var TabbedTable = React.createClass({
       };
       return obj;
     });
-    return objects;
+    return data;
   },
-  packData: function(objects, initial, activeName, currentTime) {
-    objects.forEach(function(obj) {
-      initial[obj.name] = initial[obj.name] || {};
-      initial[obj.name][obj.node] = initial[obj.name][obj.node] || {};
-      initial[obj.name][obj.node]["param"] = initial[obj.name][obj.node]["param"] || {};
-      initial[obj.name][obj.node]["param"][obj.param] = obj.value;
-      initial[obj.name][obj.node]["time"] = currentTime ? new Date() : obj.time;
+  packData: function(newData, initData) {
+    newData.forEach(function(obj) {
+      initData[obj.name] = initData[obj.name] || {};
+      initData[obj.name][obj.node] = initData[obj.name][obj.node] || {};
+      initData[obj.name][obj.node]["param"] = initData[obj.name][obj.node]["param"] || {};
+      initData[obj.name][obj.node]["param"][obj.param] = obj.value;
+      initData[obj.name][obj.node]["time"] = obj.time;
     });
-    if (Object.keys(initial).indexOf(activeName) == -1)
-      activeName = Object.keys(initial).sort()[0];
-    return { data: initial, activeName: activeName };
+    return { data: initData, activeName: this.state.activeName };
   },
   getInitialState: function() {
-    return this.packData(this.parseData(this.props.lastData), {}, this.props.activeName, false);
+    return { data: {}, activeName: null };
   },
   componentDidMount: function() {
-    this.props.handlers.metric = function(newData) {
+    this.props.handlers.metric = function(newDataRaw) {
       if (this.isMounted()) {
-        var state = this.packData(this.parseData(newData), this.state.data, this.state.activeName, false);
+        var state = this.packData(this.parseData(newDataRaw), this.state.data);
         this.setState(state);
       }
     }.bind(this);
   },
   handleChoose: function(tab) {
-    var activeName = tab.props.name;
-    localStorage["activeName"] = activeName;
-    this.setState({activeName: activeName});
+    this.setState({activeName: tab.props.name});
   },
   handleRemove: function(node) {
     var ws = this.props.ws;
@@ -56,26 +52,27 @@ var TabbedTable = React.createClass({
     this.setState({data: data});
   },
   render: function() {
-    var names = Object.keys(this.state.data).sort();
-    if (names.length === 0) return <div>No data yet :(</div>
-    else
-      return (
+    var data = this.state.data;
+    var names = Object.keys(data).sort();
+    if (names.length === 0) el = <div>Please wait...</div>
+    else {
+      var activeName = this.state.activeName;
+      if (names.indexOf(activeName) == -1) activeName = names[0];
+      el =
         <div>
-          <Tabs names={names}
-                active={this.state.activeName}
-                onChoose={this.handleChoose} />
-          <Table nameData={this.state.data[this.state.activeName]}
-                 onRemove={this.handleRemove} />
-        </div>
-      );
+          <Tabs names={names} active={activeName} onChoose={this.handleChoose} />
+          <Table nameData={data[activeName]} onRemove={this.handleRemove} />
+        </div>;
+    }
+    return <div><h1>Metrics</h1>{el}</div>;
   }
 });
 
 var Tabs = React.createClass({
   render: function() {
-    var tabs = this.props.names.map(function(name) {
+    var tabs = this.props.names.map(function(name,i) {
       var active = name === this.props.active;
-      return <Tab name={name} active={active} onChoose={this.props.onChoose} />;
+      return <Tab name={name} active={active} onChoose={this.props.onChoose} key={i} />;
     }.bind(this));
     return <ul className="nav nav-pills">{tabs}</ul>;
   }
@@ -103,29 +100,32 @@ var Table = React.createClass({
       return Object.keys(nameData[node]["param"]);
     }).flatten().distinct().sort();
 
-    var header = params.map(function(param) {
-      return <th>{param}</th>;
+    var header = params.map(function(param,i) {
+      return <th key={i}>{param}</th>;
     });
 
-    var rows = Object.keys(nameData).map(function(node) {
+    var rows = Object.keys(nameData).map(function(node,i) {
       return <Row node={node}
                   params={params}
                   nodeData={nameData[node]}
-                  onRemove={this.props.onRemove} />
+                  onRemove={this.props.onRemove}
+                  key={i} />
     }.bind(this));
 
     return (
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Node</th>
-            {header}
-            <th>Last updated</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>{rows}</tbody>
-      </table>
+      <div className="table-responsive" style={{marginTop:'10px'}}>
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Node</th>
+              {header}
+              <th>Status</th>
+              <th style={{width:'14px'}}></th>
+            </tr>
+          </thead>
+          <tbody>{rows}</tbody>
+        </table>
+      </div>
     );
   }
 });
@@ -159,8 +159,8 @@ var Row = React.createClass({
 
     var elapsed = Math.floor((new Date() - nodeData["time"]) / 1000);
 
-    var paramCells = params.map(function(param) {
-      return <td>{nodeData["param"][param]}</td>;
+    var paramCells = params.map(function(param,i) {
+      return <td key={i}>{nodeData["param"][param]}</td>;
     });
 
     return (
@@ -179,7 +179,7 @@ var Row = React.createClass({
 var LastUpdatedCell = React.createClass({
   render: function() {
     var elapsed = this.props.elapsed;
-    var text = elapsed < 1 ? "just now" : elapsed.toUnits() + " ago";
+    var text = elapsed < 3 ? "OK" : elapsed.toUnits() + " ago";
     return <td>{text}</td>;
   }
 });
@@ -191,7 +191,7 @@ var RemoveCell = React.createClass({
   render: function() {
     return (
       <td>
-        <span className={this.props.visible ? "" : "invisible"}
+        <span style={{cursor:'pointer',visibility:(this.props.visible?'visible':'hidden')}}
               onClick={this.handleRemove}>
           <span className="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
         </span>

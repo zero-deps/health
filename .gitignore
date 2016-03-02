@@ -3,3 +3,5 @@ logs/
 target/
 native/
 storage/
+.DS_Store
+node_modules/

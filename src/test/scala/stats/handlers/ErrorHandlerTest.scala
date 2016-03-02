@@ -6,6 +6,7 @@ import org.scalatest.Matchers
 import scala.concurrent.duration.Duration
 import collection.JavaConversions._
 import scala.util.Success
+import handlers.errorHandler
 
 class ErrorHandlerTest extends FreeSpecLike with Matchers {
   "errorHandler should " - {

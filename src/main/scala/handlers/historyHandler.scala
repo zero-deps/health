@@ -1,4 +1,5 @@
-package .stats.handlers
+package .stats
+package handlers
 
 import scala.concurrent.duration.Duration
 import api._
@@ -10,7 +11,7 @@ private[this] object historyHandler extends UdpHandler with SocketHandler with B
   object UdpMessage {
     def unapply(str: String): Option[History] =
       str.split("::").toList match {
-        case "message" :: casino :: user :: action :: Nil =>
+        case "history" :: casino :: user :: action :: Nil =>
           Some(History(casino, user, Duration(s"${System.currentTimeMillis.toString} ms"), action))
         case other => None
       }
@@ -23,7 +24,7 @@ private[this] object historyHandler extends UdpHandler with SocketHandler with B
   protected def kvsFilter(data: Data) = Some(data) filter { _.isInstanceOf[History] } map { _.asInstanceOf[History] }
 
   override val socketMsg: PartialFunction[Data, Try[String]] = {
-    case History(casino, user, time, action) => Try { s"msg::${casino}::${user}::${time.toMillis}::${action}" }
+    case History(casino, user, time, action) => Try { s"history::${casino}::${user}::${time.toMillis}::${action}" }
   }
 
   override val udpMessage: PartialFunction[String, Try[Data]] = {

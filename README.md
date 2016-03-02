@@ -4,7 +4,11 @@ Stats aggregates and displays some statistics.
 
 ## Build
 
-Do `sbt twirlCompileTemplates` to compile templates.
+```
+npm install --global babel-cli
+npm install babel-preset-react
+babel --presets react "src/main/jsx" --watch --compact true --out-dir "src/main/resources/stats"
+```
 
 ## Run
 
@@ -16,19 +20,13 @@ Do `sbt deploy`
 
 ## Configuration
 
-Default ports are:
-
-UDP: `50123`
-
-HTTP: `8001`
-
 To change hostname set env variable `HOST_IP`.
 
 ## Input
 
 Metric: `metric::<system-name>::<node-name>::<param-name>::<param-value>`
 
-Message: `message::<casino>::<user>::<msg>`
+Message: `history::<casino>::<user>::<json>`
 
 Time is added automatically
 
@@ -36,10 +34,10 @@ Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
 Examples:
 ```
-echo -n "metric::::127.0.0.1:4245::Heap::153.97" >/dev/udp/localhost/50123
-echo -n "message::casino1::user1::LoginRequest" >/dev/udp/localhost/50123
+echo -n "metric::::127.0.0.1:4245::Heap::153.97" >/dev/udp/127.0.0.1/50123
+echo -n "history::casino1::user1::{"$type":"LoginRequest"}" >/dev/udp/127.0.0.1/50123
 ```
 
 ## Output
 
-To get data open WebSocket connection to `/websocket`. You will receive data in same format.
+http://127.0.0.1:8002/monitor.html

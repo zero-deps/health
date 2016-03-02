@@ -1,9 +1,5 @@
 package stats
 
-import com.typesafe.sbt.packager.archetypes.JavaAppPackaging
-import deployssh.DeploySSH
-import deployssh.DeploySSH.Keys._
-import play.twirl.sbt.SbtTwirl
 import sbt.Keys._
 import sbt._
 
@@ -11,37 +7,39 @@ object AppBuild extends Build {
 
   override lazy val settings = super.settings ++ Seq(
     organization := "com..",
-    version := "0.1-SNAPSHOT",
+    version := org.eclipse.jgit.api.Git.open(file(".")).describe().call(),
     scalaVersion := Deps.Versions.scala
   )
-
-  lazy val defaultSettings = Defaults.coreDefaultSettings ++
-    Seq(
-      scalacOptions ++= Seq("-feature", "-deprecation"),
-      fork := true,
-      publishMavenStyle := false,
-      publishArtifact in (Compile, packageSrc) := false,
-      publishArtifact in (Compile, packageDoc) := false
-    )
 
   lazy val stats = Project(
     id = "stats",
     base = file("."),
-    settings = defaultSettings ++
-      Templates.settings ++
-      Package.settings ++
-      Deploy.settings ++
-      Resolvers.settings ++
+    settings = Defaults.coreDefaultSettings ++
       Seq(
+        scalacOptions ++= Seq("-feature", "-deprecation"),
+        fork := true,
         mainClass in (Compile, run) := Some(".stats.StatsApp"),
+        cancelable in Global := true,
+        resolvers ++= List(Resolver.mavenLocal, Repo),
         libraryDependencies ++=
           Deps.akka ++
           Deps.ftier ++
-          Deps.json ++
-          Deps.sql ++
           Deps.logging ++
-          Deps.test,
-        Deploy.deploy <<= deploySshTask
+          Deps.test
       )
-  ).enablePlugins(SbtTwirl, JavaAppPackaging, DeploySSH)
+  )
+
+  lazy val publishSettings = List(
+    publishTo := Some(Repo),
+    credentials += Credentials("Sonatype Nexus Repository Manager", "ua--nexus01.ee..corp", "wpl-deployer", "aG1reeshie"),
+    publishArtifact := true,
+    publishArtifact in Compile := true,
+    publishArtifact in Test := false,
+    publishMavenStyle := true,
+    pomIncludeRepository := (_ => false),
+    publishLocal <<= publishM2,
+    isSnapshot := true
+  )
+
+  lazy val Repo = " Releases" at "http://ua--nexus01.ee..corp/nexus/content/repositories/releases"
 }

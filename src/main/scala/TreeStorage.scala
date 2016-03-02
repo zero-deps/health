@@ -93,10 +93,10 @@ object TreeStorage {
     def treeRemove[T](en: En[T])(implicit enHandler: EnHandler[T]) = {
       val fids = TreeFids(en.fid)
 
-      val res = kvs.get[String](fids.places, en.id)
+      val res = implicitly[EnHandler[String]].get(fids.places, en.id)(kvs.dba)
       res.right map { place =>
         TreeKey(place.data).treeKeys map { key =>
-          kvs.get[Link](fids.treeFidForKey(key), en.id).right map { x => kvs.remove(x)}
+          implicitly[EnHandler[Link]].get(fids.treeFidForKey(key), en.id)(kvs.dba).right map { x => kvs.remove(x)}
           kvs.remove(place)
         }
       }
@@ -112,7 +112,7 @@ object TreeStorage {
       kvs.entries[En[Link]](fids.treeFidForKey(treeKey.longestKey), fromEntry, count) fold (
         l => List(Left(l)),
         enlist => enlist map { x =>
-          kvs.get[T](fids.entries, x.data.linkTo)
+          enHandler.get(fids.entries, x.data.linkTo)(kvs.dba)
         })
     }
 

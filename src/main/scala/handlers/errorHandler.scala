@@ -1,12 +1,12 @@
-package .stats.handlers
+package .stats
+package handlers
 
 import scala.concurrent.duration.Duration
 import api._
 import scala.xml._
 import scala.xml.XML
-import scala.language.postfixOps
 import scala.util.{ Try, Success, Failure }
-import .stats.TreeStorage._
+import TreeStorage._
 import .stats.{ ErrorElement, Data, Error }
 
 private[this] object errorHandler extends UdpHandler with SocketHandler with ByEnHandler[Error] with KvsHandlerTyped[Error] {

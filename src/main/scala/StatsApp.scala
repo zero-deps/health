@@ -36,8 +36,6 @@ object StatsApp extends App {
     case None => HttpResponse(BadRequest)
   }
 
-  import .stats.Template._
-
   init()
 
   val bf = ws.bindAndHandle

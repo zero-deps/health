@@ -1,4 +1,5 @@
-package .stats.handlers
+package .stats
+package handlers
 
 import scala.concurrent.duration.Duration
 import api._
