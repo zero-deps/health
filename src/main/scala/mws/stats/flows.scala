@@ -15,12 +15,12 @@ import akka.stream.OverflowStrategy
 import .stats.actors.DataSource
 import .kvs.handle.`package`.En
 import .stats.actors.DataSource.SourceMsg
-
+import scala.util.{Success, Try, Failure}
 
 case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
   import TreeStorage._
-  import handlers.DataHandler
-  
+  import handlers._
+
   def logIn[T] = Flow[T].map[T] { x => println(s"IN: $x"); x }
   def logOut[T] = Flow[T].map[T] { x => println(s"OUT: $x"); x }
 
@@ -33,11 +33,8 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
 
       val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
 
-      val toMsg = b.add(Flow[Data].map[String] {
-        case History(casino, user, time, action) => s"msg::${casino}::${user}::${time.toMillis}::${action}"
-        case Metric(name, node, param, time, value) => s"metric::${name}::${node}::${param}::${time.toMillis}::${value}"
-      })
-
+      val toMsg = b.add(Flow[Data] map { case data: Data => handler.socketMsg(data)} collect {case Success(x) => x })
+      
       val toWsMsg = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
 
       collect ~> logIn[String] ~> Sink.ignore
@@ -49,19 +46,11 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
   def saveDataFromUdp = RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
     import GraphDSL.Implicits._
     import handlers._
-    
-    val saveToKvs = b.add(Flow[Data].map[Data] { data =>
-      println(s"Saveng data $data....")
-     
-      (data match {
-        case data: Metric => metricHandler.saveToKvs(data)(kvs)
-        case data: History => historyHandler.saveToKvs(data)(kvs)
+    import .kvs.Res
 
-      }) match {
-        case Right(en) => data
-        case Left(error) =>
-          throw new Exception(error.msg)
-      }
+    val saveToKvs = b.add(Flow[Data] map { data => 
+      handler.saveToKvs(kvs)(data) 
+      data
     })
 
     val publishEvent = Sink.foreach[Data] { data =>

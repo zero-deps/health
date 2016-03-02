@@ -4,6 +4,7 @@ package actors
 import akka.actor.{ Actor, ActorLogging, Props }
 import .kvs.Kvs
 import TreeStorage.TreeKey
+import scala.util.{ Failure, Success, Try }
 
 object KvsActor {
   object REQ {
@@ -11,13 +12,13 @@ object KvsActor {
       def unapply(data: GetData): Option[(Int, Option[TreeKey])] = Some((data.count, data.key))
     }
 
-    sealed trait GetData {
+    sealed abstract class GetData(val TYPE_ALIAS: String) {
       val count: Int
       val key: Option[TreeKey]
     }
-    
-    case class GetHistory(count: Int, key: Option[TreeKey] = None) extends GetData
-    case class GetMetrcis(count: Int, key: Option[TreeKey] = None) extends GetData
+
+    case class GetHistory(count: Int, key: Option[TreeKey] = None) extends GetData(History.alias)
+    case class GetMetrcis(count: Int, key: Option[TreeKey] = None) extends GetData(Metric.alias)
 
   }
   object RES {
@@ -38,16 +39,13 @@ class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
 
   def receive = {
     case req @ REQ.GetData(count, treeKey) =>
-      val dataHandler = req match{
-        case _: REQ.GetHistory => historyHandler
-        case _: REQ.GetMetrcis => metricHandler
-      }
-      
-      val dataList =  dataHandler.getFromKvs(treeKey, Some(count).filter(_ > 0))(kvs) map {
-        case Left(error) => 
-          sender ! RES.Error(error.name)
+      val dataList = handler.getFromKvs(kvs)(treeKey, Some(count).filter(_ > 0), req.TYPE_ALIAS) map {
+        case Failure(error) =>
+          error.printStackTrace()
+          sender ! RES.Error(error.getMessage)
           None
-        case Right(data) => Some(data)
+        case Success(data) =>
+          Some(data)
       }
 
       sender ! RES.DataList(dataList.flatten)

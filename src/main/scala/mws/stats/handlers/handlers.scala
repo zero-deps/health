@@ -1,60 +1,52 @@
 package .stats
+package handlers
 
-import .kvs.handle.EnHandler
+import api._
+import scala.util.Try
 import .kvs.handle.`package`.En
-import TreeStorage._
-import scala.concurrent.duration.Duration
 import .kvs.Kvs
-import .kvs.`package`.Dbe
+import .stats.TreeStorage.TreeKey
+import scala.util.Failure
 
-package object handlers {
-  import TreeStorage._
-  val STATS_FID = "stats"
+object handler extends UdpHandler with SocketHandler with KvsHandler {
+  object handlers {
+    val kvs = Seq[KvsHandler](historyHandler, errorHandler)
+    val socket = Seq[SocketHandler](historyHandler, metricHandler, errorHandler)
+    val udp = Seq[UdpHandler](historyHandler, metricHandler, errorHandler)
+  }
 
-  trait DataHandler[T <: Data] {
-    val FID: String
+  private type PF[P1, P2] = PartialFunction[P1, P2]
 
-    def treeKey(data: T): TreeKey
-    def socketMsg(data: T): String
-    def serialize(data: T): String
-    def deSerialize(str: String): T
-
-    final lazy val handler = EnHandler.by[T, String](serialize _)(deSerialize _)
-
-    final def saveToKvs(data: T)(kvs: Kvs): Either[Dbe, En[T]] = kvs.treeAdd[T](FID, treeKey(data), data)(handler)
-    final def getFromKvs(treeKey: Option[TreeKey], count: Option[Int])(kvs: Kvs): List[Either[Dbe, Data]] = treeKey match {
-      case Some(treeKey) =>
-        kvs.treeEntries[T](FID, treeKey, None, count)(handler) map { _.right map { _.data } }
-      case None =>
-        kvs.entries[En[T]](FID, None, count)(handler) fold (
-          error => List(Left(error)),
-          entries => entries map { x => Right(x.data) })
+  private def failedPF[P1, P2] = {
+    PartialFunction[P1, Try[P2]] {
+      case other =>
+        Failure(new Exception(s"No handler for $other"))
     }
   }
 
-  object metricHandler extends DataHandler[Metric] {
-    val FID = s"$STATS_FID :: metric"
+  private def orElse[P1, P2](functions: Seq[PF[P1, P2]]): PF[P1, P2] = functions.fold(PartialFunction.empty) {
+    (func: PF[P1, P2], x: PF[P1, P2]) => x orElse func
+  }
+  private def orElse[H, P1, P2](handlers: Seq[H], func: (H) => PF[P1, P2]): PF[P1, P2] = orElse[P1, P2](handlers map func)
 
-    def treeKey(metric: Metric) = metric.name ~ metric.node ~ metric.param
-    def socketMsg(metric: Metric) = s"metric::${metric.name}::${metric.node}::${metric.param}::${metric.time.toMillis}::${metric.value}"
-    def serialize(metric: Metric) = s"${metric.name}::${metric.node}::${metric.param}::${metric.time}::${metric.value}"
-    def deSerialize(str: String) = str.split("::").toList match {
-      case name :: node :: param :: time :: value :: Nil =>
-        Metric(name, node, param, Duration(time), value)
-      case _ => throw new IllegalArgumentException(str)
-    }
+  override val udpMessage: PF[String, Try[Data]] = orElse[UdpHandler, String, Try[Data]](handlers.udp, _.udpMessage) orElse {
+    case other =>
+      Failure(new Exception(s"No handler for $other"))
   }
 
-  object historyHandler extends DataHandler[History] {
-    val FID = s"$STATS_FID :: history"
-
-    def treeKey(history: History) = history.casino ~ history.user
-    def socketMsg(history: History) = s"msg::${history.casino}::${history.user}::${history.time.toMillis}::${history.action}"
-    def serialize(history: History) = s"${history.casino}::${history.user}::${history.time}::${history.action}"
-    def deSerialize(str: String) = str.split("::").toList match {
-      case casino :: user :: time :: action :: Nil =>
-        History(casino, user, Duration(time), action)
-      case other => throw new IllegalArgumentException(str)
-    }
+  override val socketMsg: PF[Data, Try[String]] = orElse[SocketHandler, Data, Try[String]](handlers.socket, _.socketMsg) orElse {
+    case other =>
+      Failure(new Exception(s"No handler for $other"))
   }
+
+  override def saveToKvs(kvs: Kvs): PF[Data, Try[En[Data]]] = orElse[KvsHandler, Data, Try[En[Data]]](handlers.kvs, _.saveToKvs(kvs)) orElse {
+    case other =>
+      Failure(new Exception(s"No handler for $other"))
+  }
+
+  override def getFromKvs(kvs: Kvs): PF[(Option[TreeKey], Option[Int], String), List[Try[Data]]] =
+    orElse[KvsHandler, (Option[TreeKey], Option[Int], String), List[Try[Data]]](handlers.kvs, _.getFromKvs(kvs)) orElse {
+      case other =>
+        List(Failure(new Exception(s"No handler for $other")))
+    }
 }

@@ -82,18 +82,9 @@ class TreeStorageTest extends TestKit(ActorSystem("Test", TreeStorageTest.config
       val en1 = res(0).right.get
       val en2 = res(1).right.get
 
-      println("===========================")
-      println(kvs.dba.asInstanceOf[Memory].storage)
-      println(en1)
-      println(en2)
-      println("===========================")
-
       val res1 = kvs.treeRemove(en1)
       val res2 = kvs.treeRemove(en2)
 
-      println(kvs.dba.asInstanceOf[Memory].storage)
-      println(res2.right)
-      println(res1.right)
     }
 
     "shouldn't be values in 1~2" in {

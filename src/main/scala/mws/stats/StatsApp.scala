@@ -27,22 +27,18 @@ object StatsApp extends App {
   val flows = Flows(kvs)
 
   def init()(implicit fa: ActorSystem) = {
-   fa.actorOf(MetricsListener.props)
-
+    fa.actorOf(MetricsListener.props)
     flows.saveDataFromUdp.run()
   }
 
   def handleStats(req: HttpRequest)(implicit fa: ActorSystem, kvs: Kvs) = req.header[UpgradeToWebsocket] match {
-    case Some(upg) =>
-      println(s"Run stream for websocket: $upg")
-      upg.handleMessages(flows.stats)
+    case Some(upg) => upg.handleMessages(flows.stats)
     case None => HttpResponse(BadRequest)
   }
 
   import .stats.Template._
 
-  
   init()
-  
+
   val bf = ws.bindAndHandle
 }

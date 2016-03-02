@@ -31,5 +31,7 @@ object Deps {
     "com.typesafe.akka" %% "akka-slf4j" % Versions.akka,
     "ch.qos.logback" % "logback-classic" % Versions.logback)
 
-  val test = Seq("org.scalatest" %% "scalatest" % Versions.scalaTest % "test")
+  val test = Seq(
+      "org.scalatest" %% "scalatest" % Versions.scalaTest % "test",
+      "com.typesafe.akka" %% "akka-testkit" % Versions.akka)
 }

@@ -27,7 +27,6 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   val queue = mutable.Queue[Data]()
   var queueUpdated = false;
 
-  kvsActor ! KvsActor.REQ.GetMetrcis(10) //Get LAST 10 metrics from KVS
   kvsActor ! KvsActor.REQ.GetHistory(10) //Get LAST 10 messages from KVS
 
   def receive: Receive = {
