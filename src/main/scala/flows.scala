@@ -15,17 +15,22 @@ import akka.stream.OverflowStrategy
 import .stats.actors.DataSource
 import .kvs.handle.`package`.En
 import .stats.actors.DataSource.SourceMsg
-import scala.util.{Success, Try, Failure}
+import scala.util.{ Success, Try, Failure }
 
 case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
-  import TreeStorage._
   import handlers._
 
   def logIn[T] = Flow[T].map[T] { x => println(s"IN: $x"); x }
   def logOut[T] = Flow[T].map[T] { x => println(s"OUT: $x"); x }
 
   private val udpPublisher = Source.actorPublisher(UdpListener.props)
+ 
   private val updated = Source.actorPublisher(DataSource.props(kvs))
+
+  private val saveToKvs = Flow[Data] map { data =>
+    handler.saveToKvs(kvs)(data)
+    data
+  }
 
   def stats: Flow[WsMessage, WsMessage, Unit] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
@@ -33,8 +38,8 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
 
       val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
 
-      val toMsg = b.add(Flow[Data] map { case data: Data => handler.socketMsg(data)} collect {case Success(x) => x })
-      
+      val toMsg = b.add(Flow[Data] map { case data: Data => handler.socketMsg(data) } collect { case Success(x) => x })
+
       val toWsMsg = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
 
       collect ~> logIn[String] ~> Sink.ignore
@@ -47,11 +52,6 @@ case class Flows(kvs: Kvs)(implicit system: ActorSystem) {
     import GraphDSL.Implicits._
     import handlers._
     import .kvs.Res
-
-    val saveToKvs = b.add(Flow[Data] map { data => 
-      handler.saveToKvs(kvs)(data) 
-      data
-    })
 
     val publishEvent = Sink.foreach[Data] { data =>
       system.eventStream.publish(SourceMsg(data))

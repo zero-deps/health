@@ -28,6 +28,7 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   var queueUpdated = false;
 
   kvsActor ! KvsActor.REQ.GetHistory(count=1000)
+  kvsActor ! KvsActor.REQ.GetMetrcis(count=0)
 
   def receive: Receive = {
     case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }

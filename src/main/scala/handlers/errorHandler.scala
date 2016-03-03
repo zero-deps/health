@@ -6,8 +6,8 @@ import api._
 import scala.xml._
 import scala.xml.XML
 import scala.util.{ Try, Success, Failure }
-import TreeStorage._
 import .stats.{ ErrorElement, Data, Error }
+import .kvs.handle.En
 
 private[this] object errorHandler extends UdpHandler with SocketHandler with ByEnHandler[Error] with KvsHandlerTyped[Error] {
   private def elementToString(element: ErrorElement): String =
@@ -26,7 +26,7 @@ private[this] object errorHandler extends UdpHandler with SocketHandler with ByE
   }</stackTraces>
 
   private def xmlToStackTraces(xml: Node): List[ErrorElement] =
-    (xml \ "stackTrace") map { x => stringToElement(x.text) } toList
+    ((xml \ "stackTrace") map { x => stringToElement(x.text) }).toList
 
   private def errorToString(error: Error): String =
     s"${error.name}::${error.node}::${error.time}::${stackTracesToXML(error.stackTraces).toString}"
@@ -53,9 +53,7 @@ private[this] object errorHandler extends UdpHandler with SocketHandler with ByE
       }
   }
 
-  val TYPE_ALIAS = Error.alias
-
-  def treeKey(err: Error) = err.name ~ err.node
+  lazy val TYPE_ALIAS = Error.alias
 
   protected def kvsFilter(data: Data) = Some(data) filter { _.isInstanceOf[Error] } map { _.asInstanceOf[Error] }
 

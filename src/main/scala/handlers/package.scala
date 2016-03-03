@@ -4,7 +4,6 @@ package handlers
 import scala.util.{ Failure, Success, Try }
 import .kvs.handle.`package`.En
 import .kvs.Kvs
-import TreeStorage._
 import .kvs.handle.EnHandler
 
 object api {
@@ -20,7 +19,7 @@ object api {
 
   trait KvsHandler {
     def saveToKvs(kvs: Kvs): PartialFunction[Data, Try[En[Data]]]
-    def getFromKvs(kvs: Kvs): PartialFunction[(Option[TreeKey], Option[Int], String), List[Try[Data]]]
+    def getFromKvs(kvs: Kvs): PartialFunction[(Option[Int], String), Try[List[Data]]]
   }
 
   trait ByEnHandler[T <: Data] {
@@ -32,47 +31,38 @@ object api {
 
   trait KvsHandlerTyped[T <: Data] extends KvsHandler {
     val TYPE_ALIAS: String
-    final lazy val FID = s"$STATS_FID :: $TYPE_ALIAS"
+    protected lazy val FID = s"$STATS_FID::$TYPE_ALIAS"
 
     val handler: EnHandler[T]
 
-    case class PF(kvs: Kvs) extends PartialFunction[Data, Try[En[Data]]] {
-      def isDefinedAt(data: Data): Boolean = kvsFilter(data).isDefined
-      def apply(data: Data): Try[En[Data]] = {
-        val value = kvsFilter(data).get
-        val res = kvs.treeAdd[T](FID, treeKey(value), value)(handler)
-        res fold (
-          l => Failure(new Exception(l.msg)),
-          r => Success(En[Data](r.fid, r.id, r.prev, r.next, r.data)))
-      }
-    }
-
     protected def kvsFilter(data: Data): Option[T]
 
-    def treeKey(data: T): TreeKey
+    protected def entry(data: T) = En[T](FID, java.util.UUID.randomUUID.toString, None, None, data)
 
-    override def saveToKvs(kvs: Kvs) = new PartialFunction[Data, Try[En[Data]]] {
-      def isDefinedAt(data: Data): Boolean = kvsFilter(data).isDefined
-      def apply(data: Data): Try[En[Data]] = {
-        val value = kvsFilter(data).get
-        val res = kvs.treeAdd[T](FID, treeKey(value), value)(handler)
+    override def saveToKvs(kvs: Kvs) = {
+      case data: Data if (kvsFilter(data).isDefined) =>
+        val value = entry(kvsFilter(data).get)
+
+        println(s"Savin value $value...")
+
+        val res = kvs.add(value)(handler)
         res fold (
-          l => Failure(new Exception(l.msg)),
-          r => Success(En[Data](r.fid, r.id, r.prev, r.next, r.data)))
-      }
+          { l =>
+            println(s"Failure: ${l.msg}")
+            Failure(new Exception(l.msg))
+          },
+          { r =>
+            println(s"Success: ${r.fid}")
+            Success(En[Data](r.fid, r.id, r.prev, r.next, r.data))
+          })
     }
 
     override def getFromKvs(kvs: Kvs) = {
-      case (Some(treeKey), count, TYPE_ALIAS) =>
-        kvs.treeEntries[T](FID, treeKey, None, count)(handler) map {
-          _ fold (
-            error => Failure(new Exception(error.msg)),
-            entry => Success(entry.data))
-        }
-      case (None, count, TYPE_ALIAS) =>
-        kvs.entries[En[T]](FID, None, count)(handler) fold (
-          error => List(Failure(new Exception(error.msg))),
-          entries => entries map { x => Success(x.data) })
+      case (count, TYPE_ALIAS) =>
+        println(s"Getting entries from $FID...")
+        kvs.entries(FID, None, count)(handler) fold (
+          {error => println(s"!!!!!!!!${error.msg}"); if (error.msg eq "not_found") Success(List.empty) else Failure(new Exception(error.msg))},
+          entries => Success(entries map { _.data }))
     }
   }
 }

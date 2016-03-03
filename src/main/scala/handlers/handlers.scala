@@ -5,12 +5,11 @@ import api._
 import scala.util.Try
 import .kvs.handle.`package`.En
 import .kvs.Kvs
-import .stats.TreeStorage.TreeKey
 import scala.util.Failure
 
 object handler extends UdpHandler with SocketHandler with KvsHandler {
   object handlers {
-    val kvs = Seq[KvsHandler](historyHandler, errorHandler)
+    val kvs = Seq[KvsHandler](historyHandler, metricHandler, errorHandler)
     val socket = Seq[SocketHandler](historyHandler, metricHandler, errorHandler)
     val udp = Seq[UdpHandler](historyHandler, metricHandler, errorHandler)
   }
@@ -44,9 +43,9 @@ object handler extends UdpHandler with SocketHandler with KvsHandler {
       Failure(new Exception(s"No handler for $other"))
   }
 
-  override def getFromKvs(kvs: Kvs): PF[(Option[TreeKey], Option[Int], String), List[Try[Data]]] =
-    orElse[KvsHandler, (Option[TreeKey], Option[Int], String), List[Try[Data]]](handlers.kvs, _.getFromKvs(kvs)) orElse {
+  override def getFromKvs(kvs: Kvs): PF[(Option[Int], String), Try[List[Data]]] =
+    orElse[KvsHandler, (Option[Int], String), Try[List[Data]]](handlers.kvs, _.getFromKvs(kvs)) orElse {
       case other =>
-        List(Failure(new Exception(s"No handler for $other")))
+        Failure(new Exception(s"No handler for $other"))
     }
 }

@@ -3,22 +3,20 @@ package actors
 
 import akka.actor.{ Actor, ActorLogging, Props }
 import .kvs.Kvs
-import TreeStorage.TreeKey
 import scala.util.{ Failure, Success, Try }
 
 object KvsActor {
   object REQ {
     object GetData {
-      def unapply(data: GetData): Option[(Int, Option[TreeKey])] = Some((data.count, data.key))
+      def unapply(data: GetData): Option[Int] = Some(data.count)
     }
 
     sealed abstract class GetData(val TYPE_ALIAS: String) {
       val count: Int
-      val key: Option[TreeKey]
     }
 
-    case class GetHistory(count: Int, key: Option[TreeKey] = None) extends GetData(History.alias)
-    case class GetMetrcis(count: Int, key: Option[TreeKey] = None) extends GetData(Metric.alias)
+    case class GetHistory(count: Int) extends GetData(History.alias)
+    case class GetMetrcis(count: Int) extends GetData(Metric.alias)
 
   }
   object RES {
@@ -33,21 +31,20 @@ object KvsActor {
 class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
   import KvsActor._
   import .stats._
-  import TreeStorage._
   import .kvs.handle.Handler._
   import handlers._
 
   def receive = {
-    case req @ REQ.GetData(count, treeKey) =>
-      val dataList = handler.getFromKvs(kvs)(treeKey, Some(count).filter(_ > 0), req.TYPE_ALIAS) map {
+    case req @ REQ.GetData(count) =>
+      val dataList = handler.getFromKvs(kvs)(Some(count).filter(_ > 0), req.TYPE_ALIAS) match {
         case Failure(error) =>
           error.printStackTrace()
           sender ! RES.Error(error.getMessage)
           None
-        case Success(data) =>
-          Some(data)
+        case Success(dataList) =>
+          Some(dataList)
       }
 
-      sender ! RES.DataList(dataList.flatten)
+      dataList map { list => sender ! RES.DataList(list) }
   }
 }

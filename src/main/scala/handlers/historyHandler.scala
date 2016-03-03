@@ -3,9 +3,9 @@ package handlers
 
 import scala.concurrent.duration.Duration
 import api._
-import .stats.TreeStorage._
 import .stats.{ History, Data }
 import scala.util.Try
+import .kvs.handle.`package`.En
 
 private[this] object historyHandler extends UdpHandler with SocketHandler with ByEnHandler[History] with KvsHandlerTyped[History] {
   object UdpMessage {
@@ -17,10 +17,8 @@ private[this] object historyHandler extends UdpHandler with SocketHandler with B
       }
   }
 
-  val TYPE_ALIAS = History.alias
-
-  def treeKey(history: History) = history.casino ~ history.user
-
+  lazy val TYPE_ALIAS = History.alias
+    
   protected def kvsFilter(data: Data) = Some(data) filter { _.isInstanceOf[History] } map { _.asInstanceOf[History] }
 
   override val socketMsg: PartialFunction[Data, Try[String]] = {

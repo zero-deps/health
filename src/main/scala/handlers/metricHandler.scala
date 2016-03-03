@@ -3,10 +3,12 @@ package handlers
 
 import scala.concurrent.duration.Duration
 import api._
-import .stats.TreeStorage._
-import .stats.TreeStorage._
 import .stats.{ Metric, Data }
 import scala.util.Try
+import .kvs.Kvs
+import scala.util.Failure
+import .kvs.handle.`package`.En
+import scala.util.Success
 
 private[this] object metricHandler extends UdpHandler with SocketHandler with ByEnHandler[Metric] with KvsHandlerTyped[Metric] {
   object UdpMessage {
@@ -17,9 +19,7 @@ private[this] object metricHandler extends UdpHandler with SocketHandler with By
       }
   }
 
-  val TYPE_ALIAS = Metric.alias
-
-  def treeKey(metric: Metric) = metric.name ~ metric.node ~ metric.param
+  lazy val TYPE_ALIAS = Metric.alias
 
   protected def kvsFilter(data: Data) = Some(data) filter { _.isInstanceOf[Metric] } map { _.asInstanceOf[Metric] }
 
@@ -36,5 +36,19 @@ private[this] object metricHandler extends UdpHandler with SocketHandler with By
     case name :: node :: param :: time :: value :: Nil =>
       Metric(name, node, param, Duration(time), value)
     case _ => throw new IllegalArgumentException(str)
+  }
+
+  override def saveToKvs(kvs: Kvs) = {
+    case metric: Metric =>
+      println(s"Removing ${(metric.node, metric.name, metric.param)}...")
+      val oldMetric = kvs.entries(s"FID")(handler).right map { metrics =>
+        metrics filter { en => println(s"!!!!!$en!!!!!");(en.data.node, en.data.name, en.data.param) eq (metric.node, metric.name, metric.param) } map { x =>
+          kvs.remove(x)(handler)
+
+          println(s"${x.data} has been removed!")
+        }
+      }
+
+      super.saveToKvs(kvs)(metric)
   }
 }
