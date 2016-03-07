@@ -15,6 +15,7 @@ object AppBuild extends Build {
     id = "stats",
     base = file("."),
     settings = Defaults.coreDefaultSettings ++
+      publishSettings ++
       Seq(
         scalacOptions ++= Seq("-feature", "-deprecation"),
         fork := true,
