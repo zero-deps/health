@@ -23,5 +23,5 @@ object Deps {
   val test = Seq(
     "org.scalatest" %% "scalatest" % Versions.scalaTest,
     "com.typesafe.akka" %% "akka-testkit" % Versions.akka
-    ) map (_ % Test)
+  ) map (_ % Test)
 }

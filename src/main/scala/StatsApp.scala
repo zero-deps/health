@@ -1,11 +1,13 @@
 package .stats
 
-import ftier.ws._
+import com.typesafe.config.ConfigFactory
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import ftier.ws._
 
 object StatsApp extends App {
-  sys.props += (("java.library.path", sys.props("java.library.path")+":native"))
+  if (!sys.props.contains("config.resource"))
+    sys.props += ("config.resource" -> "app.conf")
 
   implicit val system = ActorSystem("Stats")
   implicit val materializer = ActorMaterializer()
@@ -13,8 +15,10 @@ object StatsApp extends App {
   val ws = Ws(system)
   import ws.kvs
 
-  system.actorOf(MetricsListener.props)
   Flows.saveDataFromUdp.run()
 
   ws.bindAndHandle
+
+  StatsClient.init
+  MetricsListener.init
 }

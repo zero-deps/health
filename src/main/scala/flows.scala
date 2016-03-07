@@ -29,13 +29,13 @@ object Flows {
 
       val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
 
-      val updated = Source.actorPublisher(DataSource.props(kvs))
+      val pub = Source.actorPublisher(DataSource.props(kvs))
       val toMsg = b.add(Flow[Data] map { case data: Data => handler.socketMsg(data) } collect { case Success(x) => x })
 
       val toWsMsg = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
 
       collect ~> logIn[String] ~> Sink.ignore
-      updated ~> toMsg ~> logOut[String] ~> toWsMsg
+      pub ~> toMsg ~> logOut[String] ~> toWsMsg
 
       FlowShape(collect.in, toWsMsg.out)
     })
