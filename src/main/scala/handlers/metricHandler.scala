@@ -40,12 +40,9 @@ private[this] object metricHandler extends UdpHandler with SocketHandler with By
 
   override def saveToKvs(kvs: Kvs) = {
     case metric: Metric =>
-      println(s"Removing ${(metric.node, metric.name, metric.param)}...")
       val oldMetric = kvs.entries(s"FID")(handler).right map { metrics =>
-        metrics filter { en => println(s"!!!!!$en!!!!!");(en.data.node, en.data.name, en.data.param) eq (metric.node, metric.name, metric.param) } map { x =>
+        metrics filter { en => (en.data.node, en.data.name, en.data.param) eq (metric.node, metric.name, metric.param) } map { x =>
           kvs.remove(x)(handler)
-
-          println(s"${x.data} has been removed!")
         }
       }
 

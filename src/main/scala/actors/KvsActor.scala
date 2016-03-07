@@ -38,7 +38,6 @@ class KvsActor(kvs: Kvs) extends Actor with ActorLogging {
     case req @ REQ.GetData(count) =>
       val dataList = handler.getFromKvs(kvs)(Some(count).filter(_ > 0), req.TYPE_ALIAS) match {
         case Failure(error) =>
-          error.printStackTrace()
           sender ! RES.Error(error.getMessage)
           None
         case Success(dataList) =>

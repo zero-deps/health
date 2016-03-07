@@ -43,25 +43,20 @@ object api {
       case data: Data if (kvsFilter(data).isDefined) =>
         val value = entry(kvsFilter(data).get)
 
-        println(s"Savin value $value...")
-
         val res = kvs.add(value)(handler)
         res fold (
           { l =>
-            println(s"Failure: ${l.msg}")
             Failure(new Exception(l.msg))
           },
           { r =>
-            println(s"Success: ${r.fid}")
             Success(En[Data](r.fid, r.id, r.prev, r.next, r.data))
           })
     }
 
     override def getFromKvs(kvs: Kvs) = {
       case (count, TYPE_ALIAS) =>
-        println(s"Getting entries from $FID...")
         kvs.entries(FID, None, count)(handler) fold (
-          {error => println(s"!!!!!!!!${error.msg}"); if (error.msg eq "not_found") Success(List.empty) else Failure(new Exception(error.msg))},
+          {error => if (error.msg eq "not_found") Success(List.empty) else Failure(new Exception(error.msg))},
           entries => Success(entries map { _.data }))
     }
   }

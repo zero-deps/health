@@ -18,7 +18,7 @@ case class Route(implicit val system:ExtendedActorSystem,kvs:Kvs) extends RouteG
       req.header[UpgradeToWebsocket] match {
         case Some(upg) =>
           log.debug(s"Run stream for websocket: $upg")
-          upg.handleMessages(Flows(kvs).stats)
+          upg.handleMessages(Flows.stats)
         case None => HttpResponse(BadRequest)
       }
     case HttpRequest(GET,Path(Root/"monitor.html"),_,_,_) =>
