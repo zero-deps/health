@@ -33,7 +33,7 @@ var Nodes = (function(){
       return result;
     },
     getInitialState: function() {
-      return {data:{},activeName:null,nodeDetails:null}
+      return {data:{},activeName:null,details:null}
     },
     componentDidMount: function() {
       this.props.handlers.metric = function(msg) {
@@ -50,7 +50,7 @@ var Nodes = (function(){
       this.setState({activeName:tab.props.name})
     },
     handleChooseRow: function(node) {
-      this.setState({nodeDetails:node})
+      this.setState({details:{name:this.state.activeName,node:node}})
     },
     render: function() {
       var data = this.state.data;
@@ -67,12 +67,12 @@ var Nodes = (function(){
               <Table nameData={data[activeName]} onChooseRow={this.handleChooseRow} />
             </div>
             {(() => {
-            var nodeDetails = this.state.nodeDetails;
-            if (nodeDetails !== null) return (
+            var details = this.state.details;
+            if (details !== null) return (
             <div className="col-sm-6 col-md-5 col-lg-4">
-              <h3 style={{marginTop:0}}>{activeName}@{nodeDetails}</h3>
+              <h3 style={{marginTop:0}}>{details.name}@{details.node}</h3>
               <h4>Metrics</h4>
-              <Metrics data={data[activeName][nodeDetails]['param']} />
+              <Metrics data={data[details.name][details.node]['param']} />
             </div>
             )})()}
           </div>
