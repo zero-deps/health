@@ -14,22 +14,20 @@ Array.prototype.distinct = function() {
 
 Number.prototype.toUnits = function() {
   var units = [
-    [        1, "second", "seconds"],
-    [       60, "minute", "minutes"],
-    [     3600,   "hour",   "hours"],
-    [24 * 3600,    "day",    "days"]
+    [        1, "s"],
+    [       60, "m"],
+    [     3600, "h"],
+    [24 * 3600, "d"]
   ];
   return units.reduceRight(function(prev,curr) {
     var seconds = curr[0],
-        singular = curr[1],
-        plural = curr[2];
-    if (prev.words.length / 2 >= 2) return prev;
+        unit = curr[1];
+    if (prev.parts.length >= 2) return prev;
     var count = Math.floor(prev.remainder / seconds);
     remainder = prev.remainder - count * seconds;
-    if (count === 0) return {remainder:remainder,words:prev.words};
-    else if (count === 1) return {remainder:remainder,words:prev.words.concat(count,singular)};
-    else return {remainder:remainder,words:prev.words.concat(count,plural)};
-  },{remainder:this,words:[]}).words.join(' ');
+    if (count === 0) return {remainder:remainder,parts:prev.parts};
+    else return {remainder:remainder,parts:prev.parts.concat(count+unit)};
+  },{remainder:this,parts:[]}).parts.join(' ');
 };
 
 var nonEmpty = function(value) {

@@ -1,94 +1,83 @@
 var Nodes = (function(){
 
   var Nodes = React.createClass({
-    parseData: function(rawData) {
-      var list = [].concat(rawData);
-      var data = list.map(function(rawData) {
-        var arr = rawData.split('::');
-        var obj = {
-          name:  arr[0],
-          node:  arr[1],
-          param: arr[2],
-          time:  arr[3],
-          value: arr[4]
-        };
-        return obj;
-      });
-      return data;
+    parseItem: function(rawData) {
+      var arr = rawData.split('::');
+      return {
+        name:  arr[0],
+        node:  arr[1],
+        param: arr[2],
+        time:  arr[3],
+        value: arr[4]
+      }
     },
-    packData: function(newData, initData) {
-      newData.forEach(function(obj) {
-        initData[obj.name] = initData[obj.name] || {};
-        initData[obj.name][obj.node] = initData[obj.name][obj.node] || {};
-        initData[obj.name][obj.node]["param"] = initData[obj.name][obj.node]["param"] || {};
-        initData[obj.name][obj.node]["param"][obj.param] = obj.value;
-        initData[obj.name][obj.node]["time"] = obj.time;
-      });
-      return { data: initData, activeName: this.state.activeName };
+    add: function(oldData,newItem) {
+      // copy old data
+      var result = {};
+      for (let name of Object.keys(oldData)) {
+        result[name] = {};
+        for (let node of Object.keys(oldData[name])) {
+          result[name][node] = {};
+          result[name][node]['time'] = oldData[name][node]['time'];
+          result[name][node]['param'] = {};
+          for (let param of Object.keys(oldData[name][node]['param']))
+            result[name][node]['param'][param] = oldData[name][node]['param'][param];
+        }
+      }
+      // add new item
+      result[newItem.name] = result[newItem.name] || {};
+      result[newItem.name][newItem.node] = result[newItem.name][newItem.node] || {};
+      result[newItem.name][newItem.node]['param'] = result[newItem.name][newItem.node]['param'] || {};
+      result[newItem.name][newItem.node]['param'][newItem.param] = newItem.value;
+      result[newItem.name][newItem.node]['time'] = newItem.time;
+      return result;
     },
     getInitialState: function() {
-      return { data: {}, activeName: null, nodeDetails: null };
+      return {data:{},activeName:null,nodeDetails:null}
     },
     componentDidMount: function() {
-      this.props.handlers.metric = function(newDataRaw) {
+      this.props.handlers.metric = function(msg) {
         if (this.isMounted()) {
-          var state = this.packData(this.parseData(newDataRaw), this.state.data);
-          this.setState(state);
+          var oldData = this.state.data;
+          var newItem = this.parseItem(msg);
+          var data = this.add(oldData,newItem);
+          var activeName = this.state.activeName !== null ? this.state.activeName : newItem.name;
+          this.setState({data:data,activeName:activeName})
         }
       }.bind(this);
     },
     handleChooseTab: function(tab) {
-      this.setState({activeName: tab.props.name});
+      this.setState({activeName:tab.props.name})
     },
     handleChooseRow: function(node) {
       this.setState({nodeDetails:node})
     },
-    handleRemoveRow: function(node) {
-      var ws = this.props.ws;
-      var data = this.state.data;
-      var name = this.state.activeName;
-      // Remove on server
-      var params = Object.keys(data[name][node]["param"]);
-      params.forEach(function(param) {
-        ws.send(name + "::" + node + "::" + param);
-      });
-      // Remove on client
-      delete data[name][node];
-      this.setState({data: data});
-    },
     render: function() {
       var data = this.state.data;
-      var names = Object.keys(data).sort();
+      var names = Object.keys(data);
       var el;
       if (names.length === 0)
         el = <div className="alert alert-info">Please wait...</div>
       else {
         var activeName = this.state.activeName;
-        if (names.indexOf(activeName) == -1) activeName = names[0];
         el =
           <div className="row">
             <div className="col-sm-6 col-md-5 col-lg-4">
               <Tabs names={names} active={activeName} onChoose={this.handleChooseTab} />
-              <Table nameData={data[activeName]} onRemoveRow={this.handleRemoveRow} onChooseRow={this.handleChooseRow} />
+              <Table nameData={data[activeName]} onChooseRow={this.handleChooseRow} />
             </div>
             {(() => {
-              var nodeDetails = this.state.nodeDetails;
-              if (nodeDetails !== null) return (
-                <div className="col-sm-6 col-md-5 col-lg-4">
-                  <h3>{activeName}@{nodeDetails}</h3>
-                  <h4>Metrics</h4>
-                  <Metrics data={data[activeName][nodeDetails]['param']} />
-                </div>
-              )
-            })()}
+            var nodeDetails = this.state.nodeDetails;
+            if (nodeDetails !== null) return (
+            <div className="col-sm-6 col-md-5 col-lg-4">
+              <h3 style={{marginTop:0}}>{activeName}@{nodeDetails}</h3>
+              <h4>Metrics</h4>
+              <Metrics data={data[activeName][nodeDetails]['param']} />
+            </div>
+            )})()}
           </div>
       }
-      return (
-        <div className="col-xs-12">
-          <h1>Nodes</h1>
-          {el}
-        </div>
-      )
+      return <div className="col-xs-12">{el}</div>
     }
   });
 
@@ -119,23 +108,20 @@ var Nodes = (function(){
   var Table = React.createClass({
     render: function() {
       var nameData = this.props.nameData;
-
       var rows = Object.keys(nameData).map(function(node,i) {
         return <Row node={node}
                     nodeData={nameData[node]}
-                    onRemove={this.props.onRemoveRow}
                     onChoose={this.props.onChooseRow}
                     key={i} />
       }.bind(this));
-
+      var minWidth = {width:'1px'}
       return (
         <div className="table-responsive" style={{marginTop:'10px'}}>
           <table className="table">
             <thead>
               <tr>
                 <th>Node</th>
-                <th style={{width:'1px'}}>Status</th>
-                <th style={{width:'1px'}}></th>
+                <th style={minWidth}>Status</th>
               </tr>
             </thead>
             <tbody>{rows}</tbody>
@@ -158,42 +144,18 @@ var Nodes = (function(){
     handleChoose: function() {
       this.props.onChoose(this.props.node);
     },
-    handleRemove: function() {
-      this.props.onRemove(this.props.node);
-    },
     render: function() {
       var elapsed = Math.floor((new Date() - this.props.nodeData["time"]) / 1000);
       return (
         <tr className={elapsed < 3 ? "success" : "danger"} style={{cursor:'pointer'}} onClick={this.handleChoose}>
           <td>{this.props.node}</td>
-          <LastUpdatedCell elapsed={elapsed} />
-          <RemoveCell onRemove={this.handleRemove} />
+          <td>
+          {(() => {
+            if (elapsed < 3) return "OK";
+            else return <span><span style={{whiteSpace:'nowrap'}}>{elapsed.toUnits()}</span> ago</span>;
+          })()}
+          </td>
         </tr>
-      );
-    }
-  });
-
-  var LastUpdatedCell = React.createClass({
-    render: function() {
-      var elapsed = this.props.elapsed;
-      var text = elapsed < 3 ? "OK" : elapsed.toUnits() + " ago";
-      return <td>{text}</td>;
-    }
-  });
-
-  var RemoveCell = React.createClass({
-    handleRemove: function() {
-      this.props.onRemove();
-    },
-    render: function() {
-      return (
-        <td>
-          <span style={{cursor:'pointer'}}
-                onClick={this.handleRemove}>
-            <span className="glyphicon glyphicon-remove-circle" aria-hidden="true"></span>
-          </span>
-          <span className="sr-only">Remove</span>
-        </td>
       );
     }
   });

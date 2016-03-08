@@ -52,7 +52,6 @@ var UserHistory = (function(){
       var minWidth = {width:'1px'};
       return (
         <div className="col-sm-12">
-          <h1>History</h1>
           <div className="table-responsive">
             <table className="table table-hover">
               <thead>
