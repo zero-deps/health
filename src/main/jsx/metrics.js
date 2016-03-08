@@ -161,17 +161,46 @@ var Nodes = (function(){
   });
 
   var Metrics = React.createClass({
+    format: function(v) { return v !== undefined ? v : 'N/A' },
     render: function() {
       var data = this.props.data;
       return (
         <ul className="list-group">
           <li className="list-group-item">
-            <span className="badge">{data['CPU'] ? data['CPU'] : 'N/A'}</span>
-            CPU
+            <span className="badge">{this.format(data['cpu.count'])}</span>
+            CPU Count
           </li>
           <li className="list-group-item">
-            <span className="badge">{data['Heap'] ? data['Heap'] : 'N/A'}</span>
-            Heap
+            <span className="badge">{this.format(data['cpu.load'])}</span>
+            CPU Load
+          </li>
+          <li className="list-group-item">
+            <span className="badge">{this.format(data['mem.heap'])}</span>
+            Memory Heap
+          </li>
+          <li className="list-group-item">
+            <span className="badge">{this.format(data['mem.free'])}</span>
+            Memory Free
+          </li>
+          <li className="list-group-item">
+            <span className="badge">{this.format(data['mem.total'])}</span>
+            Memory Total
+          </li>
+          <li className="list-group-item">
+            <span className="badge">{this.format(data['mem.max'])}</span>
+            Memory Max
+          </li>
+          <li className="list-group-item">
+            <span className="badge">{this.format(data['root./.usable'])}</span>
+            FS Usable
+          </li>
+          <li className="list-group-item">
+            <span className="badge">{this.format(data['root./.free'])}</span>
+            FS Free
+          </li>
+          <li className="list-group-item">
+            <span className="badge">{this.format(data['root./.total'])}</span>
+            FS Total
           </li>
         </ul>
       );

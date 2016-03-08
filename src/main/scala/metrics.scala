@@ -1,5 +1,6 @@
 package .stats
 
+import scala.language.postfixOps
 import akka.actor.{ActorRef,Actor,ActorLogging,Props,ActorSystem}
 import akka.cluster.Cluster
 import akka.cluster.ClusterEvent.CurrentClusterState
@@ -21,6 +22,22 @@ class MetricsListener extends Actor with ActorLogging {
   val metrics = ClusterMetricsExtension(system)
   val eventStream = system.eventStream
 
+  import scala.concurrent.duration._
+  import context.dispatcher
+  system.scheduler.schedule(5 seconds, 10 seconds) {
+    val rt = Runtime.getRuntime
+    eventStream.publish(StatsClient.Metric(selfAddress,"cpu.count","%d".format(rt.availableProcessors)))
+    eventStream.publish(StatsClient.Metric(selfAddress,"mem.free",memFormat(rt.freeMemory)))
+    eventStream.publish(StatsClient.Metric(selfAddress,"mem.max",memFormat(rt.maxMemory)))
+    eventStream.publish(StatsClient.Metric(selfAddress,"mem.total",memFormat(rt.totalMemory)))
+    java.io.File.listRoots.map{ root =>
+      val path = root.getAbsolutePath
+      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.total",fsFormat(root.getTotalSpace)))
+      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.free",fsFormat(root.getFreeSpace)))
+      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.usable",fsFormat(root.getUsableSpace)))
+    }
+  }
+
   override def preStart(): Unit = metrics.subscribe(self)
   override def postStop(): Unit = metrics.unsubscribe(self)
 
@@ -35,15 +52,19 @@ class MetricsListener extends Actor with ActorLogging {
 
   def heap(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
     case HeapMemory(address, _, used, _, _) =>
-      val heap = "%.2f".format(used.doubleValue / 1024 / 1024)
-      eventStream.publish(StatsClient.Metric(address,"Heap",heap))
+      eventStream.publish(StatsClient.Metric(address,"mem.heap",memFormat(used)))
     case _ =>
   }
 
   def cpu(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
     case Cpu(address, _, Some(systemLoadAverage), _, _, _) =>
-      val cpu = "%.2f".format(systemLoadAverage)
-      eventStream.publish(StatsClient.Metric(address,"CPU",cpu))
+      eventStream.publish(StatsClient.Metric(address,"cpu.load","%.1f".format(systemLoadAverage)))
     case _ =>
   }
+
+  import java.text.DecimalFormat
+  def memFormat(num:Number):String =
+    new DecimalFormat("###.0").format(num.floatValue / 1024 / 1024)
+  def fsFormat(num:Number):String =
+    new DecimalFormat("###,###").format(num.floatValue / 1024 / 1024)
 }
