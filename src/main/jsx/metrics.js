@@ -151,7 +151,7 @@ var Nodes = (function(){
           <td>{this.props.node}</td>
           <td>
           {(() => {
-            if (elapsed < 3) return "OK";
+            if (elapsed < 3) return <span style={{textAlign:'center'}}>OK</span>;
             else return <span><span style={{whiteSpace:'nowrap'}}>{elapsed.toUnits()}</span> ago</span>;
           })()}
           </td>
