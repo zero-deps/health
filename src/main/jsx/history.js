@@ -2,28 +2,7 @@ var update = React.addons.update;
 
 var UserHistory = (function(){
 
-  var MsgCell = React.createClass({
-    getInitialState: function() {
-      return {details:false};
-    },
-    handleToggleMsg: function() {
-      this.setState({details:!this.state.details});
-    },
-    render: function() {
-      if (this.state.details)
-        return (
-          <td style={{cursor:'zoom-out'}} onClick={this.handleToggleMsg}>
-            <pre>{JSON.stringify(this.props.msg,null,' ')}</pre>
-          </td>);
-      else
-        return (
-          <td style={{cursor:'zoom-in'}} onClick={this.handleToggleMsg} title={JSON.stringify(this.props.msg)}>
-            {this.props.msg.$type}
-          </td>);
-    }
-  });
-
-  return React.createClass({
+  var UserHistory = React.createClass({
     parseIn: function(str) {
       var arr = str.split('::');
       var msg = JSON.parse(arr[3]);
@@ -70,18 +49,19 @@ var UserHistory = (function(){
           </tr>
         );
       });
+      var minWidth = {width:'1px'};
       return (
-        <div>
+        <div className="col-sm-12">
           <h1>History</h1>
           <div className="table-responsive">
             <table className="table table-hover">
               <thead>
                 <tr>
-                  <th>Casino</th>
-                  <th>User</th>
+                  <th style={minWidth}>Casino</th>
+                  <th style={minWidth}>User</th>
                   <th>Message</th>
-                  <th title="Correlation ID" style={{cursor:'help'}}>CID</th>
-                  <th>Time</th>
+                  <th title="Correlation ID" style={{cursor:'help',width:'1px'}}>CID</th>
+                  <th style={minWidth}>Time</th>
                 </tr>
               </thead>
               <tbody>{rows}</tbody>
@@ -91,4 +71,28 @@ var UserHistory = (function(){
       );
     }
   });
+
+  var MsgCell = React.createClass({
+    getInitialState: function() {
+      return {details:false};
+    },
+    handleToggleMsg: function() {
+      this.setState({details:!this.state.details});
+    },
+    render: function() {
+      if (this.state.details)
+        return (
+          <td style={{cursor:'zoom-out'}} onClick={this.handleToggleMsg}>
+            <pre>{JSON.stringify(this.props.msg,null,' ')}</pre>
+          </td>);
+      else
+        return (
+          <td style={{cursor:'zoom-in'}} onClick={this.handleToggleMsg} title={JSON.stringify(this.props.msg)}>
+            {this.props.msg.$type}
+          </td>);
+    }
+  });
+
+  return UserHistory;
+
 })();
