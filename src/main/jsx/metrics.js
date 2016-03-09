@@ -14,13 +14,13 @@ var Nodes = (function(){
     add: function(oldData,newItem) {
       // copy old data
       var result = {};
-      for (let name of Object.keys(oldData)) {
+      for (name of Object.keys(oldData)) {
         result[name] = {};
-        for (let node of Object.keys(oldData[name])) {
+        for (node of Object.keys(oldData[name])) {
           result[name][node] = {};
           result[name][node]['time'] = oldData[name][node]['time'];
           result[name][node]['param'] = {};
-          for (let param of Object.keys(oldData[name][node]['param']))
+          for (param of Object.keys(oldData[name][node]['param']))
             result[name][node]['param'][param] = oldData[name][node]['param'][param];
         }
       }
@@ -47,7 +47,7 @@ var Nodes = (function(){
       }.bind(this);
     },
     handleChooseTab: function(tab) {
-      this.setState({activeName:tab.props.name})
+      this.setState({activeName:tab.props.name,details:null})
     },
     handleChooseRow: function(node) {
       this.setState({details:{name:this.state.activeName,node:node}})
@@ -69,10 +69,26 @@ var Nodes = (function(){
             {(() => {
             var details = this.state.details;
             if (details !== null) return (
-            <div className="col-sm-6 col-md-5 col-lg-4">
-              <h3 style={{marginTop:0}}>{details.name}@{details.node}</h3>
-              <h4>Metrics</h4>
-              <Metrics data={data[details.name][details.node]['param']} />
+            <div className="col-sm-6 col-md-5 col-lg-8">
+              <div className="row">
+                <div className="col-xs-12">
+                  <h3 style={{marginTop:0}}>{details.name}@{details.node}</h3>
+                </div>
+              </div>
+              <div className="row">
+                {(()=>{
+                var xs = data[details.name][details.node]['param'];
+                if (Object.keys(xs).some(x => x.startsWith('service.'))) return (
+                <div className="col-lg-6">
+                  <h4>Services</h4>
+                  <Services data={data[details.name][details.node]['param']} />
+                </div>
+                )})()}
+                <div className="col-lg-6">
+                  <h4>Metrics</h4>
+                  <Metrics data={data[details.name][details.node]['param']} />
+                </div>
+              </div>
             </div>
             )})()}
           </div>
@@ -96,7 +112,7 @@ var Nodes = (function(){
       this.props.onChoose(this);
     },
     render: function() {
-      var className = this.props.active ? "active" : "";
+      var className = this.props.active ? 'active' : '';
       return (
         <li role="presentation" className={className}>
           <a href="#" onClick={this.handleChoose}>{this.props.name}</a>
@@ -151,12 +167,39 @@ var Nodes = (function(){
           <td>{this.props.node}</td>
           <td>
           {(() => {
-            if (elapsed < 3) return <span style={{textAlign:'center'}}>OK</span>;
-            else return <span><span style={{whiteSpace:'nowrap'}}>{elapsed.toUnits()}</span> ago</span>;
+            if (elapsed < 3) return <div style={{textAlign:'center'}}>OK</div>;
+            else return <div><span style={{whiteSpace:'nowrap'}}>{elapsed.toUnits()}</span> ago</div>;
           })()}
           </td>
         </tr>
       );
+    }
+  });
+
+  var Services = React.createClass({
+    format: function(id,name) {
+      var x = this.props.data["service."+id];
+      if (x === undefined) return '';
+      var liClass = 'list-group-item'+
+        (x==='started'?' list-group-item-success':'')+
+        (x==='stopped'?' list-group-item-danger':'');
+      return (
+        <li className={liClass}>
+          {(()=>{
+          if (x !== 'started' && x !== 'stopped') return (
+          <span className="badge">{x}</span>
+          )
+          })()}
+          {name}
+        </li>
+      )
+    },
+    render: function() {
+      return (
+        <ul className="list-group">
+          {this.format('geoip','GeoIP')}
+        </ul>
+      )
     }
   });
 

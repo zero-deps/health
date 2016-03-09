@@ -25,7 +25,7 @@ class MetricsListener extends Actor with ActorLogging {
   import scala.concurrent.duration._
   import context.dispatcher
   system.scheduler.schedule(5 seconds, 10 seconds) {
-    val rt = Runtime.getRuntime
+    val rt = sys.runtime
     eventStream.publish(StatsClient.Metric(selfAddress,"cpu.count","%d".format(rt.availableProcessors)))
     eventStream.publish(StatsClient.Metric(selfAddress,"mem.free",memFormat(rt.freeMemory)))
     eventStream.publish(StatsClient.Metric(selfAddress,"mem.max",memFormat(rt.maxMemory)))
