@@ -7,7 +7,7 @@ Stats aggregates and displays some statistics.
 ```
 npm install --global babel-cli
 npm install babel-preset-react
-babel --presets react "src/main/jsx" --watch --compact true --out-dir "src/main/resources/stats"
+babel --presets react "src/main/jsx" --watch --out-dir "src/main/resources/stats"
 ```
 
 ## Run
