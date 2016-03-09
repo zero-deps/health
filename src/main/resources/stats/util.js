@@ -12,7 +12,8 @@ Array.prototype.distinct = function() {
   });
 };
 
-Number.prototype.toUnits = function() {
+function secToTimeInterval(sec) {
+  if (sec === NaN) return NaN.toString();
   var units = [
     [        1, "s"],
     [       60, "m"],
@@ -27,8 +28,23 @@ Number.prototype.toUnits = function() {
     remainder = prev.remainder - count * seconds;
     if (count === 0) return {remainder:remainder,parts:prev.parts};
     else return {remainder:remainder,parts:prev.parts.concat(count+unit)};
-  },{remainder:this,parts:[]}).parts.join(' ');
+  },{remainder:sec,parts:[]}).parts.join(' ');
 };
+
+function nsToMs(ns) {
+  if (ns === NaN) return NaN.toString();
+  return (ns / 1000 / 1000).toFixed(3);
+};
+
+function bytesToMb(bytes) {
+  if (bytes === NaN) return NaN.toString();
+  return (bytes / 1024 / 1024).toFixed(1);
+}
+
+function bytesToGb(bytes) {
+  if (bytes === NaN) return NaN.toString();
+  return (bytes / 1024 / 1024 / 1024).toFixed(3);
+}
 
 var nonEmpty = function(value) {
   return value !== ""

@@ -259,7 +259,7 @@ var Nodes = function () {
               React.createElement(
                 'span',
                 { style: { whiteSpace: 'nowrap' } },
-                elapsed.toUnits()
+                secToTimeInterval(elapsed)
               ),
               ' ago'
             );
@@ -272,20 +272,17 @@ var Nodes = function () {
   var Services = React.createClass({
     displayName: 'Services',
 
-    format: function (id, name) {
+    service: function (id, name) {
       var x = this.props.data["service." + id];
-      if (x === undefined) return '';
-      var liClass = 'list-group-item' + (x === 'started' ? ' list-group-item-success' : '') + (x === 'stopped' ? ' list-group-item-danger' : '');
+      var liClass = 'list-group-item' + (x === undefined ? ' disabled' : '') + (x === 'started' ? ' list-group-item-success' : '') + (x === 'stopped' ? ' list-group-item-danger' : '');
       return React.createElement(
         'li',
         { className: liClass },
-        (() => {
-          if (x !== 'started' && x !== 'stopped') return React.createElement(
-            'span',
-            { className: 'badge' },
-            x
-          );
-        })(),
+        React.createElement(
+          'span',
+          { title: 'Δ (ms)', className: 'badge' },
+          nsToMs(Number(x))
+        ),
         name
       );
     },
@@ -293,8 +290,8 @@ var Nodes = function () {
       return React.createElement(
         'ul',
         { className: 'list-group' },
-        this.format('geoip', 'GeoIP'),
-        this.format('favorite', 'Favorite')
+        this.service('geoip', 'GeoIP'),
+        this.service('favorite', 'Favorite')
       );
     }
   });
@@ -302,9 +299,6 @@ var Nodes = function () {
   var Metrics = React.createClass({
     displayName: 'Metrics',
 
-    format: function (v) {
-      return v !== undefined ? v : 'N/A';
-    },
     render: function () {
       var data = this.props.data;
       return React.createElement(
@@ -316,7 +310,7 @@ var Nodes = function () {
           React.createElement(
             'span',
             { className: 'badge' },
-            this.format(data['sys.uptime'])
+            secToTimeInterval(Number(data['sys.uptime']))
           ),
           'Uptime'
         ),
@@ -326,7 +320,7 @@ var Nodes = function () {
           React.createElement(
             'span',
             { className: 'badge' },
-            this.format(data['cpu.count'])
+            Number(data['cpu.count'])
           ),
           'CPU Count'
         ),
@@ -335,8 +329,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['cpu.load'])
+            { title: '%', className: 'badge' },
+            Number(data['cpu.load']).toFixed(1)
           ),
           'CPU Load'
         ),
@@ -345,8 +339,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['mem.heap'])
+            { title: 'MB', className: 'badge' },
+            bytesToMb(Number(data['mem.heap']))
           ),
           'Memory Heap'
         ),
@@ -355,8 +349,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['mem.free'])
+            { title: 'MB', className: 'badge' },
+            bytesToMb(Number(data['mem.free']))
           ),
           'Memory Free'
         ),
@@ -365,8 +359,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['mem.total'])
+            { title: 'MB', className: 'badge' },
+            bytesToMb(Number(data['mem.total']))
           ),
           'Memory Total'
         ),
@@ -375,8 +369,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['mem.max'])
+            { title: 'MB', className: 'badge' },
+            bytesToMb(Number(data['mem.max']))
           ),
           'Memory Max'
         ),
@@ -385,8 +379,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['root./.usable'])
+            { title: 'GB', className: 'badge' },
+            bytesToGb(Number(data['root./.usable']))
           ),
           'FS Usable'
         ),
@@ -395,8 +389,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['root./.free'])
+            { title: 'GB', className: 'badge' },
+            bytesToGb(Number(data['root./.free']))
           ),
           'FS Free'
         ),
@@ -405,8 +399,8 @@ var Nodes = function () {
           { className: 'list-group-item' },
           React.createElement(
             'span',
-            { className: 'badge' },
-            this.format(data['root./.total'])
+            { title: 'GB', className: 'badge' },
+            bytesToGb(Number(data['root./.total']))
           ),
           'FS Total'
         )

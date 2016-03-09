@@ -175,7 +175,7 @@ var Nodes = (function(){
           <td>
           {(() => {
             if (elapsed < 3) return <div style={{textAlign:'center'}}>OK</div>;
-            else return <div><span style={{whiteSpace:'nowrap'}}>{elapsed.toUnits()}</span> ago</div>;
+            else return <div><span style={{whiteSpace:'nowrap'}}>{secToTimeInterval(elapsed)}</span> ago</div>;
           })()}
           </td>
         </tr>
@@ -184,19 +184,15 @@ var Nodes = (function(){
   });
 
   var Services = React.createClass({
-    format: function(id,name) {
+    service: function(id,name) {
       var x = this.props.data["service."+id];
-      if (x === undefined) return '';
       var liClass = 'list-group-item'+
+        (x===undefined?' disabled':'')+
         (x==='started'?' list-group-item-success':'')+
         (x==='stopped'?' list-group-item-danger':'');
       return (
         <li className={liClass}>
-          {(()=>{
-          if (x !== 'started' && x !== 'stopped') return (
-          <span className="badge">{x}</span>
-          )
-          })()}
+          <span title="Δ (ms)" className="badge">{nsToMs(Number(x))}</span>
           {name}
         </li>
       )
@@ -204,57 +200,56 @@ var Nodes = (function(){
     render: function() {
       return (
         <ul className="list-group">
-          {this.format('geoip','GeoIP')}
-          {this.format('favorite','Favorite')}
+          {this.service('geoip','GeoIP')}
+          {this.service('favorite','Favorite')}
         </ul>
       )
     }
   });
 
   var Metrics = React.createClass({
-    format: function(v) { return v !== undefined ? v : 'N/A' },
     render: function() {
       var data = this.props.data;
       return (
         <ul className="list-group">
           <li className="list-group-item">
-            <span className="badge">{this.format(data['sys.uptime'])}</span>
+            <span className="badge">{secToTimeInterval(Number(data['sys.uptime']))}</span>
             Uptime
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['cpu.count'])}</span>
+            <span className="badge">{Number(data['cpu.count'])}</span>
             CPU Count
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['cpu.load'])}</span>
+            <span title="%" className="badge">{Number(data['cpu.load']).toFixed(1)}</span>
             CPU Load
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['mem.heap'])}</span>
+            <span title="MB" className="badge">{bytesToMb(Number(data['mem.heap']))}</span>
             Memory Heap
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['mem.free'])}</span>
+            <span title="MB" className="badge">{bytesToMb(Number(data['mem.free']))}</span>
             Memory Free
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['mem.total'])}</span>
+            <span title="MB" className="badge">{bytesToMb(Number(data['mem.total']))}</span>
             Memory Total
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['mem.max'])}</span>
+            <span title="MB" className="badge">{bytesToMb(Number(data['mem.max']))}</span>
             Memory Max
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['root./.usable'])}</span>
+            <span title="GB" className="badge">{bytesToGb(Number(data['root./.usable']))}</span>
             FS Usable
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['root./.free'])}</span>
+            <span title="GB" className="badge">{bytesToGb(Number(data['root./.free']))}</span>
             FS Free
           </li>
           <li className="list-group-item">
-            <span className="badge">{this.format(data['root./.total'])}</span>
+            <span title="GB" className="badge">{bytesToGb(Number(data['root./.total']))}</span>
             FS Total
           </li>
         </ul>

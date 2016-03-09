@@ -26,16 +26,16 @@ class MetricsListener extends Actor with ActorLogging {
   import context.dispatcher
   system.scheduler.schedule(5 seconds, 10 seconds) {
     val rt = sys.runtime
-    eventStream.publish(StatsClient.Metric(selfAddress,"cpu.count","%d".format(rt.availableProcessors)))
-    eventStream.publish(StatsClient.Metric(selfAddress,"mem.free",memFormat(rt.freeMemory)))
-    eventStream.publish(StatsClient.Metric(selfAddress,"mem.max",memFormat(rt.maxMemory)))
-    eventStream.publish(StatsClient.Metric(selfAddress,"mem.total",memFormat(rt.totalMemory)))
-    eventStream.publish(StatsClient.Metric(selfAddress,"sys.uptime",intervalFormat(system.uptime)))
+    eventStream.publish(StatsClient.Metric(selfAddress,"cpu.count",""+rt.availableProcessors))
+    eventStream.publish(StatsClient.Metric(selfAddress,"mem.free",""+rt.freeMemory))
+    eventStream.publish(StatsClient.Metric(selfAddress,"mem.max",""+rt.maxMemory))
+    eventStream.publish(StatsClient.Metric(selfAddress,"mem.total",""+rt.totalMemory))
+    eventStream.publish(StatsClient.Metric(selfAddress,"sys.uptime",""+system.uptime))
     java.io.File.listRoots.map{ root =>
       val path = root.getAbsolutePath
-      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.total",fsFormat(root.getTotalSpace)))
-      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.free",fsFormat(root.getFreeSpace)))
-      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.usable",fsFormat(root.getUsableSpace)))
+      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.total",""+root.getTotalSpace))
+      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.free",""+root.getFreeSpace))
+      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.usable",""+root.getUsableSpace))
     }
   }
 
@@ -53,26 +53,13 @@ class MetricsListener extends Actor with ActorLogging {
 
   def heap(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
     case HeapMemory(address, _, used, _, _) =>
-      eventStream.publish(StatsClient.Metric(address,"mem.heap",memFormat(used)))
+      eventStream.publish(StatsClient.Metric(address,"mem.heap",""+used))
     case _ =>
   }
 
   def cpu(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
     case Cpu(address, _, Some(systemLoadAverage), _, _, _) =>
-      eventStream.publish(StatsClient.Metric(address,"cpu.load","%.1f".format(systemLoadAverage)))
+      eventStream.publish(StatsClient.Metric(address,"cpu.load",""+systemLoadAverage))
     case _ =>
-  }
-
-  import java.text.DecimalFormat
-  def memFormat(num:Number):String =
-    new DecimalFormat("###.0").format(num.floatValue / 1024 / 1024)
-  def fsFormat(num:Number):String =
-    new DecimalFormat("###,###").format(num.floatValue / 1024 / 1024)
-  def intervalFormat(seconds:Long):String = {
-    val s = java.util.concurrent.TimeUnit.SECONDS
-    if (s.toDays(seconds) > 0) s.toDays(seconds)+"d"
-    else if (s.toHours(seconds) > 0) s.toHours(seconds)+"h"
-    else if (s.toMinutes(seconds) > 0) s.toMinutes(seconds)+"m"
-    else seconds+"s"
   }
 }
