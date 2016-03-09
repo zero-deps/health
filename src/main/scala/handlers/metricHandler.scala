@@ -38,14 +38,5 @@ private[this] object metricHandler extends UdpHandler with SocketHandler with By
     case _ => throw new IllegalArgumentException(str)
   }
 
-  override def saveToKvs(kvs: Kvs) = {
-    case metric: Metric =>
-      val oldMetric = kvs.entries(s"FID")(handler).right map { metrics =>
-        metrics filter { en => (en.data.node, en.data.name, en.data.param) eq (metric.node, metric.name, metric.param) } map { x =>
-          kvs.remove(x)(handler)
-        }
-      }
-
-      super.saveToKvs(kvs)(metric)
-  }
+  protected override def entry(m:Metric):En[Metric] = En[Metric](fid=FID,id=s"${m.name}::${m.node}::${m.param}",data=m)
 }

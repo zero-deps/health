@@ -34,7 +34,7 @@ Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
 Examples:
 ```
-echo -n "metric::::127.0.0.1:4245::Heap::153.97" >/dev/udp/127.0.0.1/50123
+echo -n "metric::::127.0.0.1:4245::mem.heap::153.97" >/dev/udp/127.0.0.1/50123
 echo -n 'history::casino1::user1::{"$type":"LoginRequest"}' >/dev/udp/127.0.0.1/50123
 ```
 
