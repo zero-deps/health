@@ -167,6 +167,10 @@ var Nodes = (function(){
       return (
         <ul className="list-group">
           <li className="list-group-item">
+            <span className="badge">{this.format(data['sys.uptime'])}</span>
+            Uptime
+          </li>
+          <li className="list-group-item">
             <span className="badge">{this.format(data['cpu.count'])}</span>
             CPU Count
           </li>

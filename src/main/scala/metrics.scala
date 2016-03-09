@@ -30,6 +30,7 @@ class MetricsListener extends Actor with ActorLogging {
     eventStream.publish(StatsClient.Metric(selfAddress,"mem.free",memFormat(rt.freeMemory)))
     eventStream.publish(StatsClient.Metric(selfAddress,"mem.max",memFormat(rt.maxMemory)))
     eventStream.publish(StatsClient.Metric(selfAddress,"mem.total",memFormat(rt.totalMemory)))
+    eventStream.publish(StatsClient.Metric(selfAddress,"sys.uptime",intervalFormat(system.uptime)))
     java.io.File.listRoots.map{ root =>
       val path = root.getAbsolutePath
       eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.total",fsFormat(root.getTotalSpace)))
@@ -67,4 +68,11 @@ class MetricsListener extends Actor with ActorLogging {
     new DecimalFormat("###.0").format(num.floatValue / 1024 / 1024)
   def fsFormat(num:Number):String =
     new DecimalFormat("###,###").format(num.floatValue / 1024 / 1024)
+  def intervalFormat(seconds:Long):String = {
+    val s = java.util.concurrent.TimeUnit.SECONDS
+    if (s.toDays(seconds) > 0) s.toDays(seconds)+"d"
+    else if (s.toHours(seconds) > 0) s.toHours(seconds)+"h"
+    else if (s.toMinutes(seconds) > 0) s.toMinutes(seconds)+"m"
+    else seconds+"s"
+  }
 }
