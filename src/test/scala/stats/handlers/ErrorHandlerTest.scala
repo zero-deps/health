@@ -13,17 +13,19 @@ class ErrorHandlerTest extends FreeSpecLike with Matchers {
       val nullException = new NullPointerException
       val exception = new Exception(nullException)
       val stackTraces = exception.getStackTrace map { element => ErrorElement(element.getClassName, element.getMethodName, element.getFileName, element.getLineNumber) }
-      val error = Error("TEST", "local", Duration("1456406636779 milliseconds"), stackTraces.toList)
+      val error = Error("TEST", "local", Duration("1456406636779 milliseconds"), "Test Exception", stackTraces.toList)
       val strError = errorHandler.serialize(error)
 
+      println(strError)
+      
       error shouldBe errorHandler.deSerialize(strError)
     }
 
     "hanlde messages without stack trace by UDP" in {
-      val udpMessage = "error::TEST::local"
+      val udpMessage = "error::TEST::local::Test Exception"
       val strError = errorHandler.udpMessage(udpMessage)
       strError match {
-        case Success(Error("TEST", "local", _, list)) =>
+        case Success(Error("TEST", "local", _, "Test Exception", list)) =>
           list shouldBe List.empty
         case other => fail(s"$strError is incorrect message!")
       }

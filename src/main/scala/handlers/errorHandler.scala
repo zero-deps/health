@@ -3,13 +3,17 @@ package handlers
 
 import scala.concurrent.duration.Duration
 import api._
-import scala.xml._
-import scala.xml.XML
 import scala.util.{ Try, Success, Failure }
 import .stats.{ ErrorElement, Data, Error }
 import .kvs.handle.En
+import scala.util.parsing.json._
+import scala.util.parsing.json.JSONArray
+import argonaut._, Argonaut._
 
 private[this] object errorHandler extends UdpHandler with SocketHandler with ByEnHandler[Error] with KvsHandlerTyped[Error] {
+  implicit def ErrorElementJson: CodecJson[ErrorElement] =
+    casecodec4(ErrorElement.apply, ErrorElement.unapply)("className", "method", "fileName", "lineNumber")
+
   private def elementToString(element: ErrorElement): String =
     s"${element.className}::${element.method}::${element.fileName}::${element.lineNumber}"
 
@@ -19,29 +23,26 @@ private[this] object errorHandler extends UdpHandler with SocketHandler with ByE
     case other => throw new IllegalArgumentException(str)
   }
 
-  private def stackTracesToXML(traces: List[ErrorElement]): Node = <stackTraces>{
-    traces map { element: ErrorElement =>
-      <stackTrace>{ elementToString(element) }</stackTrace>
-    }
-  }</stackTraces>
+  private def stackTracesToJson(traces: List[ErrorElement]): Option[String] = Some(traces) filter (!_.isEmpty) map { _.asJson.nospaces  }
 
-  private def xmlToStackTraces(xml: Node): List[ErrorElement] =
-    ((xml \ "stackTrace") map { x => stringToElement(x.text) }).toList
+  private def jsonToStackTraces(json: String): List[ErrorElement] = json.decodeOption[List[ErrorElement]].getOrElse(Nil)
 
   private def errorToString(error: Error): String =
-    s"${error.name}::${error.node}::${error.time}::${stackTracesToXML(error.stackTraces).toString}"
+    s"${error.name}::${error.node}::${error.time.toMillis}::${error.message}" + { stackTracesToJson(error.stackTraces) map { "::" + _.toString } getOrElse "" }
 
   private def strToError(str: String): Error = {
     str.split("::").toList match {
-      case name :: node :: time :: stackTracesXML =>
-        val xmlString = stackTracesXML.mkString("::")
-        Error(name, node, Duration(time), if (xmlString == "") List.empty else xmlToStackTraces(XML.loadString(xmlString)))
+      case name :: node :: time :: message :: stackTracesXML =>
+        println(s"!!!!$stackTracesXML")
+        val jsonString = stackTracesXML.mkString("::")
+        println(s"${jsonToStackTraces(jsonString)}")
+        Error(name, node, if (time.trim.contains(" ")) Duration(time) else Duration(time + " ms"), message, if (jsonString eq "") List.empty else jsonToStackTraces(jsonString))
       case other => throw new IllegalArgumentException(str)
     }
   }
 
   object UdpMessage {
-    def unapply(str: String): Option[Error] =
+    def unapply(str: String): Option[Error] = {
       str.split("::").toList match {
         case msgType :: name :: node :: tail if msgType == "error" =>
           val error = (name :: node :: s"${System.currentTimeMillis} ms" :: tail).mkString("::")
@@ -51,6 +52,7 @@ private[this] object errorHandler extends UdpHandler with SocketHandler with ByE
           }
         case other => None
       }
+    }
   }
 
   lazy val TYPE_ALIAS = Error.alias
@@ -58,7 +60,9 @@ private[this] object errorHandler extends UdpHandler with SocketHandler with ByE
   protected def kvsFilter(data: Data) = Some(data) filter { _.isInstanceOf[Error] } map { _.asInstanceOf[Error] }
 
   val socketMsg: PartialFunction[Data, Try[String]] = {
-    case err: Error => Success(s"error::${errorToString(err)}")
+    case err: Error => 
+      println(errorToString(err))
+      Try{s"error::${errorToString(err)}"}
   }
 
   val udpMessage: PartialFunction[String, Try[Data]] = {

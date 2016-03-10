@@ -26,6 +26,7 @@ object AppBuild extends Build {
           Deps.akka ++
           Deps.ftier ++
           Deps.logging ++
+          Deps.json ++
           Deps.test
       )
   )

@@ -9,6 +9,7 @@ object Deps {
     val logback = "1.1.3"
     val ftier = "0.1-190-g1fe6934"
     val scalaTest = "2.2.4"
+    val argonaut = "6.2-M1"
   }
 
   val akka = Seq(
@@ -24,4 +25,6 @@ object Deps {
     "org.scalatest" %% "scalatest" % Versions.scalaTest,
     "com.typesafe.akka" %% "akka-testkit" % Versions.akka
   ) map (_ % Test)
+  
+  val json = Seq("io.argonaut" %% "argonaut" % Versions.argonaut)
 }

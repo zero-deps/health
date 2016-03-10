@@ -17,7 +17,7 @@ object KvsActor {
 
     case class GetHistory(count: Int) extends GetData(History.alias)
     case class GetMetrcis(count: Int) extends GetData(Metric.alias)
-
+    case class GetErrors(count: Int) extends GetData(Error.alias)
   }
   object RES {
     case class DataSaved(data: Data)

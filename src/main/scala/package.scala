@@ -20,7 +20,7 @@ package object stats {
   object Error{
     val alias = "Error"
   }
-  case class Error(name: String, node: String, time: Duration, stackTraces: List[ErrorElement]) extends Data
+  case class Error(name: String, node: String, time: Duration, message: String, stackTraces: List[ErrorElement]) extends Data
 }
 
 
