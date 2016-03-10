@@ -169,12 +169,13 @@ var Nodes = (function(){
     },
     render: function() {
       var elapsed = Math.floor((new Date() - this.props.nodeData["time"]) / 1000);
+      var active = elapsed < 5;
       return (
-        <tr className={elapsed < 3 ? "success" : "danger"} style={{cursor:'pointer'}} onClick={this.handleChoose}>
+        <tr className={active ? "success" : "danger"} style={{cursor:'pointer'}} onClick={this.handleChoose}>
           <td>{this.props.node}</td>
           <td>
           {(() => {
-            if (elapsed < 3) return <div style={{textAlign:'center'}}>OK</div>;
+            if (active) return <div style={{textAlign:'center'}}>OK</div>;
             else return <div><span style={{whiteSpace:'nowrap'}}>{secToTimeInterval(elapsed)}</span> ago</div>;
           })()}
           </td>
@@ -217,16 +218,12 @@ var Nodes = (function(){
             Uptime
           </li>
           <li className="list-group-item">
-            <span className="badge">{Number(data['cpu.count'])}</span>
-            CPU Count
-          </li>
-          <li className="list-group-item">
-            <span title="%" className="badge">{Number(data['cpu.load']).toFixed(1)}</span>
+            <span title="%" className="badge">{(Number(data['cpu.load'])*100).toFixed(2)}</span>
             CPU Load
           </li>
           <li className="list-group-item">
-            <span title="MB" className="badge">{bytesToMb(Number(data['mem.heap']))}</span>
-            Memory Heap
+            <span title="MB" className="badge">{bytesToMb(Number(data['mem.used']))}</span>
+            Memory Used
           </li>
           <li className="list-group-item">
             <span title="MB" className="badge">{bytesToMb(Number(data['mem.free']))}</span>
@@ -237,19 +234,15 @@ var Nodes = (function(){
             Memory Total
           </li>
           <li className="list-group-item">
-            <span title="MB" className="badge">{bytesToMb(Number(data['mem.max']))}</span>
-            Memory Max
+            <span title="GB" className="badge">{kbToGb(Number(data['root./.used']))}</span>
+            FS Used
           </li>
           <li className="list-group-item">
-            <span title="GB" className="badge">{bytesToGb(Number(data['root./.usable']))}</span>
-            FS Usable
-          </li>
-          <li className="list-group-item">
-            <span title="GB" className="badge">{bytesToGb(Number(data['root./.free']))}</span>
+            <span title="GB" className="badge">{kbToGb(Number(data['root./.free']))}</span>
             FS Free
           </li>
           <li className="list-group-item">
-            <span title="GB" className="badge">{bytesToGb(Number(data['root./.total']))}</span>
+            <span title="GB" className="badge">{kbToGb(Number(data['root./.total']))}</span>
             FS Total
           </li>
         </ul>

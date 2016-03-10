@@ -16,18 +16,13 @@ object AppBuild extends Build {
     base = file("."),
     settings = Defaults.coreDefaultSettings ++
       publishSettings ++
+      Deps.stats ++
       Seq(
         scalacOptions ++= Seq("-feature", "-deprecation"),
         fork := true,
         mainClass in (Compile, run) := Some(".stats.StatsApp"),
         cancelable in Global := true,
-        resolvers ++= List(Resolver.mavenLocal, Repo),
-        libraryDependencies ++=
-          Deps.akka ++
-          Deps.ftier ++
-          Deps.logging ++
-          Deps.json ++
-          Deps.test
+        resolvers ++= List(Resolver.mavenLocal, Repo)
       )
   )
 

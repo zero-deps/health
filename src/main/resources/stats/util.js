@@ -38,12 +38,12 @@ function nsToMs(ns) {
 
 function bytesToMb(bytes) {
   if (bytes === NaN) return NaN.toString();
-  return (bytes / 1024 / 1024).toFixed(1);
+  return (bytes / 1024 / 1024).toFixed(2);
 }
 
-function bytesToGb(bytes) {
+function kbToGb(bytes) {
   if (bytes === NaN) return NaN.toString();
-  return (bytes / 1024 / 1024 / 1024).toFixed(3);
+  return (bytes / 1024 / 1024).toFixed(2);
 }
 
 var nonEmpty = function(value) {

@@ -1,11 +1,6 @@
 package .stats
 
-import scala.language.postfixOps
-import akka.actor.{ActorRef,Actor,ActorLogging,Props,ActorSystem}
-import akka.cluster.Cluster
-import akka.cluster.ClusterEvent.CurrentClusterState
-import akka.cluster.metrics.{ClusterMetricsChanged, ClusterMetricsExtension, NodeMetrics}
-import akka.cluster.metrics.StandardMetrics.{Cpu, HeapMemory}
+import akka.actor._
 
 object MetricsListener {
   def init(implicit system:ActorSystem): Unit =
@@ -18,48 +13,51 @@ class MetricsListener extends Actor with ActorLogging {
     sys.props += ("java.library.path" -> (sys.props("java.library.path")+":native"))
 
   import context.system
+  import akka.cluster.Cluster
   val selfAddress = Cluster(system).selfAddress
-  val metrics = ClusterMetricsExtension(system)
-  val eventStream = system.eventStream
 
+  import scala.language.postfixOps
   import scala.concurrent.duration._
   import context.dispatcher
-  system.scheduler.schedule(5 seconds, 10 seconds) {
-    val rt = sys.runtime
-    eventStream.publish(StatsClient.Metric(selfAddress,"cpu.count",""+rt.availableProcessors))
-    eventStream.publish(StatsClient.Metric(selfAddress,"mem.free",""+rt.freeMemory))
-    eventStream.publish(StatsClient.Metric(selfAddress,"mem.max",""+rt.maxMemory))
-    eventStream.publish(StatsClient.Metric(selfAddress,"mem.total",""+rt.totalMemory))
-    eventStream.publish(StatsClient.Metric(selfAddress,"sys.uptime",""+system.uptime))
-    java.io.File.listRoots.map{ root =>
-      val path = root.getAbsolutePath
-      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.total",""+root.getTotalSpace))
-      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.free",""+root.getFreeSpace))
-      eventStream.publish(StatsClient.Metric(selfAddress,s"root.${path}.usable",""+root.getUsableSpace))
-    }
-  }
+  import org.hyperic.sigar._
+  val sigar = new Sigar
 
-  override def preStart(): Unit = metrics.subscribe(self)
-  override def postStop(): Unit = metrics.unsubscribe(self)
+  val scheduler = system.scheduler
+  val schedules = List(
+    // Uptime (seconds)
+    scheduler.schedule(1 second, 5 seconds) {
+      self ! ("sys.uptime"->system.uptime)
+    },
+    // CPU load ([0,1])
+    scheduler.schedule(1 second, 15 seconds) {
+      self ! ("cpu.load"->sigar.getCpuPerc.getCombined)
+    },
+    // Memory (bytes)
+    scheduler.schedule(1 second, 1 minute) {
+      self ! ("mem.used"->sigar.getMem.getActualUsed)
+      self ! ("mem.free"->sigar.getMem.getActualFree)
+      self ! ("mem.total"->sigar.getMem.getTotal)
+    },
+    // FS (KB)
+    scheduler.schedule(1 second, 1 hour) {
+      import scala.util._
+      Try(sigar.getFileSystemUsage("/")) match {
+        case Success(usage) =>
+          self ! ("root./.used"->usage.getUsed)
+          self ! ("root./.free"->usage.getFree)
+          self ! ("root./.total"->usage.getTotal)
+        case Failure(_) =>
+          self ! ("root./.used"->"--")
+          self ! ("root./.free"->"--")
+          self ! ("root./.total"->"--")
+      }
+    }
+  )
+
+  override def postStop(): Unit = schedules.map(_.cancel())
 
   def receive: Receive = {
-    case ClusterMetricsChanged(clusterMetrics) =>
-      clusterMetrics.filter(_.address == selfAddress) foreach { nodeMetrics =>
-        heap(nodeMetrics)
-        cpu(nodeMetrics)
-      }
-    case state: CurrentClusterState =>
-  }
-
-  def heap(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
-    case HeapMemory(address, _, used, _, _) =>
-      eventStream.publish(StatsClient.Metric(address,"mem.heap",""+used))
-    case _ =>
-  }
-
-  def cpu(nodeMetrics: NodeMetrics): Unit = nodeMetrics match {
-    case Cpu(address, _, Some(systemLoadAverage), _, _, _) =>
-      eventStream.publish(StatsClient.Metric(address,"cpu.load",""+systemLoadAverage))
-    case _ =>
+    case (param:String,value) =>
+      system.eventStream.publish(StatsClient.Metric(selfAddress,param,value.toString))
   }
 }
