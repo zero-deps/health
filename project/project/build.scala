@@ -1,4 +1,4 @@
-package akka.project
+package stats.project
 
 import sbt._
 import sbt.Keys._
