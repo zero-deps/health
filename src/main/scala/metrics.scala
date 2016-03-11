@@ -9,9 +9,12 @@ object MetricsListener {
 }
 
 class MetricsListener extends Actor with ActorLogging {
-  if (!sys.props("java.library.path").contains(":native"))
-    sys.props += ("java.library.path" -> (sys.props("java.library.path")+":native"))
-
+  { // Sigar loader
+    import org.slf4j.bridge.SLF4JBridgeHandler
+    SLF4JBridgeHandler.removeHandlersForRootLogger()
+    SLF4JBridgeHandler.install()
+    kamon.sigar.SigarProvisioner.provision()
+  }
   import context.system
   import akka.cluster.Cluster
   val selfAddress = Cluster(system).selfAddress
