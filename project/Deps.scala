@@ -15,6 +15,7 @@ object Deps {
     val slf4j = "1.7.18"
   }
 
+
   val stats = libraryDependencies ++= Seq(
     "com.." %% "ftier-ws" % Versions.ftier,
     "io.argonaut" %% "argonaut" % Versions.argonaut,
