@@ -17,6 +17,7 @@ object StatsClient {
       system.actorOf(Props(new StatsClient(new InetSocketAddress(host,port))))
     }
   }
+
 }
 
 class StatsClient(remote:InetSocketAddress) extends Actor with ActorLogging {
