@@ -26,13 +26,12 @@ object Deps {
     "org.slf4j" % "jul-to-slf4j" % Versions.slf4j // for sigar loader
   ) ++ test
 
-  val stats_client = Seq("io.argonaut" %% "argonaut" % Versions.argonaut,
+  val stats_client = Seq("io.argonaut" %% "argonaut" % Versions.argonaut % Provided,
     "io.kamon" % "sigar-loader" % Versions.sigarLoader,
-    ("com.typesafe.akka" %% "akka-slf4j" % Versions.akka).
-      exclude("org.slf4j", "slf4j-api"),
+    "com.typesafe.akka" %% "akka-slf4j" % Versions.akka % Provided,
     ("ch.qos.logback" % "logback-classic" % Versions.logback).
       exclude("org.slf4j", "slf4j-api"),
-    "com.typesafe.akka" %% "akka-cluster" % Versions.akka,
+    "com.typesafe.akka" %% "akka-cluster" % Versions.akka % Provided,
     "ch.qos.logback" % "logback-classic" % Versions.logback,
     "org.slf4j" % "jul-to-slf4j" % Versions.slf4j // for sigar loader
   )
