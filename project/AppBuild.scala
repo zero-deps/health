@@ -14,7 +14,7 @@ object AppBuild extends Build {
   lazy val stats = Project(
     id = "stats",
     base = file("."),
-    settings = Defaults.coreDefaultSettings ++
+    settings = defaultSettings ++
       publishSettings ++
       Deps.stats ++
       Seq(
@@ -23,7 +23,24 @@ object AppBuild extends Build {
         mainClass in (Compile, run) := Some(".stats.StatsApp"),
         cancelable in Global := true,
         resolvers ++= List(Resolver.mavenLocal, Repo)
+      ),
+    aggregate = Seq(client)
+  ).dependsOn(client)
+
+  lazy val client = Project(
+    id = "stats_client",
+    base = file("client"),
+    settings = defaultSettings ++
+      publishSettings ++
+      Seq(
+        libraryDependencies ++= Deps.stats_client ++ Deps.test
       )
+  )
+
+  lazy val defaultSettings = Defaults.coreDefaultSettings ++ Seq(
+    scalacOptions in Compile ++= Seq("-feature", "-deprecation", "-target:jvm-1.7"),
+    javacOptions in Compile ++= Seq("-source", "1.7", "-target", "1.7"),
+    resolvers ++= List(Resolver.mavenLocal, Repo)
   )
 
   lazy val publishSettings = List(
