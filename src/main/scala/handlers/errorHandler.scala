@@ -33,9 +33,7 @@ private[this] object errorHandler extends UdpHandler with SocketHandler with ByE
   private def strToError(str: String): Error = {
     str.split("::").toList match {
       case name :: node :: time :: message :: stackTracesXML =>
-        println(s"!!!!$stackTracesXML")
         val jsonString = stackTracesXML.mkString("::")
-        println(s"${jsonToStackTraces(jsonString)}")
         Error(name, node, if (time.trim.contains(" ")) Duration(time) else Duration(time + " ms"), message, if (jsonString eq "") List.empty else jsonToStackTraces(jsonString))
       case other => throw new IllegalArgumentException(str)
     }
