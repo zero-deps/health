@@ -7,9 +7,6 @@ import akka.io.{IO, Udp}
 import akka.util.ByteString
 import argonaut._
 import Argonaut._
-import scala.concurrent.duration._
-import org.hyperic.sigar._
-import scala.language.postfixOps
 
 object Client {
 
@@ -24,51 +21,6 @@ object Client {
     system.actorOf(props(new InetSocketAddress(remote, port)))
 
   def props(socket: InetSocketAddress): Props = Props(new Client(socket))
-
-  def scheduleHardwareStats(implicit system: ActorSystem) = {
-    import system.dispatcher
-    val config = system.settings.config
-    if (config.hasPath("stats.client.enabled") && config.getBoolean("stats.client.enabled")) {
-      val remote = config.getString("stats.client.remote.host")
-      val port = config.getInt("stats.client.remote.port")
-      val sigar = new Sigar
-      val mtr = create(remote, port)
-
-      val scheduler = system.scheduler
-      val schedules = List(
-        // Uptime (seconds)
-        scheduler.schedule(1 second, 5 seconds) {
-          mtr ! ("sys.uptime", system.uptime)
-        },
-        // CPU load ([0,1])
-        scheduler.schedule(1 second, 15 seconds) {
-          mtr ! ("cpu.load", sigar.getCpuPerc.getCombined)
-        },
-        // Memory (bytes)
-        scheduler.schedule(1 second, 1 minute) {
-          mtr ! ("mem.used", sigar.getMem.getActualUsed)
-          mtr ! ("mem.free", sigar.getMem.getActualFree)
-          mtr ! ("mem.total", sigar.getMem.getTotal)
-        },
-        // FS (KB)
-        scheduler.schedule(1 second, 1 hour) {
-          import scala.util._
-          Try(sigar.getFileSystemUsage("/")) match {
-            case Success(usage) =>
-              mtr ! ("root./.used", usage.getUsed)
-              mtr ! ("root./.free", usage.getFree)
-              mtr ! ("root./.total", usage.getTotal)
-            case Failure(_) =>
-              mtr ! ("root./.used", "--")
-              mtr ! ("root./.free", "--")
-              mtr ! ("root./.total", "--")
-          }
-        })
-
-    } else {
-      system.log.warning("Stats are disabled, no hardware information will be send to stats server.")
-    }
-  }
 
   def measure[R](name:String)(block: => R)(implicit system: ActorSystem): R ={
     val config = system.settings.config
@@ -117,12 +69,6 @@ class Client(remote: InetSocketAddress) extends Actor {
   private val host = selfAddress.host.getOrElse("")
   private val port = selfAddress.port.getOrElse("")
 
-  { // Sigar loader
-    import org.slf4j.bridge.SLF4JBridgeHandler
-    SLF4JBridgeHandler.removeHandlersForRootLogger()
-    SLF4JBridgeHandler.install()
-    kamon.sigar.SigarProvisioner.provision()
-  }
 
   IO(Udp) ! Udp.SimpleSender
 
@@ -150,6 +96,8 @@ class Client(remote: InetSocketAddress) extends Actor {
       send(udp)("history" :: casino :: user :: message :: Nil)
 
     case "die" => context.stop(self)
+
+    case x => system.log.warning(s"unexpected message $x")
 
   }
 

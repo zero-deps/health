@@ -18,12 +18,10 @@ object Deps {
   val stats = libraryDependencies ++= Seq(
     "com.." %% "ftier-ws" % Versions.ftier,
     "io.argonaut" %% "argonaut" % Versions.argonaut,
-    "io.kamon" % "sigar-loader" % Versions.sigarLoader,
     ("com.typesafe.akka" %% "akka-slf4j" % Versions.akka).
       exclude("org.slf4j", "slf4j-api"),
     ("ch.qos.logback" % "logback-classic" % Versions.logback).
-      exclude("org.slf4j", "slf4j-api"),
-    "org.slf4j" % "jul-to-slf4j" % Versions.slf4j // for sigar loader
+      exclude("org.slf4j", "slf4j-api")
   ) ++ test
 
   val stats_client = Seq("io.argonaut" %% "argonaut" % Versions.argonaut % Provided,
