@@ -4,12 +4,12 @@ package client
 import akka.actor.{ActorRef, ActorSystem, ExtendedActorSystem, Extension, ExtensionKey}
 
 
-object ClientExtension extends ExtensionKey[ClientExtension] {
-  override def lookup = ClientExtension
-  override def createExtension(system: ExtendedActorSystem): ClientExtension = new ClientExtension()(system)
+object Stats extends ExtensionKey[Stats] {
+  override def lookup = Stats
+  override def createExtension(system: ExtendedActorSystem): Stats = new Stats()(system)
 }
 
-class ClientExtension(implicit system: ActorSystem) extends Extension {
+class Stats(implicit system: ActorSystem) extends Extension {
   import system.dispatcher
   import scala.concurrent.duration._
   import org.hyperic.sigar._

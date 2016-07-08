@@ -11,6 +11,6 @@ class Logger extends Actor {
     case msg: InitializeLogger =>
       sender ! Logging.loggerInitialized()
     case event @ Error(cause, logSource, logClass, message) =>
-      ClientExtension(context.system).send(cause)
+      Stats(context.system).send(cause)
   }
 }
