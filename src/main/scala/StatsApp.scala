@@ -18,7 +18,4 @@ object StatsApp extends App {
   Flows.saveDataFromUdp.run()
 
   ws.bindAndHandle
-
-  StatsClient.init
-  MetricsListener.init
 }
