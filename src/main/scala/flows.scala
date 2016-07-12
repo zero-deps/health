@@ -45,6 +45,8 @@ object Flows {
       import GraphDSL.Implicits._
 
       val udpPublisher = Source.actorPublisher(UdpListener.props)
+      val convertUdpMsg = Flow[String] map { msg => handler.udpMessage(msg) } collect { case Success(x) => x }
+
       val saveToKvs = Flow[Data] map { data =>
         handler.saveToKvs(kvs)(data)
         data
@@ -53,7 +55,7 @@ object Flows {
         system.eventStream.publish(SourceMsg(data))
       }
 
-      udpPublisher ~> logIn[Data] ~> saveToKvs ~> publishEvent
+      udpPublisher ~> logIn ~> convertUdpMsg ~> saveToKvs ~> publishEvent
 
       ClosedShape
     })

@@ -10,20 +10,17 @@ import akka.stream.actor.ActorPublisherMessage._
 import scala.collection.mutable
 import scala.concurrent.duration.Duration
 import handlers._
+import scala.util.Failure
 
 object UdpListener {
-  case object QueueUpdated
-
   def props: Props = Props(classOf[UdpListener])
 }
 
-class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
+class UdpListener extends ActorPublisher[String] with Actor with ActorLogging {
   import context.system
   import UdpListener._
 
-  val MaxBufferSize = 50
-  val queue = mutable.Queue[Data]()
-  var queueUpdated = false;
+  var buf = Vector.empty[String]
 
   val config = system.settings.config
   val hostname = config.getString("hostname")
@@ -44,33 +41,36 @@ class UdpListener extends ActorPublisher[Data] with Actor with ActorLogging {
     case Udp.Received(data, _) =>
       val decoded = data.decodeString("UTF-8")
       log.debug(s"Received: $decoded")
-      handler.udpMessage(decoded) map { message =>
-        if (queue.size == MaxBufferSize) queue.dequeue()
-        queue += message
-        if (!queueUpdated) {
-          queueUpdated = true
-          self ! QueueUpdated
-        }
+
+      if (buf.isEmpty && totalDemand > 0)
+        onNext(decoded)
+      else {
+        buf :+= decoded
+        deliverBuf()
       }
+
     case "close" =>
       socket ! Udp.Unbind
     case Udp.Unbound =>
       context.stop(self)
-    case QueueUpdated => deliver()
-    case Request(amount) => deliver()
+    case Request(_) => deliverBuf()
     case Cancel => {
       log.info(s"publisher canceled $this")
       context.stop(self)
     }
   }
 
-  @tailrec final def deliver(): Unit = {
-    if (totalDemand == 0) log.debug(s"No more demand for: $this")
-    if (queue.size == 0 && totalDemand != 0) {
-      queueUpdated = false
-    } else if (totalDemand > 0 && queue.size > 0) {
-      onNext(queue.dequeue())
-      deliver()
+  @tailrec final def deliverBuf(): Unit =
+    if (totalDemand > 0) {
+      if (totalDemand <= Int.MaxValue) {
+        val (use, keep) = buf.splitAt(totalDemand.toInt)
+        buf = keep
+        use foreach onNext
+      } else {
+        val (use, keep) = buf.splitAt(Int.MaxValue)
+        buf = keep
+        use foreach onNext
+        deliverBuf()
+      }
     }
-  }
 }
