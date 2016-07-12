@@ -23,41 +23,18 @@ object Client {
   def props(socket: InetSocketAddress): Props = Props(new Client(socket))
 
   def measure[R](name:String)(block: => R)(implicit system: ActorSystem): R ={
-    val config = system.settings.config
-    if (config.hasPath("stats.client.enabled") && config.getBoolean("stats.client.enabled")) {
-      val remote = config.getString("stats.client.remote.host")
-      val port = config.getInt("stats.client.remote.port")
-      val mtr = create(remote, port)
-      val t0 = System.nanoTime()
-      val result = block
-      val t1 = System.nanoTime()
-      mtr ! (name, t1-t0)
-      mtr ! "die"
-      result
-    } else block
+    val t0 = System.nanoTime()
+    val result = block
+    val t1 = System.nanoTime()
+    Stats(system).send((name, t1-t0))
+    result
   }
 
   def history(casino: String, user: String, message: String)(implicit system: ActorSystem) = {
-    val config = system.settings.config
-    if (config.hasPath("stats.client.enabled") && config.getBoolean("stats.client.enabled")) {
-      val remote = config.getString("stats.client.remote.host")
-      val port = config.getInt("stats.client.remote.port")
-      val mtr = create(remote, port)
-      mtr ! (casino, user, message)
-      mtr ! "die"
-    }
+    Stats(system).send((casino, user, message))
   }
 
-  def error(e: Throwable)(implicit system: ActorSystem) = {
-    val config = system.settings.config
-    if (config.hasPath("stats.client.enabled") && config.getBoolean("stats.client.enabled")) {
-      val remote = config.getString("stats.client.remote.host")
-      val port = config.getInt("stats.client.remote.port")
-      val mtr = create(remote, port)
-      mtr ! e
-      mtr ! "die"
-    }
-  }
+  def error(e: Throwable)(implicit system: ActorSystem) = Stats(system).send(e)
 
 }
 
