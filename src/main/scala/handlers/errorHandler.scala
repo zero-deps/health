@@ -28,7 +28,7 @@ private[this] object errorHandler extends UdpHandler with SocketHandler with ByE
   private def jsonToStackTraces(json: String): List[ErrorElement] = json.decodeOption[List[ErrorElement]].getOrElse(Nil)
 
   private def errorToString(error: Error): String =
-    s"${error.name}::${error.node}::${error.time.toMillis}::${error.message}" + { stackTracesToJson(error.stackTraces) map { "::" + _.toString } getOrElse "" }
+    s"${error.name}::${error.node}::${error.time.toMillis}::${error.message}" + { stackTracesToJson(error.stackTraces) map { _.toString } getOrElse "" }
 
   private def strToError(str: String): Error = {
     str.split("::").toList match {
