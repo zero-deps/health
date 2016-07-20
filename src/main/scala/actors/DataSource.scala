@@ -2,7 +2,7 @@ package .stats
 package actors
 
 import scalaz._
-import akka.actor.{ActorLogging, Actor, Props}
+import akka.actor.{ ActorLogging, Actor, Props }
 import akka.stream.actor.ActorPublisher
 import scala.collection.mutable
 import scala.annotation.tailrec
@@ -23,39 +23,40 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   override def postStop: Unit = system.eventStream.unsubscribe(self)
 
   val kvsActor = context.actorOf(KvsActor.props(kvs))
-  val MaxBufferSize = 50
-  val queue = mutable.Queue[Data]()
-  var queueUpdated = false;
+  val MaxBufferSize = 1000
+  var buf = Vector.empty[Data]
 
-  kvsActor ! KvsActor.REQ.GetHistory(count=1000)
-  kvsActor ! KvsActor.REQ.GetErrors(count=1000)
-  kvsActor ! KvsActor.REQ.GetMetrcis(count=0)
+  kvsActor ! KvsActor.REQ.GetHistory(count = 1000)
+  kvsActor ! KvsActor.REQ.GetErrors(count = 1000)
+  kvsActor ! KvsActor.REQ.GetMetrcis(count = 0)
 
   def receive: Receive = {
     case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }
-    case _:KvsActor.RES.Error => log.debug("No data")
-    case SourceMsg(data) => publishData(data)
-    case QueueUpdated => deliver()
-    case Request(amount) => deliver()
+    case _: KvsActor.RES.Error => log.debug("No data")
+    case SourceMsg(data) =>
+      if (buf.isEmpty && totalDemand > 0)
+        onNext(data)
+      else {
+        buf :+= data
+        deliverBuf()
+      }
+    case Request(_) => deliverBuf()
     case Cancel =>
       log.debug(s"publisher canceled $this")
       context.stop(self)
   }
 
-  private def publishData(data: Data) = {
-    if (queue.size == MaxBufferSize) queue.dequeue()
-    queue += data
-    if (!queueUpdated) {
-      queueUpdated = true
-      self ! QueueUpdated
+  @tailrec final def deliverBuf(): Unit =
+    if (totalDemand > 0) {
+      if (totalDemand <= Int.MaxValue) {
+        val (use, keep) = buf.splitAt(totalDemand.toInt)
+        buf = keep
+        use foreach onNext
+      } else {
+        val (use, keep) = buf.splitAt(Int.MaxValue)
+        buf = keep
+        use foreach onNext
+        deliverBuf()
+      }
     }
-  }
-  @tailrec final def deliver(): Unit = {
-    if (totalDemand == 0) log.debug(s"No more demand for: $this")
-    else if (queue.isEmpty && totalDemand != 0) queueUpdated = false
-    else if (totalDemand > 0 && queue.nonEmpty) {
-      onNext(queue.dequeue())
-      deliver()
-    }
-  }
 }

@@ -3,12 +3,8 @@ package handlers
 
 import scala.concurrent.duration.Duration
 import api._
-import .stats.{ Metric, Data }
 import scala.util.Try
-import .kvs.Kvs
-import scala.util.Failure
-import .kvs.handle.`package`.En
-import scala.util.Success
+import .kvs.handle.En
 
 private[this] object metricHandler extends UdpHandler with SocketHandler with ByEnHandler[Metric] with KvsHandlerTyped[Metric] {
   object UdpMessage {

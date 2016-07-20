@@ -32,7 +32,10 @@ class Stats(implicit system: ActorSystem) extends Extension {
                } else None
 
 
-  def send (m : Any ) = client map ( _ ! m)
+  def send (m : Any ) = client match {
+    case Some(c) => c ! m
+    case None =>
+  }
 
 
   if(enabled){

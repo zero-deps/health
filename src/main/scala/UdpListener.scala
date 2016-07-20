@@ -21,6 +21,7 @@ class UdpListener extends ActorPublisher[String] with Actor with ActorLogging {
   import UdpListener._
 
   var buf = Vector.empty[String]
+  val MaxBufferSize = 10000
 
   val config = system.settings.config
   val hostname = config.getString("hostname")
@@ -34,7 +35,7 @@ class UdpListener extends ActorPublisher[String] with Actor with ActorLogging {
     case msg @ Udp.Bound(_) =>
       log.info(s"Received Udp.Bound: $msg...")
       val socket = sender
-      context become (ready(sender))
+      context become ready(sender)
   }
 
   def ready(socket: ActorRef): Receive = {
