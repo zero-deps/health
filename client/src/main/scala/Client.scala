@@ -20,7 +20,7 @@ object Client {
   final def create(remote: String, port: Int)(implicit system: ActorSystem): ActorRef =
     system.actorOf(props(new InetSocketAddress(remote, port)))
 
-  def props(socket: InetSocketAddress): Props = Props(new Client(socket))
+  def props(socket: InetSocketAddress): Props = Props(classOf[Client],socket)
 
   def measure[R](name:String)(block: => R)(implicit system: ActorSystem): R ={
     val t0 = System.nanoTime()
