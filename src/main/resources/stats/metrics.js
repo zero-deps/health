@@ -102,19 +102,6 @@ var Nodes = function () {
               React.createElement(
                 'div',
                 { className: 'row' },
-                (() => {
-                  var xs = data[details.name][details.node]['param'];
-                  if (Object.keys(xs).some(x => x.startsWith('service.'))) return React.createElement(
-                    'div',
-                    { className: 'col-lg-6' },
-                    React.createElement(
-                      'h4',
-                      null,
-                      'Services'
-                    ),
-                    React.createElement(Services, { data: data[details.name][details.node]['param'] })
-                  );
-                })(),
                 React.createElement(
                   'div',
                   { className: 'col-lg-6' },
@@ -123,7 +110,7 @@ var Nodes = function () {
                     null,
                     'Metrics'
                   ),
-                  React.createElement(Metrics, { data: data[details.name][details.node]['param'] })
+                  React.createElement(Metrics, { data: data[details.name][details.node]['param'], name: details.name, node: details.node })
                 )
               )
             );
@@ -270,122 +257,132 @@ var Nodes = function () {
     }
   });
 
-  var Services = React.createClass({
-    displayName: 'Services',
-
-    service: function (id, name) {
-      var x = this.props.data["service." + id];
-      var liClass = 'list-group-item' + (x === undefined ? ' disabled' : '') + (x === 'started' ? ' list-group-item-success' : '') + (x === 'stopped' ? ' list-group-item-danger' : '');
-      return React.createElement(
-        'li',
-        { className: liClass },
-        React.createElement(
-          'span',
-          { title: 'Δ (ms)', className: 'badge' },
-          nsToMs(Number(x))
-        ),
-        name
-      );
-    },
-    render: function () {
-      return React.createElement(
-        'ul',
-        { className: 'list-group' },
-        this.service('geoip', 'GeoIP'),
-        this.service('favorite', 'Favorite')
-      );
-    }
-  });
-
   var Metrics = React.createClass({
     displayName: 'Metrics',
 
     render: function () {
       var data = this.props.data;
+      var cpu_val = Math.round(+(data['cpu.load'] * 100));
+      var mem_val = Math.round(+(data['mem.used'] / data['mem.total'] * 100));
+      var fs_val = Math.round(+(data['root./.used'] / data['root./.total'] * 100));
+
       return React.createElement(
-        'ul',
-        { className: 'list-group' },
+        'div',
+        null,
         React.createElement(
-          'li',
-          { className: 'list-group-item' },
-          React.createElement(
-            'span',
-            { className: 'badge' },
-            secToTimeInterval(Number(data['sys.uptime']))
-          ),
-          'Uptime'
+          'div',
+          null,
+          React.createElement(StatsGauge, { gauge_id: 'gauge_' + this.props.name + '_' + this.props.node, cpu_val: cpu_val, mem_val: mem_val, fs_val: fs_val })
         ),
         React.createElement(
-          'li',
-          { className: 'list-group-item' },
+          'ul',
+          { className: 'list-group' },
           React.createElement(
-            'span',
-            { title: '%', className: 'badge' },
-            (Number(data['cpu.load']) * 100).toFixed(2)
+            'li',
+            { className: 'list-group-item' },
+            React.createElement(
+              'span',
+              { className: 'badge' },
+              secToTimeInterval(Number(data['sys.uptime']))
+            ),
+            'Uptime'
           ),
-          'CPU Load'
-        ),
-        React.createElement(
-          'li',
-          { className: 'list-group-item' },
           React.createElement(
-            'span',
-            { title: 'MB', className: 'badge' },
-            bytesToMb(Number(data['mem.used']))
+            'li',
+            { className: 'list-group-item' },
+            React.createElement(
+              'span',
+              { title: 'MB', className: 'badge' },
+              bytesToMb(Number(data['mem.used']))
+            ),
+            'Memory Used'
           ),
-          'Memory Used'
-        ),
-        React.createElement(
-          'li',
-          { className: 'list-group-item' },
           React.createElement(
-            'span',
-            { title: 'MB', className: 'badge' },
-            bytesToMb(Number(data['mem.free']))
+            'li',
+            { className: 'list-group-item' },
+            React.createElement(
+              'span',
+              { title: 'MB', className: 'badge' },
+              bytesToMb(Number(data['mem.free']))
+            ),
+            'Memory Free'
           ),
-          'Memory Free'
-        ),
-        React.createElement(
-          'li',
-          { className: 'list-group-item' },
           React.createElement(
-            'span',
-            { title: 'MB', className: 'badge' },
-            bytesToMb(Number(data['mem.total']))
+            'li',
+            { className: 'list-group-item' },
+            React.createElement(
+              'span',
+              { title: 'MB', className: 'badge' },
+              bytesToMb(Number(data['mem.total']))
+            ),
+            'Memory Total'
           ),
-          'Memory Total'
-        ),
-        React.createElement(
-          'li',
-          { className: 'list-group-item' },
           React.createElement(
-            'span',
-            { title: 'GB', className: 'badge' },
-            kbToGb(Number(data['root./.used']))
+            'li',
+            { className: 'list-group-item' },
+            React.createElement(
+              'span',
+              { title: 'GB', className: 'badge' },
+              kbToGb(Number(data['root./.used']))
+            ),
+            'FS Used'
           ),
-          'FS Used'
-        ),
-        React.createElement(
-          'li',
-          { className: 'list-group-item' },
           React.createElement(
-            'span',
-            { title: 'GB', className: 'badge' },
-            kbToGb(Number(data['root./.free']))
+            'li',
+            { className: 'list-group-item' },
+            React.createElement(
+              'span',
+              { title: 'GB', className: 'badge' },
+              kbToGb(Number(data['root./.free']))
+            ),
+            'FS Free'
           ),
-          'FS Free'
-        ),
-        React.createElement(
-          'li',
-          { className: 'list-group-item' },
           React.createElement(
-            'span',
-            { title: 'GB', className: 'badge' },
-            kbToGb(Number(data['root./.total']))
-          ),
-          'FS Total'
+            'li',
+            { className: 'list-group-item' },
+            React.createElement(
+              'span',
+              { title: 'GB', className: 'badge' },
+              kbToGb(Number(data['root./.total']))
+            ),
+            'FS Total'
+          )
         )
       );
+    }
+  });
+
+  var StatsGauge = React.createClass({
+    displayName: 'StatsGauge',
+
+    getInitialState: function () {
+      var data = google.visualization.arrayToDataTable([['Label', 'Value'], ['Memory', 0], ['CPU', 0], ['FS', 0]]);
+
+      var max = +this.props.max;
+      var options = {
+        width: 400, height: 120,
+        redFrom: 90, redTo: 100,
+        yellowFrom: 75, yellowTo: 90,
+        minorTicks: 5
+      };
+      return { options: options, data: data, chart: null };
+    },
+    componentDidMount: function () {
+      var chart = new google.visualization.Gauge(document.getElementById(this.props.gauge_id));
+      this.setState({ chart: chart });
+      this.draw();
+    },
+    componentDidUpdate: function () {
+      this.draw();
+    },
+    draw: function () {
+      this.state.data.setValue(0, 1, this.props.mem_val);
+      this.state.data.setValue(1, 1, this.props.cpu_val);
+      this.state.data.setValue(2, 1, this.props.fs_val);
+      if (this.state.chart !== null) this.state.chart.draw(this.state.data, this.state.options);
+    },
+    render: function () {
+      return React.createElement('div', { id: this.props.gauge_id });
     }
   });
 

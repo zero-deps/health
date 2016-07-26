@@ -83,17 +83,9 @@ var Nodes = (function(){
                 </div>
               </div>
               <div className="row">
-                {(()=>{
-                var xs = data[details.name][details.node]['param'];
-                if (Object.keys(xs).some(x => x.startsWith('service.'))) return (
-                <div className="col-lg-6">
-                  <h4>Services</h4>
-                  <Services data={data[details.name][details.node]['param']} />
-                </div>
-                )})()}
                 <div className="col-lg-6">
                   <h4>Metrics</h4>
-                  <Metrics data={data[details.name][details.node]['param']} />
+                  <Metrics data={data[details.name][details.node]['param']} name={details.name} node={details.node} />
                 </div>
               </div>
             </div>
@@ -184,69 +176,88 @@ var Nodes = (function(){
     }
   });
 
-  var Services = React.createClass({
-    service: function(id,name) {
-      var x = this.props.data["service."+id];
-      var liClass = 'list-group-item'+
-        (x===undefined?' disabled':'')+
-        (x==='started'?' list-group-item-success':'')+
-        (x==='stopped'?' list-group-item-danger':'');
-      return (
-        <li className={liClass}>
-          <span title="Δ (ms)" className="badge">{nsToMs(Number(x))}</span>
-          {name}
-        </li>
-      )
-    },
-    render: function() {
-      return (
-        <ul className="list-group">
-          {this.service('geoip','GeoIP')}
-          {this.service('favorite','Favorite')}
-        </ul>
-      )
-    }
-  });
-
   var Metrics = React.createClass({
     render: function() {
       var data = this.props.data;
+            var cpu_val = Math.round(+(data['cpu.load']*100));
+            var mem_val = Math.round(+(data['mem.used'] / data['mem.total'] * 100));
+            var fs_val = Math.round(+(data['root./.used'] / data['root./.total'] * 100));
+
       return (
-        <ul className="list-group">
-          <li className="list-group-item">
-            <span className="badge">{secToTimeInterval(Number(data['sys.uptime']))}</span>
-            Uptime
-          </li>
-          <li className="list-group-item">
-            <span title="%" className="badge">{(Number(data['cpu.load'])*100).toFixed(2)}</span>
-            CPU Load
-          </li>
-          <li className="list-group-item">
-            <span title="MB" className="badge">{bytesToMb(Number(data['mem.used']))}</span>
-            Memory Used
-          </li>
-          <li className="list-group-item">
-            <span title="MB" className="badge">{bytesToMb(Number(data['mem.free']))}</span>
-            Memory Free
-          </li>
-          <li className="list-group-item">
-            <span title="MB" className="badge">{bytesToMb(Number(data['mem.total']))}</span>
-            Memory Total
-          </li>
-          <li className="list-group-item">
-            <span title="GB" className="badge">{kbToGb(Number(data['root./.used']))}</span>
-            FS Used
-          </li>
-          <li className="list-group-item">
-            <span title="GB" className="badge">{kbToGb(Number(data['root./.free']))}</span>
-            FS Free
-          </li>
-          <li className="list-group-item">
-            <span title="GB" className="badge">{kbToGb(Number(data['root./.total']))}</span>
-            FS Total
-          </li>
-        </ul>
+        <div>
+          <div>
+            <StatsGauge gauge_id={'gauge_'+this.props.name+'_'+this.props.node} cpu_val={cpu_val} mem_val={mem_val} fs_val={fs_val}   />
+          </div>
+          <ul className="list-group">
+            <li className="list-group-item">
+              <span className="badge">{secToTimeInterval(Number(data['sys.uptime']))}</span>
+              Uptime
+            </li>
+            <li className="list-group-item">
+              <span title="MB" className="badge">{bytesToMb(Number(data['mem.used']))}</span>
+              Memory Used
+            </li>
+            <li className="list-group-item">
+              <span title="MB" className="badge">{bytesToMb(Number(data['mem.free']))}</span>
+              Memory Free
+            </li>
+            <li className="list-group-item">
+              <span title="MB" className="badge">{bytesToMb(Number(data['mem.total']))}</span>
+              Memory Total
+            </li>
+            <li className="list-group-item">
+              <span title="GB" className="badge">{kbToGb(Number(data['root./.used']))}</span>
+              FS Used
+            </li>
+            <li className="list-group-item">
+              <span title="GB" className="badge">{kbToGb(Number(data['root./.free']))}</span>
+              FS Free
+            </li>
+            <li className="list-group-item">
+              <span title="GB" className="badge">{kbToGb(Number(data['root./.total']))}</span>
+              FS Total
+            </li>
+          </ul>
+        </div>
       );
+    }
+  });
+
+  var StatsGauge = React.createClass({
+    getInitialState: function() {
+      var data = google.visualization.arrayToDataTable([
+        ['Label', 'Value'],
+        ['Memory', 0],
+        ['CPU', 0],
+        ['FS', 0]
+      ]);
+
+      var max = +(this.props.max)
+      var options = {
+        width: 400, height: 120,
+        redFrom: 90, redTo: 100,
+        yellowFrom:75, yellowTo: 90,
+        minorTicks: 5
+      };
+      return {options:options,data:data,chart:null};
+    },
+    componentDidMount: function() {
+      var chart = new google.visualization.Gauge(document.getElementById(this.props.gauge_id));
+      this.setState({chart:chart});
+      this.draw();
+    },
+    componentDidUpdate: function() {
+      this.draw();
+    },
+    draw: function() {
+      this.state.data.setValue(0, 1, this.props.mem_val);
+      this.state.data.setValue(1, 1, this.props.cpu_val);
+      this.state.data.setValue(2, 1, this.props.fs_val);
+      if (this.state.chart !== null)
+        this.state.chart.draw(this.state.data,this.state.options);
+    },
+    render: function() {
+      return <div id={this.props.gauge_id}></div>;
     }
   });
 
