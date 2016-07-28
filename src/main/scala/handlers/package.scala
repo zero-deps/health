@@ -2,7 +2,7 @@ package .stats
 package handlers
 
 import scala.util.{ Failure, Success, Try }
-import .kvs.handle.`package`.En
+import .kvs.handle.En
 import .kvs.Kvs
 import .kvs.handle.EnHandler
 

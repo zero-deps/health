@@ -23,12 +23,12 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   override def postStop: Unit = system.eventStream.unsubscribe(self)
 
   val kvsActor = context.actorOf(KvsActor.props(kvs))
-  val MaxBufferSize = 1000
+  val MaxBufferSize = 10000
   var buf = Vector.empty[Data]
 
   kvsActor ! KvsActor.REQ.GetHistory(count = 1000)
   kvsActor ! KvsActor.REQ.GetErrors(count = 1000)
-  kvsActor ! KvsActor.REQ.GetMetrcis(count = 0)
+  kvsActor ! KvsActor.REQ.GetMetrcis(count = 1000)
 
   def receive: Receive = {
     case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }
