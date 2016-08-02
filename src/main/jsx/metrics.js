@@ -18,38 +18,19 @@ var Nodes = (function(){
         value: arr[4]
       }
     },
-    add: function(oldData,newItem) {
-      // copy old data
-      var result = {};
-      for (name of Object.keys(oldData)) {
-        result[name] = {};
-        for (node of Object.keys(oldData[name])) {
-          result[name][node] = {};
-          result[name][node]['time'] = oldData[name][node]['time'];
-          result[name][node]['param'] = {};
-          for (param of Object.keys(oldData[name][node]['param']))
-            result[name][node]['param'][param] = oldData[name][node]['param'][param];
-        }
-      }
-      // add new item
-      result[newItem.name] = result[newItem.name] || {};
-      result[newItem.name][newItem.node] = result[newItem.name][newItem.node] || {};
-      result[newItem.name][newItem.node]['param'] = result[newItem.name][newItem.node]['param'] || {};
-      result[newItem.name][newItem.node]['param'][newItem.param] = newItem.value;
-      result[newItem.name][newItem.node]['time'] = newItem.time;
-      return result;
-    },
     getInitialState: function() {
-      return {data:{},activeName:null,details:null}
+      return {data:[],activeName:null,details:null}
     },
     componentDidMount: function() {
       this.props.handlers.metric = function(msg) {
         if (this.isMounted()) {
-          var oldData = this.state.data;
+          var oldData = this.state.data || [];
           var newItem = this.parseItem(msg);
-          var data = this.add(oldData,newItem);
+          //var data = update(oldData, {$push: [newItem]}); TRY ordinary push
+          var data = oldData.push(newItem)
           var activeName = this.state.activeName !== null ? this.state.activeName : newItem.name;
-          this.setState({data:data,activeName:activeName})
+          var names = this.state.names || [];
+          this.setState({data:data,activeName:activeName, names: _.uniq(names.push(newItem.name)), newItem:newItem})
         }
       }.bind(this);
     },
@@ -60,37 +41,42 @@ var Nodes = (function(){
       this.setState({details:{name:this.state.activeName,node:node}})
     },
     render: function() {
-      var data = this.state.data;
-      var names = Object.keys(data);
       var el;
-      if (names.length === 0)
+      if (this.state.data.length === 0)
         el = <div className="alert alert-info">Please wait...</div>
       else {
         var activeName = this.state.activeName;
+        var activeData = _.groupBy( this.state.data, e => e.name)[activeName]
+        //calculate nodes here
         el =
           <div className="row">
             <div className="col-sm-6 col-md-5 col-lg-4">
-              <Tabs names={names} active={activeName} onChoose={this.handleChooseTab} />
-              <Table nameData={data[activeName]} onChooseRow={this.handleChooseRow} />
+              <Tabs names={this.state.names} active={activeName} onChoose={this.handleChooseTab} />
+              <Table nameData={activeData} onChooseRow={this.handleChooseRow} />
             </div>
             {(() => {
             var details = this.state.details;
-            if (details !== null) return (
-            <div className="col-sm-6 col-md-5 col-lg-8">
-              <div className="row">
-                <div className="col-xs-12">
-                  <h3 style={{marginTop:0}}>{details.name}@{details.node}</h3>
+            if (details !== null){
+              var activeData = _.groupBy( activeData, e => e.node)[details.node]
+              return (
+                <div className="col-sm-6 col-md-5 col-lg-8">
+                  <div className="row">
+                    <div className="col-xs-12">
+                      <h3 style={{marginTop:0}}>{details.name}@{details.node}</h3>
+                    </div>
+                  </div>
+                  <div className="row">
+                    <div className="col-lg-6">
+                      <h4>Metrics</h4>
+                      <Metrics data={activeData}
+                               name={details.name}
+                               node={details.node} />
+                    </div>
+                  </div>
                 </div>
-              </div>
-              <div className="row">
-                <div className="col-lg-6">
-                  <h4>Metrics</h4>
-                  <Metrics data={data[details.name][details.node]['param']} name={details.name} node={details.node} />
-                </div>
-              </div>
-            </div>
-            )})()}
+            )}})()}
           </div>
+
       }
       return <div className="col-xs-12">{el}</div>
     }
@@ -123,12 +109,16 @@ var Nodes = (function(){
   var Table = React.createClass({
     render: function() {
       var nameData = this.props.nameData;
-      var rows = Object.keys(nameData).map(function(node,i) {
-        return <Row node={node}
-                    nodeData={nameData[node]}
+      var groupedData = _.groupBy(nameData, data => data.node)
+      var rows = [];
+      _.forIn(groupedData, function(value, key) {
+        rows.push( <Row node={key}
+                    nodeData={groupedData[key]}
                     onChoose={this.props.onChooseRow}
-                    key={i} />
+                    />
+       );
       }.bind(this));
+
       var minWidth = {width:'1px'}
       return (
         <div className="table-responsive" style={{marginTop:'10px'}}>
@@ -146,6 +136,7 @@ var Nodes = (function(){
     }
   });
 
+
   var Row = React.createClass({
     componentDidMount: function() {
       this.timer = setInterval(this.tick, 1000);
@@ -160,7 +151,8 @@ var Nodes = (function(){
       this.props.onChoose(this.props.node);
     },
     render: function() {
-      var elapsed = Math.floor((new Date() - this.props.nodeData["time"]) / 1000);
+      var lastData =  this.props.nodeData[this.props.nodeData.length -1]
+      var elapsed = Math.floor((new Date() - lastData["time"]) / 1000);
       var active = elapsed < 5;
       return (
         <tr className={active ? "success" : "danger"} style={{cursor:'pointer'}} onClick={this.handleChoose}>
@@ -178,46 +170,34 @@ var Nodes = (function(){
 
   var Metrics = React.createClass({
     render: function() {
-      var data = this.props.data;
-            var cpu_val = Math.round(+(data['cpu.load']*100));
-            var mem_val = Math.round(+(data['mem.used'] / data['mem.total'] * 100));
-            var fs_val = Math.round(+(data['root./.used'] / data['root./.total'] * 100));
+      var lastData = this.props.data[this.props.data.length-1];
+      /*
+      var cpu_load = +(_.findLast(data, function(obj) {return obj.param == 'cpu.load';}).value);
+      var mem_total = +(_.findLast(data, function(obj) {return obj.param == 'mem.total';}).value);
+      var mem_used = +(_.findLast(data, function(obj) {return obj.param == 'mem.used';}).value);
+      var fs_total = +(_.findLast(data, function(obj) {return obj.param == 'root./.total';}).value);
+      var fs_used = +(_.findLast(data, function(obj) {return obj.param == 'root./.used';}).value);
+
+      var cpu_val = Math.round(cpu_load*100));
+      var mem_val = Math.round(mem_used / mem_total * 100));
+      var fs_val = Math.round(fs_used / fs_total * 100));*/
+
 
       return (
         <div>
-          <div>
-            <StatsGauge gauge_id={'gauge_'+this.props.name+'_'+this.props.node} cpu_val={cpu_val} mem_val={mem_val} fs_val={fs_val}   />
-          </div>
           <ul className="list-group">
             <li className="list-group-item">
               <span className="badge">{secToTimeInterval(Number(data['sys.uptime']))}</span>
               Uptime
             </li>
-            <li className="list-group-item">
-              <span title="MB" className="badge">{bytesToMb(Number(data['mem.used']))}</span>
-              Memory Used
-            </li>
-            <li className="list-group-item">
-              <span title="MB" className="badge">{bytesToMb(Number(data['mem.free']))}</span>
-              Memory Free
-            </li>
-            <li className="list-group-item">
-              <span title="MB" className="badge">{bytesToMb(Number(data['mem.total']))}</span>
-              Memory Total
-            </li>
-            <li className="list-group-item">
-              <span title="GB" className="badge">{kbToGb(Number(data['root./.used']))}</span>
-              FS Used
-            </li>
-            <li className="list-group-item">
-              <span title="GB" className="badge">{kbToGb(Number(data['root./.free']))}</span>
-              FS Free
-            </li>
-            <li className="list-group-item">
-              <span title="GB" className="badge">{kbToGb(Number(data['root./.total']))}</span>
-              FS Total
-            </li>
           </ul>
+          <div>
+            <StatsGauge gauge_id={'gauge_'+this.props.name+'_'+this.props.node} cpu_val={cpu_val} mem_val={mem_val} fs_val={fs_val}/>
+          </div>
+          <div>
+            <CpuChart cpu_id={'cpu_line_chart_'+this.props.name+'_'+this.props.node} cpu_val={cpu_val} time={data["time"]} />
+          </div>
+
         </div>
       );
     }
@@ -258,6 +238,43 @@ var Nodes = (function(){
     },
     render: function() {
       return <div id={this.props.gauge_id}></div>;
+    }
+  });
+
+  var CpuChart = React.createClass({
+    getInitialState: function() {
+
+      var data = new google.visualization.DataTable();
+        data.addColumn('date', 'Time');
+        data.addColumn('number', 'CPU');
+
+      var options = {
+        chart: {
+          title: 'CPU usage',
+          subtitle: 'in %'
+        },
+        width: 900,
+        height: 500
+      };
+      return {options:options,data:data,chart:null};
+    },
+
+    componentDidMount: function() {
+      var chart =  new google.charts.Line(document.getElementById(this.props.cpu_id));
+      this.setState({chart:chart});
+      this.draw();
+    },
+    componentDidUpdate: function() {
+      this.draw();
+    },
+    draw: function() {
+
+      this.state.data.addRows([[new Date(this.props.time / 1000), this.props.cpu_val]] );
+      if (this.state.chart !== null)
+        this.state.chart.draw(this.state.data,this.state.options);
+    },
+    render: function() {
+      return <div id={this.props.cpu_id}></div>;
     }
   });
 
