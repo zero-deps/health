@@ -1,7 +1,6 @@
 package .stats
 package handlers
 
-import scala.concurrent.duration.Duration
 import api._
 import scala.util.Try
 import .kvs.handle.En
@@ -10,7 +9,7 @@ private[this] object metricHandler extends UdpHandler with SocketHandler with By
   object UdpMessage {
     def unapply(str: String): Option[Metric] =
       str.split("::").toList match {
-        case "metric" :: name :: node :: param :: value :: Nil => Some(Metric(name, node, param, Duration(s"${System.currentTimeMillis} ms"), value))
+        case "metric" :: name :: node :: param :: value :: Nil => Some(Metric(name, node, param, System.currentTimeMillis.toString, value))
         case other => None
       }
   }
@@ -20,7 +19,7 @@ private[this] object metricHandler extends UdpHandler with SocketHandler with By
   protected def kvsFilter(data: Data) = Some(data) filter { _.isInstanceOf[Metric] } map { _.asInstanceOf[Metric] }
 
   override val socketMsg: PartialFunction[Data, Try[String]] = {
-    case Metric(name, node, param, time, value) => Try { s"metric::${name}::${node}::${param}::${time.toMillis}::${value}" }
+    case Metric(name, node, param, time, value) => Try { s"metric::${name}::${node}::${param}::${time}::${value}" }
   }
 
   override val udpMessage: PartialFunction[String, Try[Data]] = {
@@ -30,7 +29,7 @@ private[this] object metricHandler extends UdpHandler with SocketHandler with By
   def serialize(metric: Metric) = s"${metric.name}::${metric.node}::${metric.param}::${metric.time}::${metric.value}"
   def deSerialize(str: String) = str.split("::").toList match {
     case name :: node :: param :: time :: value :: Nil =>
-      Metric(name, node, param, Duration(time), value)
+      Metric(name, node, param, time, value)
     case _ => throw new IllegalArgumentException(str)
   }
 

@@ -18,8 +18,7 @@ package object stats {
   }
 
   case class History(casino: String, user: String, time: Duration, action: String) extends Data
-  //TODO why duration??
-  case class Metric(name: String, node: String, param: String, time: Duration, value: String) extends Data
+  case class Metric(name: String, node: String, param: String, time: String, value: String) extends Data
   case class ErrorElement(className: String, method: String, fileName: String, lineNumber: Int)
   case class Error(name: String, node: String, time: Duration, message: String, stackTraces: List[ErrorElement]) extends Data
 
