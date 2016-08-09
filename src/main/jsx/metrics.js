@@ -19,18 +19,16 @@ var Nodes = (function(){
       }
     },
     getInitialState: function() {
-      return {data:[],activeName:null,details:null}
+      return {data: [],activeName:null,details:null, names: new Set()}
     },
     componentDidMount: function() {
       this.props.handlers.metric = function(msg) {
         if (this.isMounted()) {
-          var oldData = this.state.data || [];
           var newItem = this.parseItem(msg);
-          //var data = update(oldData, {$push: [newItem]}); TRY ordinary push
-          var data = oldData.push(newItem)
+          this.state.data.push(newItem);
           var activeName = this.state.activeName !== null ? this.state.activeName : newItem.name;
-          var names = this.state.names || [];
-          this.setState({data:data,activeName:activeName, names: _.uniq(names.push(newItem.name)), newItem:newItem})
+          this.state.names.add(newItem.name);
+          this.setState({activeName:activeName, newItem:newItem})
         }
       }.bind(this);
     },
@@ -46,18 +44,17 @@ var Nodes = (function(){
         el = <div className="alert alert-info">Please wait...</div>
       else {
         var activeName = this.state.activeName;
-        var activeData = _.groupBy( this.state.data, e => e.name)[activeName]
-        //calculate nodes here
+        var activeSystemData = _.groupBy( this.state.data, e => e.name)[activeName];
         el =
           <div className="row">
             <div className="col-sm-6 col-md-5 col-lg-4">
-              <Tabs names={this.state.names} active={activeName} onChoose={this.handleChooseTab} />
-              <Table nameData={activeData} onChooseRow={this.handleChooseRow} />
+              <Tabs names={Array.from(this.state.names)} active={activeName} onChoose={this.handleChooseTab} />
+              <Table nameData={activeSystemData} onChooseRow={this.handleChooseRow} />
             </div>
             {(() => {
             var details = this.state.details;
             if (details !== null){
-              var activeData = _.groupBy( activeData, e => e.node)[details.node]
+              var activeNodeData = _.groupBy( activeSystemData, e => e.node)[details.node]
               return (
                 <div className="col-sm-6 col-md-5 col-lg-8">
                   <div className="row">
@@ -68,7 +65,7 @@ var Nodes = (function(){
                   <div className="row">
                     <div className="col-lg-6">
                       <h4>Metrics</h4>
-                      <Metrics data={activeData}
+                      <Metrics data={activeNodeData}
                                name={details.name}
                                node={details.node} />
                     </div>
@@ -170,34 +167,39 @@ var Nodes = (function(){
 
   var Metrics = React.createClass({
     render: function() {
-      var lastData = this.props.data[this.props.data.length-1];
-      /*
-      var cpu_load = +(_.findLast(data, function(obj) {return obj.param == 'cpu.load';}).value);
-      var mem_total = +(_.findLast(data, function(obj) {return obj.param == 'mem.total';}).value);
-      var mem_used = +(_.findLast(data, function(obj) {return obj.param == 'mem.used';}).value);
-      var fs_total = +(_.findLast(data, function(obj) {return obj.param == 'root./.total';}).value);
-      var fs_used = +(_.findLast(data, function(obj) {return obj.param == 'root./.used';}).value);
+      var data = this.props.data
 
-      var cpu_val = Math.round(cpu_load*100));
-      var mem_val = Math.round(mem_used / mem_total * 100));
-      var fs_val = Math.round(fs_used / fs_total * 100));*/
+      var uptime = _.findLast(data, function(obj) {return obj.param == 'sys.uptime';});
 
+      var cpu = _.findLast(data, function(obj) {return obj.param == 'cpu.load';});
+
+      var memTotal = _.findLast(data, function(obj) {return obj.param == 'mem.total';});
+      var memUsed = _.findLast(data, function(obj) {return obj.param == 'mem.used';});
+
+      var fsTotal = _.findLast(data, function(obj) {return obj.param == 'root./.total';});
+      var fsUsed = _.findLast(data, function(obj) {return obj.param == 'root./.used';});
+
+      var cpuVal = cpu === undefined ? 0 : Math.round(cpu.value * 100);
+      var memVal = memTotal === undefined || memUsed === undefined || memTotal.value == 0 ? 0 : Math.round(memUsed.value / memTotal.value * 100);
+      var fsVal = fsTotal === undefined || fsUsed === undefined || fsTotal.value == 0 ? 0 : Math.round(fsUsed.value / fsTotal.value * 100);
+
+      var cpu = _.filter(data, function(stat) {return stat.param == 'cpu.load';});
+      var cpuData = _.map(cpu, function(e) {return [new Date(+e.time), Math.round(e.value * 100)];})
 
       return (
         <div>
           <ul className="list-group">
             <li className="list-group-item">
-              <span className="badge">{secToTimeInterval(Number(data['sys.uptime']))}</span>
+              <span className="badge">{secToTimeInterval(uptime === undefined ? 0 : uptime.value)}</span>
               Uptime
             </li>
           </ul>
           <div>
-            <StatsGauge gauge_id={'gauge_'+this.props.name+'_'+this.props.node} cpu_val={cpu_val} mem_val={mem_val} fs_val={fs_val}/>
+            <StatsGauge gauge_id={'gauge_'+this.props.name+'_'+this.props.node} cpu_val={cpuVal} mem_val={memVal} fs_val={fsVal}/>
           </div>
           <div>
-            <CpuChart cpu_id={'cpu_line_chart_'+this.props.name+'_'+this.props.node} cpu_val={cpu_val} time={data["time"]} />
+            <CpuChart cpu_id={'cpu_line_chart_'+this.props.name+'_'+this.props.node} cpuData={cpuData}/>
           </div>
-
         </div>
       );
     }
@@ -253,8 +255,8 @@ var Nodes = (function(){
           title: 'CPU usage',
           subtitle: 'in %'
         },
-        width: 900,
-        height: 500
+        width: 600,
+        height: 200
       };
       return {options:options,data:data,chart:null};
     },
@@ -268,10 +270,11 @@ var Nodes = (function(){
       this.draw();
     },
     draw: function() {
-
-      this.state.data.addRows([[new Date(this.props.time / 1000), this.props.cpu_val]] );
-      if (this.state.chart !== null)
-        this.state.chart.draw(this.state.data,this.state.options);
+      var nr = this.state.data.getNumberOfRows();
+      if ( this.props.cpuData.length > nr) {
+         this.state.data.insertRows(nr,  this.props.cpuData.slice(nr -1, this.props.cpuData.length))
+         if (this.state.chart !== null) this.state.chart.draw(this.state.data,this.state.options);
+      }
     },
     render: function() {
       return <div id={this.props.cpu_id}></div>;
