@@ -4,10 +4,6 @@ package handlers
 import scala.concurrent.duration.Duration
 import api._
 import scala.util.{ Try, Success, Failure }
-import .stats.{ ErrorElement, Data, Error }
-import .kvs.handle.En
-import scala.util.parsing.json._
-import scala.util.parsing.json.JSONArray
 import argonaut._, Argonaut._
 
 private[this] object errorHandler extends UdpHandler with SocketHandler with ByEnHandler[Error] with KvsHandlerTyped[Error] {

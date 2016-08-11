@@ -1,13 +1,11 @@
 package .stats
 
 import akka.http.scaladsl.model.HttpMethods.GET
-import akka.http.scaladsl.model.{ HttpRequest, HttpResponse, HttpEntity }
-import akka.http.scaladsl.model.HttpEntity.ChunkStreamPart
-import akka.http.scaladsl.model.StatusCodes.{NotFound,BadRequest}
-import akka.http.scaladsl.model.ws.UpgradeToWebsocket
+import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
+import akka.http.scaladsl.model.StatusCodes.BadRequest
+import akka.http.scaladsl.model.ws.UpgradeToWebSocket
 import .kvs.Kvs
 import ftier.ws._
-import akka.stream.scaladsl.StreamConverters
 import akka.actor.ExtendedActorSystem
 
 case class Route(implicit val system:ExtendedActorSystem,kvs:Kvs) extends RouteGrip[HttpRequest,HttpResponse] {
@@ -15,7 +13,7 @@ case class Route(implicit val system:ExtendedActorSystem,kvs:Kvs) extends RouteG
 
   val route:PartialFunction[HttpRequest,HttpResponse] = {
     case req@HttpRequest(GET,Path(Root/"stats"/"ws"),_,_,_) =>
-      req.header[UpgradeToWebsocket] match {
+      req.header[UpgradeToWebSocket] match {
         case Some(upg) =>
           log.debug(s"Run stream for websocket: $upg")
           upg.handleMessages(Flows.stats)

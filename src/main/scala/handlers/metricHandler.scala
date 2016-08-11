@@ -2,8 +2,9 @@ package .stats
 package handlers
 
 import api._
+import .kvs.handle.`package`.En
+
 import scala.util.Try
-import .kvs.handle.En
 
 private[this] object metricHandler extends UdpHandler with SocketHandler with ByEnHandler[Metric] with KvsHandlerTyped[Metric] {
   object UdpMessage {

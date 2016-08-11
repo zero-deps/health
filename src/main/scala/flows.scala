@@ -1,21 +1,19 @@
 package .stats
 
-import akka.actor.{ ActorRef, Props }
-import akka.http.scaladsl.model.ws.{ UpgradeToWebsocket, Message => WsMessage, TextMessage }
-import akka.http.scaladsl.model.ws.TextMessage.Strict
-import akka.http.scaladsl.model.HttpRequest
+import akka.NotUsed
+import akka.http.scaladsl.model.ws.{TextMessage, Message => WsMessage}
 import akka.stream.FlowShape
-import akka.stream.scaladsl.{ Flow, Source, Sink }
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import .kvs.Kvs
 import akka.stream.scaladsl.GraphDSL
 import akka.stream.scaladsl.RunnableGraph
 import akka.stream.ClosedShape
 import akka.actor.ActorSystem
-import akka.stream.OverflowStrategy
 import .stats.actors.DataSource
 import .kvs.handle._
 import .stats.actors.DataSource.SourceMsg
-import scala.util.{ Success, Try, Failure }
+
+import scala.util.Success
 
 object Flows {
   import handlers._
@@ -23,7 +21,7 @@ object Flows {
   def logIn[T](implicit system: ActorSystem) = Flow[T].map[T] { x => system.log.debug(s"IN: $x"); x }
   def logOut[T](implicit system: ActorSystem) = Flow[T].map[T] { x => system.log.debug(s"OUT: $x"); x }
 
-  def stats(implicit system:ActorSystem,kvs:Kvs): Flow[WsMessage, WsMessage, Unit] =
+  def stats(implicit system:ActorSystem,kvs:Kvs): Flow[WsMessage, WsMessage, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
 

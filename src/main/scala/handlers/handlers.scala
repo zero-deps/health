@@ -3,7 +3,7 @@ package handlers
 
 import api._
 import scala.util.Try
-import .kvs.handle.En
+import .kvs.handle.`package`.En
 import .kvs.Kvs
 import scala.util.Failure
 

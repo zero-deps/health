@@ -6,11 +6,11 @@ import sbt.Keys._
 object Deps {
   object Versions {
     val scala = "2.11.8"
-    val akka = "2.3.15"
-    val logback = "1.1.6"
-    val ftier = "0-210-g6357c5a"
+    val akka = "2.4.9-RC2"
+    val logback = "1.1.7"
+    val ftier = "0-223-g0c0991d"
     val scalaTest = "2.2.4"
-    val argonaut = "6.2-M2"
+    val argonaut = "6.2-M3"
     val sigarLoader = "1.6.6-rev002"
     val slf4j = "1.7.18"
   }

@@ -1,10 +1,8 @@
 package .stats
 package actors
 
-import scalaz._
 import akka.actor.{ ActorLogging, Actor, Props }
 import akka.stream.actor.ActorPublisher
-import scala.collection.mutable
 import scala.annotation.tailrec
 import akka.stream.actor.ActorPublisherMessage._
 import .kvs.Kvs
@@ -31,7 +29,10 @@ class DataSource(kvs: Kvs) extends ActorPublisher[Data] with Actor with ActorLog
   kvsActor ! KvsActor.REQ.GetMetrcis(count = 1000)
 
   def receive: Receive = {
-    case KvsActor.RES.DataList(list) => list.reverse map { x => self ! SourceMsg(x) }
+    case KvsActor.RES.DataList(list) =>
+      list.reverse map {
+        x => self ! SourceMsg(x)
+      }
     case _: KvsActor.RES.Error => log.debug("No data")
     case SourceMsg(data) =>
       if (buf.isEmpty && totalDemand > 0)

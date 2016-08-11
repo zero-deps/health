@@ -2,7 +2,7 @@ package .stats
 package handlers
 
 import scala.util.{ Failure, Success, Try }
-import .kvs.handle.En
+import .kvs.handle.`package`.En
 import .kvs.Kvs
 import .kvs.handle.EnHandler
 
@@ -37,7 +37,7 @@ object api {
 
     protected def kvsFilter(data: Data): Option[T]
 
-    protected def entry(data: T) = En[T](FID, java.util.UUID.randomUUID.toString, None, None, data)
+    protected def entry(data: T) = En[T](FID, java.util.UUID.randomUUID.toString, data)
 
     override def saveToKvs(kvs: Kvs) = {
       case data: Data if (kvsFilter(data).isDefined) =>
@@ -46,7 +46,7 @@ object api {
         val res = kvs.add(value)(handler)
         res fold (
           { l =>
-            Failure(new Exception(l.msg))
+            Failure(new Exception(l))
           },
           { r =>
             Success(En[Data](r.fid, r.id, r.prev, r.next, r.data))
@@ -56,7 +56,9 @@ object api {
     override def getFromKvs(kvs: Kvs) = {
       case (count, TYPE_ALIAS) =>
         kvs.entries(FID, None, count)(handler) fold (
-          {error => if (error.msg eq "not_found") Success(List.empty) else Failure(new Exception(error.msg))},
+          {error =>
+            if (error eq "not_found") Success(List.empty)
+            else Failure(new Exception(error))},
           entries => Success(entries map { _.data }))
     }
   }

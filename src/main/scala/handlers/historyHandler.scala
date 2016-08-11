@@ -3,9 +3,7 @@ package handlers
 
 import scala.concurrent.duration.Duration
 import api._
-import .stats.{ History, Data }
 import scala.util.Try
-import .kvs.handle.`package`.En
 
 private[this] object historyHandler extends UdpHandler with SocketHandler with ByEnHandler[History] with KvsHandlerTyped[History] {
   object UdpMessage {
