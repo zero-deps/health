@@ -8,7 +8,7 @@
 var Nodes = function () {
 
   var Nodes = React.createClass({
-    displayName: 'Nodes',
+    displayName: "Nodes",
 
     parseItem: function (rawData) {
       var arr = rawData.split('::');
@@ -20,37 +20,17 @@ var Nodes = function () {
         value: arr[4]
       };
     },
-    add: function (oldData, newItem) {
-      // copy old data
-      var result = {};
-      for (name of Object.keys(oldData)) {
-        result[name] = {};
-        for (node of Object.keys(oldData[name])) {
-          result[name][node] = {};
-          result[name][node]['time'] = oldData[name][node]['time'];
-          result[name][node]['param'] = {};
-          for (param of Object.keys(oldData[name][node]['param'])) result[name][node]['param'][param] = oldData[name][node]['param'][param];
-        }
-      }
-      // add new item
-      result[newItem.name] = result[newItem.name] || {};
-      result[newItem.name][newItem.node] = result[newItem.name][newItem.node] || {};
-      result[newItem.name][newItem.node]['param'] = result[newItem.name][newItem.node]['param'] || {};
-      result[newItem.name][newItem.node]['param'][newItem.param] = newItem.value;
-      result[newItem.name][newItem.node]['time'] = newItem.time;
-      return result;
-    },
     getInitialState: function () {
-      return { data: {}, activeName: null, details: null };
+      return { data: [], activeName: null, details: null, names: new Set() };
     },
     componentDidMount: function () {
       this.props.handlers.metric = function (msg) {
         if (this.isMounted()) {
-          var oldData = this.state.data;
           var newItem = this.parseItem(msg);
-          var data = this.add(oldData, newItem);
+          this.state.data.push(newItem);
           var activeName = this.state.activeName !== null ? this.state.activeName : newItem.name;
-          this.setState({ data: data, activeName: activeName });
+          this.state.names.add(newItem.name);
+          this.setState({ activeName: activeName, newItem: newItem });
         }
       }.bind(this);
     },
@@ -61,72 +41,76 @@ var Nodes = function () {
       this.setState({ details: { name: this.state.activeName, node: node } });
     },
     render: function () {
-      var data = this.state.data;
-      var names = Object.keys(data);
       var el;
-      if (names.length === 0) el = React.createElement(
-        'div',
-        { className: 'alert alert-info' },
-        'Please wait...'
+      if (this.state.data.length === 0) el = React.createElement(
+        "div",
+        { className: "alert alert-info" },
+        "Please wait..."
       );else {
         var activeName = this.state.activeName;
+        var activeSystemData = _.groupBy(this.state.data, e => e.name)[activeName];
         el = React.createElement(
-          'div',
-          { className: 'row' },
+          "div",
+          { className: "row" },
           React.createElement(
-            'div',
-            { className: 'col-sm-6 col-md-5 col-lg-4' },
-            React.createElement(Tabs, { names: names, active: activeName, onChoose: this.handleChooseTab }),
-            React.createElement(Table, { nameData: data[activeName], onChooseRow: this.handleChooseRow })
+            "div",
+            { className: "col-sm-6 col-md-5 col-lg-4" },
+            React.createElement(Tabs, { names: Array.from(this.state.names), active: activeName, onChoose: this.handleChooseTab }),
+            React.createElement(Table, { nameData: activeSystemData, onChooseRow: this.handleChooseRow })
           ),
           (() => {
             var details = this.state.details;
-            if (details !== null) return React.createElement(
-              'div',
-              { className: 'col-sm-6 col-md-5 col-lg-8' },
-              React.createElement(
-                'div',
-                { className: 'row' },
+            if (details !== null) {
+              var activeNodeData = _.groupBy(activeSystemData, e => e.node)[details.node];
+              return React.createElement(
+                "div",
+                { className: "col-sm-6 col-md-5 col-lg-8" },
                 React.createElement(
-                  'div',
-                  { className: 'col-xs-12' },
+                  "div",
+                  { className: "row" },
                   React.createElement(
-                    'h3',
-                    { style: { marginTop: 0 } },
-                    details.name,
-                    '@',
-                    details.node
+                    "div",
+                    { className: "col-xs-12" },
+                    React.createElement(
+                      "h3",
+                      { style: { marginTop: 0 } },
+                      details.name,
+                      "@",
+                      details.node
+                    )
+                  )
+                ),
+                React.createElement(
+                  "div",
+                  { className: "row" },
+                  React.createElement(
+                    "div",
+                    { className: "col-lg-6" },
+                    React.createElement(
+                      "h4",
+                      null,
+                      "Metrics"
+                    ),
+                    React.createElement(Metrics, { data: activeNodeData,
+                      name: details.name,
+                      node: details.node })
                   )
                 )
-              ),
-              React.createElement(
-                'div',
-                { className: 'row' },
-                React.createElement(
-                  'div',
-                  { className: 'col-lg-6' },
-                  React.createElement(
-                    'h4',
-                    null,
-                    'Metrics'
-                  ),
-                  React.createElement(Metrics, { data: data[details.name][details.node]['param'], name: details.name, node: details.node })
-                )
-              )
-            );
+              );
+            }
           })()
         );
       }
       return React.createElement(
-        'div',
-        { className: 'col-xs-12' },
+        "div",
+        { className: "col-xs-12" },
         el
       );
     }
   });
 
   var Tabs = React.createClass({
-    displayName: 'Tabs',
+    displayName: "Tabs",
 
     render: function () {
       var tabs = this.props.names.map(function (name, i) {
@@ -134,15 +118,15 @@ var Nodes = function () {
         return React.createElement(Tab, { name: name, active: active, onChoose: this.props.onChoose, key: i });
       }.bind(this));
       return React.createElement(
-        'ul',
-        { className: 'nav nav-pills' },
+        "ul",
+        { className: "nav nav-pills" },
         tabs
       );
     }
   });
 
   var Tab = React.createClass({
-    displayName: 'Tab',
+    displayName: "Tab",
 
     handleChoose: function () {
       this.props.onChoose(this);
@@ -150,11 +134,11 @@ var Nodes = function () {
     render: function () {
       var className = this.props.active ? 'active' : '';
       return React.createElement(
-        'li',
-        { role: 'presentation', className: className },
+        "li",
+        { role: "presentation", className: className },
         React.createElement(
-          'a',
-          { href: '#', onClick: this.handleChoose },
+          "a",
+          { href: "#", onClick: this.handleChoose },
           this.props.name
         )
       );
@@ -162,43 +146,46 @@ var Nodes = function () {
   });
 
   var Table = React.createClass({
-    displayName: 'Table',
+    displayName: "Table",
 
     render: function () {
       var nameData = this.props.nameData;
-      var rows = Object.keys(nameData).map(function (node, i) {
-        return React.createElement(Row, { node: node,
-          nodeData: nameData[node],
-          onChoose: this.props.onChooseRow,
-          key: i });
+      var groupedData = _.groupBy(nameData, data => data.node);
+      var rows = [];
+      _.forIn(groupedData, function (value, key) {
+        rows.push(React.createElement(Row, { node: key,
+          nodeData: groupedData[key],
+          onChoose: this.props.onChooseRow
+        }));
       }.bind(this));
+
       var minWidth = { width: '1px' };
       return React.createElement(
-        'div',
-        { className: 'table-responsive', style: { marginTop: '10px' } },
+        "div",
+        { className: "table-responsive", style: { marginTop: '10px' } },
         React.createElement(
-          'table',
-          { className: 'table' },
+          "table",
+          { className: "table" },
           React.createElement(
-            'thead',
+            "thead",
             null,
             React.createElement(
-              'tr',
+              "tr",
               null,
               React.createElement(
-                'th',
+                "th",
                 null,
-                'Node'
+                "Node"
               ),
               React.createElement(
-                'th',
+                "th",
                 { style: minWidth },
-                'Status'
+                "Status"
               )
             )
           ),
           React.createElement(
-            'tbody',
+            "tbody",
             null,
             rows
           )
@@ -208,7 +195,7 @@ var Nodes = function () {
   });
 
   var Row = React.createClass({
-    displayName: 'Row',
+    displayName: "Row",
 
     componentDidMount: function () {
       this.timer = setInterval(this.tick, 1000);
@@ -223,33 +210,34 @@ var Nodes = function () {
       this.props.onChoose(this.props.node);
     },
     render: function () {
-      var elapsed = Math.floor((new Date() - this.props.nodeData["time"]) / 1000);
+      var lastData = this.props.nodeData[this.props.nodeData.length - 1];
+      var elapsed = Math.floor((new Date() - lastData["time"]) / 1000);
       var active = elapsed < 5;
       return React.createElement(
-        'tr',
+        "tr",
         { className: active ? "success" : "danger", style: { cursor: 'pointer' }, onClick: this.handleChoose },
         React.createElement(
-          'td',
+          "td",
           null,
           this.props.node
         ),
         React.createElement(
-          'td',
+          "td",
           null,
           (() => {
             if (active) return React.createElement(
-              'div',
+              "div",
               { style: { textAlign: 'center' } },
-              'OK'
+              "OK"
             );else return React.createElement(
-              'div',
+              "div",
               null,
               React.createElement(
-                'span',
+                "span",
                 { style: { whiteSpace: 'nowrap' } },
                 secToTimeInterval(elapsed)
               ),
-              ' ago'
+              " ago"
             );
           })()
         )
@@ -258,102 +246,77 @@ var Nodes = function () {
   });
 
   var Metrics = React.createClass({
-    displayName: 'Metrics',
+    displayName: "Metrics",
 
     render: function () {
       var data = this.props.data;
-      var cpu_val = Math.round(+(data['cpu.load'] * 100));
-      var mem_val = Math.round(+(data['mem.used'] / data['mem.total'] * 100));
-      var fs_val = Math.round(+(data['root./.used'] / data['root./.total'] * 100));
+
+      var uptime = _.findLast(data, function (obj) {
+        return obj.param == 'sys.uptime';
+      });
+
+      var cpu = _.findLast(data, function (obj) {
+        return obj.param == 'cpu.load';
+      });
+
+      var memTotal = _.findLast(data, function (obj) {
+        return obj.param == 'mem.total';
+      });
+      var memUsed = _.findLast(data, function (obj) {
+        return obj.param == 'mem.used';
+      });
+
+      var fsTotal = _.findLast(data, function (obj) {
+        return obj.param == 'root./.total';
+      });
+      var fsUsed = _.findLast(data, function (obj) {
+        return obj.param == 'root./.used';
+      });
+
+      var cpuVal = cpu === undefined ? 0 : Math.round(cpu.value * 100);
+      var memVal = memTotal === undefined || memUsed === undefined || memTotal.value == 0 ? 0 : Math.round(memUsed.value / memTotal.value * 100);
+      var fsVal = fsTotal === undefined || fsUsed === undefined || fsTotal.value == 0 ? 0 : Math.round(fsUsed.value / fsTotal.value * 100);
+
+      var cpu = _.filter(data, function (stat) {
+        return stat.param == 'cpu.load';
+      });
+      var cpuData = _.map(cpu, function (e) {
+        return [new Date(+e.time), Math.round(e.value * 100)];
+      });
 
       return React.createElement(
-        'div',
+        "div",
         null,
         React.createElement(
-          'div',
-          null,
-          React.createElement(StatsGauge, { gauge_id: 'gauge_' + this.props.name + '_' + this.props.node, cpu_val: cpu_val, mem_val: mem_val, fs_val: fs_val })
+          "ul",
+          { className: "list-group" },
+          React.createElement(
+            "li",
+            { className: "list-group-item" },
+            React.createElement(
+              "span",
+              { className: "badge" },
+              secToTimeInterval(uptime === undefined ? 0 : uptime.value)
+            ),
+            "Uptime"
+          )
         ),
         React.createElement(
-          'ul',
-          { className: 'list-group' },
-          React.createElement(
-            'li',
-            { className: 'list-group-item' },
-            React.createElement(
-              'span',
-              { className: 'badge' },
-              secToTimeInterval(Number(data['sys.uptime']))
-            ),
-            'Uptime'
-          ),
-          React.createElement(
-            'li',
-            { className: 'list-group-item' },
-            React.createElement(
-              'span',
-              { title: 'MB', className: 'badge' },
-              bytesToMb(Number(data['mem.used']))
-            ),
-            'Memory Used'
-          ),
-          React.createElement(
-            'li',
-            { className: 'list-group-item' },
-            React.createElement(
-              'span',
-              { title: 'MB', className: 'badge' },
-              bytesToMb(Number(data['mem.free']))
-            ),
-            'Memory Free'
-          ),
-          React.createElement(
-            'li',
-            { className: 'list-group-item' },
-            React.createElement(
-              'span',
-              { title: 'MB', className: 'badge' },
-              bytesToMb(Number(data['mem.total']))
-            ),
-            'Memory Total'
-          ),
-          React.createElement(
-            'li',
-            { className: 'list-group-item' },
-            React.createElement(
-              'span',
-              { title: 'GB', className: 'badge' },
-              kbToGb(Number(data['root./.used']))
-            ),
-            'FS Used'
-          ),
-          React.createElement(
-            'li',
-            { className: 'list-group-item' },
-            React.createElement(
-              'span',
-              { title: 'GB', className: 'badge' },
-              kbToGb(Number(data['root./.free']))
-            ),
-            'FS Free'
-          ),
-          React.createElement(
-            'li',
-            { className: 'list-group-item' },
-            React.createElement(
-              'span',
-              { title: 'GB', className: 'badge' },
-              kbToGb(Number(data['root./.total']))
-            ),
-            'FS Total'
-          )
+          "div",
+          null,
+          React.createElement(StatsGauge, { gauge_id: 'gauge_' + this.props.name + '_' + this.props.node, cpu_val: cpuVal, mem_val: memVal, fs_val: fsVal })
+        ),
+        React.createElement(
+          "div",
+          null,
+          React.createElement(CpuChart, { cpu_id: 'cpu_line_chart_' + this.props.name + '_' + this.props.node, cpuData: cpuData })
         )
       );
     }
   });
 
   var StatsGauge = React.createClass({
-    displayName: 'StatsGauge',
+    displayName: "StatsGauge",
 
     getInitialState: function () {
       var data = google.visualization.arrayToDataTable([['Label', 'Value'], ['Memory', 0], ['CPU', 0], ['FS', 0]]);
@@ -382,7 +345,47 @@ var Nodes = function () {
       if (this.state.chart !== null) this.state.chart.draw(this.state.data, this.state.options);
     },
     render: function () {
-      return React.createElement('div', { id: this.props.gauge_id });
+      return React.createElement("div", { id: this.props.gauge_id });
+    }
+  });
+
+  var CpuChart = React.createClass({
+    displayName: "CpuChart",
+
+    getInitialState: function () {
+
+      var data = new google.visualization.DataTable();
+      data.addColumn('date', 'Time');
+      data.addColumn('number', 'CPU');
+
+      var options = {
+        chart: {
+          title: 'CPU usage',
+          subtitle: 'in %'
+        },
+        width: 600,
+        height: 200
+      };
+      return { options: options, data: data, chart: null };
+    },
+
+    componentDidMount: function () {
+      var chart = new google.charts.Line(document.getElementById(this.props.cpu_id));
+      this.setState({ chart: chart });
+      this.draw();
+    },
+    componentDidUpdate: function () {
+      this.draw();
+    },
+    draw: function () {
+      var nr = this.state.data.getNumberOfRows();
+      if (this.props.cpuData.length > nr) {
+        this.state.data.insertRows(nr, this.props.cpuData.slice(nr - 1, this.props.cpuData.length));
+        if (this.state.chart !== null) this.state.chart.draw(this.state.data, this.state.options);
+      }
+    },
+    render: function () {
+      return React.createElement("div", { id: this.props.cpu_id });
     }
   });
 
