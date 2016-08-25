@@ -6,7 +6,7 @@ import sbt.Keys._
 object Deps {
   object Versions {
     val scala = "2.11.8"
-    val akka = "2.4.9-RC2"
+    val akka = "2.4.9-10-g5573d26"
     val logback = "1.1.7"
     val ftier = "0-223-g0c0991d"
     val scalaTest = "2.2.4"
@@ -18,7 +18,7 @@ object Deps {
   val stats = libraryDependencies ++= Seq(
     "com.." %% "ftier-ws" % Versions.ftier,
     "io.argonaut" %% "argonaut" % Versions.argonaut,
-    ("com.typesafe.akka" %% "akka-slf4j" % Versions.akka).
+    ("com...akka" %% "akka-slf4j" % Versions.akka).
       exclude("org.slf4j", "slf4j-api"),
     ("ch.qos.logback" % "logback-classic" % Versions.logback).
       exclude("org.slf4j", "slf4j-api")
@@ -26,10 +26,10 @@ object Deps {
 
   val stats_client = Seq("io.argonaut" %% "argonaut" % Versions.argonaut % Provided,
     "io.kamon" % "sigar-loader" % Versions.sigarLoader,
-    "com.typesafe.akka" %% "akka-slf4j" % Versions.akka % Provided,
+    "com...akka" %% "akka-slf4j" % Versions.akka % Provided,
     ("ch.qos.logback" % "logback-classic" % Versions.logback).
       exclude("org.slf4j", "slf4j-api"),
-    "com.typesafe.akka" %% "akka-cluster" % Versions.akka % Provided,
+    "com...akka" %% "akka-cluster" % Versions.akka % Provided,
     "ch.qos.logback" % "logback-classic" % Versions.logback,
     "org.slf4j" % "jul-to-slf4j" % Versions.slf4j // for sigar loader
   )
@@ -37,6 +37,6 @@ object Deps {
 
   val test = Seq(
     "org.scalatest" %% "scalatest" % Versions.scalaTest,
-    "com.typesafe.akka" %% "akka-testkit" % Versions.akka
+    "com...akka" %% "akka-testkit" % Versions.akka
   ) map (_ % Test)
 }
