@@ -3,7 +3,7 @@ package stats
 import sbt.Keys._
 import sbt._
 
-object AppBuild extends Build {
+object Build extends sbt.Build {
 
   override lazy val settings = super.settings ++ Seq(
     organization := "com..",
@@ -38,14 +38,13 @@ object AppBuild extends Build {
   )
 
   lazy val defaultSettings = Defaults.coreDefaultSettings ++ Seq(
-    scalacOptions in Compile ++= Seq("-feature", "-deprecation", "-target:jvm-1.7"),
-    javacOptions in Compile ++= Seq("-source", "1.7", "-target", "1.7"),
+    scalacOptions in Compile ++= Seq("-feature","-deprecation"),
     resolvers ++= List(Resolver.mavenLocal, Repo)
   )
 
   lazy val publishSettings = List(
     publishTo := Some(Repo),
-    credentials += Credentials("Sonatype Nexus Repository Manager", "ua--nexus01.ee..corp", "wpl-deployer", "aG1reeshie"),
+    credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.mobile..com", "wpl-deployer", "aG1reeshie"),
     publishArtifact := true,
     publishArtifact in Compile := true,
     publishArtifact in Test := false,
@@ -55,5 +54,5 @@ object AppBuild extends Build {
     isSnapshot := true
   )
 
-  lazy val Repo = " Releases" at "http://ua--nexus01.ee..corp/nexus/content/repositories/releases"
+  lazy val Repo = " Releases" at "http://nexus.mobile..com/nexus/content/repositories/releases"
 }
