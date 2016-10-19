@@ -15,13 +15,8 @@ object Deps {
     val scalatest = "3.0.0"
   }
 
-  val argonaut = "com.." %% "argonaut" % Versions.argonaut cross CrossVersion.fullMapped {
-    case "2.12.0-RC2" => "2.11"
-    case x => x
-  }
-
   val stats_client = Seq(
-    argonaut % Provided,
+    "com.." %% "argonaut" % Versions.argonaut % Provided,
     "io.kamon" % "sigar-loader" % Versions.sigarLoader,
     "org.slf4j" % "jul-to-slf4j" % Versions.jul2slf4j, // for sigar loader
     "com...akka" %% "akka-cluster" % Versions.akka % Provided,
@@ -31,7 +26,7 @@ object Deps {
 
   val stats = libraryDependencies ++= Seq(
     "com.." %% "ftier-ws" % Versions.ftier,
-    argonaut
+    "com.." %% "argonaut" % Versions.argonaut
   ) ++ test
 
   val test = Seq(
