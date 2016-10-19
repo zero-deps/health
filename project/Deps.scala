@@ -9,13 +9,13 @@ object Deps {
     val akka = "2.4.11-19-g8520080"
     val logback = "1.1.7"
     val ftier = "0-236-g8a3356f"
-    val argonaut = "6.2-M3"
+    val argonaut = "6.2-M3-14-gbf4b286"
     val sigarLoader = "1.6.6-rev002"
     val jul2slf4j = "1.7.21"
     val scalatest = "3.0.0"
   }
 
-  val argonaut = "io.argonaut" %% "argonaut" % Versions.argonaut cross CrossVersion.fullMapped {
+  val argonaut = "com.." %% "argonaut" % Versions.argonaut cross CrossVersion.fullMapped {
     case "2.12.0-RC2" => "2.11"
     case x => x
   }
