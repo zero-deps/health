@@ -49,7 +49,7 @@ object api {
             Failure(new Exception(l))
           },
           { r =>
-            Success(En[Data](r.fid, r.id, r.prev, r.next, r.data))
+            Success(En[Data](r.fid, r.id, r.prev, r.data))
           })
     }
 
