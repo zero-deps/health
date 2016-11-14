@@ -33,7 +33,7 @@ object Build extends sbt.Build {
     settings = defaultSettings ++
       publishSettings ++
       Seq(
-        libraryDependencies ++= Deps.stats_client ++ Deps.test
+        libraryDependencies ++= Deps.stats_client
       )
   )
 
