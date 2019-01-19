@@ -1,7 +1,5 @@
-.idea/
-logs/
 target/
-native/
-storage/
 .DS_Store
-node_modules/
+/native/
+/rng_data_*/
+/logs/stats.log

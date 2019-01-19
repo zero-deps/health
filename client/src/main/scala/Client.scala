@@ -1,81 +1,42 @@
-package stats
-package client
+package .stats.client
 
 import java.net.InetSocketAddress
-import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.actor.{Actor, ActorRef, ActorLogging, Props}
 import akka.io.{IO, Udp}
 import akka.util.ByteString
-import argonaut._
-import Argonaut._
 
 object Client {
-
-  implicit def StackTraceEncodeJson: EncodeJson[StackTraceElement] =
-    EncodeJson((element: StackTraceElement) =>
-      ("className" := element.getClassName) ->:
-        ("method" := element.getMethodName) ->:
-        ("fileName" := element.getFileName) ->:
-        ("lineNumber" := element.getLineNumber) ->: jEmptyObject)
-
-  final def create(remote: String, port: Int)(implicit system: ActorSystem): ActorRef =
-    system.actorOf(props(new InetSocketAddress(remote, port)))
-
-  def props(socket: InetSocketAddress): Props = Props(classOf[Client],socket)
-
-  def measure[R](name:String)(block: => R)(implicit system: ActorSystem): R ={
-    val t0 = System.nanoTime()
-    val result = block
-    val t1 = System.nanoTime()
-    Stats(system).send((name, t1-t0))
-    result
+  def props(remote: (String, Int), local: (String, String)): Props = {
+    val isa = { val (host, port) = remote; new InetSocketAddress(host, port) }
+    Props(new Client(isa, local))
   }
-
-  def history(casino: String, user: String, message: String)(implicit system: ActorSystem) = {
-    Stats(system).send((casino, user, message))
-  }
-
-  def error(e: Throwable)(implicit system: ActorSystem) = Stats(system).send(e)
-
 }
 
-class Client(remote: InetSocketAddress) extends Actor {
+class Client(remote: InetSocketAddress, local: (String,String)) extends Actor with ActorLogging {
   import context.system
-  import akka.cluster.Cluster
-  import Client.StackTraceEncodeJson
-  private val selfAddress = Cluster(system).selfAddress
-  private val host = selfAddress.host.getOrElse("")
-  private val port = selfAddress.port.getOrElse("")
-
+  val (host, port) = local
 
   IO(Udp) ! Udp.SimpleSender
 
-
-  final def receive = {
+  def receive: Receive = {
     case Udp.SimpleSenderReady => context become ready(sender)
   }
 
-  final def send(send: ActorRef)(data: Seq[Any]): Unit = {
-    send ! Udp.Send(ByteString(data mkString "::"), remote)
+  def send(udp: ActorRef)(data: String): Unit = {
+    udp ! Udp.Send(ByteString(data), remote)
   }
-
 
   def ready(udp: ActorRef): Receive = {
-    case err: Throwable =>
-      val stackTrace = (err.getStackTrace.toList map {_.asJson}).asJson.toString
-
-      send(udp)("error" :: system.name :: s"$host:$port" :: s"${err.getClass.getName}:${err.getMessage}" :: stackTrace :: Nil)
-
-    case (param: String, value: Any) =>
-      val sender = send(udp) _
-      send(udp)("metric" :: system.name :: s"$host:$port" :: param :: value :: Nil)
-
-    case (casino: String, user: String, message: String) =>
-      send(udp)("history" :: casino :: user :: message :: Nil)
-
-    case "die" => context.stop(self)
-
-    case x => system.log.warning(s"unexpected message $x")
-
+    case m: Stat => m match {
+      
+      case MetricStat(name, value) =>
+        send(udp)(s"metric::${system.name}::${host}:${port}::${name}::${value}")
+      
+      case ErrorStat(className, message, stacktrace) =>
+        send(udp)(s"error::${system.name}::${host}:${port}::${className}::${message}::${stacktrace}")
+      
+      case ActionStat(user, action) =>
+        send(udp)(s"action::${system.name}::${host}:${port}::${user}::${action}")
+    }
   }
-
 }

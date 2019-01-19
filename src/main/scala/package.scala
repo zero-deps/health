@@ -1,27 +1,14 @@
 package 
 
-import scala.concurrent.duration.Duration
-
 package object stats {
-  sealed trait Data
+  sealed trait Stat
+  final case class MetricStat(name: String, value: String) extends Stat
+  final case class ErrorStat(className: String, message: String, stacktrace: String) extends Stat
+  final case class ActionStat(user: String, action: String) extends Stat
 
-  object Metric{
-    val alias = "Metric"       
-  }
+  final case class StatMeta(time: String, sys: String, addr: String)
 
-  object History{
-    val alias = "History"
-  }
+  type Msg = (Stat, StatMeta)
 
-  object Error{
-    val alias = "Error"
-  }
-
-  case class History(casino: String, user: String, time: Duration, action: String) extends Data
-  case class Metric(name: String, node: String, param: String, time: String, value: String) extends Data
-  case class ErrorElement(className: String, method: String, fileName: String, lineNumber: Int)
-  case class Error(name: String, node: String, time: Duration, message: String, stackTraces: List[ErrorElement]) extends Data
-
+  def now_ms(): String = System.currentTimeMillis.toString
 }
-
-

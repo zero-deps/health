@@ -1,60 +1,71 @@
 package .stats
 
-import akka.NotUsed
+// import .kvs.en._
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.ws.{TextMessage, Message => WsMessage}
+import akka.NotUsed
+import akka.stream.ClosedShape
 import akka.stream.FlowShape
-import akka.stream.scaladsl.{Flow, Sink, Source}
-import .kvs.Kvs
 import akka.stream.scaladsl.GraphDSL
 import akka.stream.scaladsl.RunnableGraph
-import akka.stream.ClosedShape
-import akka.actor.ActorSystem
-import .stats.actors.DataSource
-import .kvs.handle._
-import .stats.actors.DataSource.SourceMsg
-
-import scala.util.Success
+import akka.stream.scaladsl.{Flow, Sink, Source, Merge}
+import .kvs.Kvs
 
 object Flows {
-  import handlers._
-
-  def logIn[T](implicit system: ActorSystem) = Flow[T].map[T] { x => system.log.debug(s"IN: $x"); x }
-  def logOut[T](implicit system: ActorSystem) = Flow[T].map[T] { x => system.log.debug(s"OUT: $x"); x }
-
-  def stats(implicit system:ActorSystem,kvs:Kvs): Flow[WsMessage, WsMessage, NotUsed] =
+  def ws(system: ActorSystem, kvs: Kvs): Flow[WsMessage, WsMessage, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
 
-      val collect = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
+      val msgIn = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
+      val logIn = Flow[String].map{ msg => system.log.debug(s"IN: ${msg}"); msg }
+      val logOut = Flow[String].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
+      val kvspub = Source.actorPublisher(KvsPub.props(kvs))
+      val wspub = Source.actorPublisher(WsPub.props)
+      val pub = b.add(Merge[Msg](2))
+      val toMsg = b.add(Flow[Msg].map{ 
+        case (MetricStat(name, value), StatMeta(time, sys, addr)) =>
+          s"metric::${name}::${value}::${time}::${sys}::${addr}"
+        case (ErrorStat(className, message, stacktrace), StatMeta(time, sys, addr)) =>
+          s"error::${className}::${message}::${stacktrace}::${time}::${sys}::${addr}"
+        case (ActionStat(user, action), StatMeta(time, sys, addr)) =>
+          s"action::${user}::${action}::${time}::${sys}::${addr}"
+      })
+      val msgOut = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
 
-      val pub = Source.actorPublisher(DataSource.props(kvs))
-      val toMsg = b.add(Flow[Data] map { case data: Data => handler.socketMsg(data) } collect { case Success(x) => x })
+      msgIn ~> logIn ~> Sink.ignore // ignore income messages
+      wspub  ~> pub
+      kvspub ~> pub ~> toMsg ~> logOut ~> msgOut
 
-      val toWsMsg = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
-
-      collect ~> logIn[String] ~> Sink.ignore
-      pub ~> toMsg ~> logOut[String] ~> toWsMsg
-
-      FlowShape(collect.in, toWsMsg.out)
+      FlowShape(msgIn.in, msgOut.out)
     })
 
-  def saveDataFromUdp(implicit system:ActorSystem,kvs:Kvs) =
+  def udp(system: ActorSystem, kvs: Kvs) = {
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
 
-      val udpPublisher = Source.actorPublisher(UdpListener.props)
-      val convertUdpMsg = Flow[String] map { msg => handler.udpMessage(msg) } collect { case Success(x) => x }
-
-      val saveToKvs = Flow[Data] map { data =>
-        handler.saveToKvs(kvs)(data)
-        data
+      val udpPub = Source.actorPublisher(UdpPub.props)
+      val logIn = Flow[String].map{ msg => system.log.debug(s"UDP: ${msg}"); msg }
+      val convert = Flow[String].
+        map(_.split("::").toList).
+        collect{
+          case "metric" :: sys :: addr :: name :: value :: Nil =>
+            MetricStat(name, value) -> StatMeta(now_ms(), sys, addr)
+          case "error" :: sys :: addr :: className :: message :: stacktrace :: Nil =>
+            ErrorStat(className, message, stacktrace) -> StatMeta(now_ms(), sys, addr)
+          case "action" :: sys :: addr :: user :: action :: Nil =>
+            ActionStat(user, action) -> StatMeta(now_ms(), sys, addr)
+        }
+      val save = Flow[Msg].map{ msg =>
+        //todo: save to kvs
+        msg
       }
-      val publishEvent = Sink.foreach[Data] { data =>
-        system.eventStream.publish(SourceMsg(data))
+      val pub = Sink.foreach[Msg]{ msg =>
+        system.eventStream.publish(msg)
       }
 
-      udpPublisher ~> logIn ~> convertUdpMsg ~> saveToKvs ~> publishEvent
+      udpPub ~> logIn ~> convert ~> save ~> pub
 
       ClosedShape
     })
+  }
 }

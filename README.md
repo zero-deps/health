@@ -1,6 +1,31 @@
 # Stats
 
-Stats aggregates and displays some statistics.
+## Overview
+
+### Motivation
+
+* Quick way to check nodes status
+* Collect JVM stats
+* Track user history
+* Don’t use debug logging :)
+
+### Solution
+
+```
+                                        
++--------+           +-------+          
+|        |    UDP    |       |          
+| System +---------->+ Stats |          
+|        |           |       |          
++--------+           +-+---+-+          
+                       |   |            
+     +-----------+     |   |     +-----+
+     |           | TCP |   |     |     |
+     | Dashboard +<----+   +---->+ KVS |
+     |           |               |     |
+     +-----------+               +-----+
+                                        
+```
 
 ## Build
 

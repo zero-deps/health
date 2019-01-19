@@ -1,21 +1,18 @@
 package .stats
 
-import com.typesafe.config.ConfigFactory
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import ftier.ws._
+import .ftier._
+import .kvs._
 
 object StatsApp extends App {
-  if (!sys.props.contains("config.resource"))
-    sys.props += ("config.resource" -> "app.conf")
-
   implicit val system = ActorSystem("Stats")
   implicit val materializer = ActorMaterializer()
 
-  val ws = Ws(system)
-  import ws.kvs
+  val ws = WsExtension(system)
+  val kvs = Kvs(system)
 
-  Flows.saveDataFromUdp.run()
+  Flows.udp(system, kvs).run()
 
   ws.bindAndHandle
 }

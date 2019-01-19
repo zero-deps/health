@@ -1,3 +1,4 @@
-libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.21"
-libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "4.5.0.201609210915-r"
-scalacOptions ++= Seq("-feature","-deprecation")
+libraryDependencies += "org.slf4j" % "slf4j-nop" % "1.7.25"
+libraryDependencies += "org.eclipse.jgit" % "org.eclipse.jgit" % "5.2.1.201812262042-r"
+
+scalacOptions in Compile ++= Seq("-deprecation", "-feature")

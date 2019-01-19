@@ -1,5 +1,4 @@
-package 
-package stats
+package .stats
 
 import akka.actor.{ Actor, ActorLogging, ActorRef, Props }
 import akka.io.{ IO, Udp }
@@ -7,18 +6,13 @@ import java.net.InetSocketAddress
 import akka.stream.actor.ActorPublisher
 import scala.annotation.tailrec
 import akka.stream.actor.ActorPublisherMessage._
-import scala.collection.mutable
-import scala.concurrent.duration.Duration
-import handlers._
-import scala.util.Failure
 
-object UdpListener {
-  def props: Props = Props(classOf[UdpListener])
+object UdpPub {
+  def props: Props = Props(classOf[UdpPub])
 }
 
-class UdpListener extends ActorPublisher[String] with Actor with ActorLogging {
+class UdpPub extends ActorPublisher[String] with Actor with ActorLogging {
   import context.system
-  import UdpListener._
 
   var buf = Vector.empty[String]
   val MaxBufferSize = 10000
