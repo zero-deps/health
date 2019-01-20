@@ -17,9 +17,9 @@ class UdpPub extends ActorPublisher[String] with Actor with ActorLogging {
   var buf = Vector.empty[String]
   val MaxBufferSize = 10000
 
-  val config = system.settings.config
-  val hostname = config.getString("hostname")
-  val udpPort = config.getInt("udp.port")
+  val cfg = system.settings.config.getConfig("stats.server")
+  val hostname = cfg.getString("host")
+  val udpPort = cfg.getInt("port")
 
   log.info(s"Starting UDP listener on $hostname:$udpPort...")
 

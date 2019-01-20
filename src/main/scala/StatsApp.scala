@@ -11,6 +11,7 @@ object StatsApp extends App {
 
   val ws = WsExtension(system)
   val kvs = Kvs(system)
+  val stats = client.StatsExtenstion(system)
 
   Flows.udp(system, kvs).run()
 

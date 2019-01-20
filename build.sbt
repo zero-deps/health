@@ -24,11 +24,10 @@ lazy val stats = project.in(file(".")).settings(
   libraryDependencies += "com.." %% "ftier" % "0.0.13-12-g5b9a4ad",
   libraryDependencies += "com.." %% "kvs" % "4.1.2",
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
-).aggregate(client)
+).aggregate(client).dependsOn(client)
 
 lazy val client = project.in(file("client")).withId("stats_client").settings(
   libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.19",
-  libraryDependencies += "io.argonaut" %% "argonaut" % "6.2.2",
   libraryDependencies += "io.kamon" % "sigar-loader" % "1.6.6-rev002",
   libraryDependencies += ("org.slf4j" % "jul-to-slf4j" % "1.7.25").exclude("org.slf4j", "slf4j-api"), // for sigar loader
 )

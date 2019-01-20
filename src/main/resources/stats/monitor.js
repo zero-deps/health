@@ -5,7 +5,8 @@
 | Make changes in `src\main\jsx\monitor.js`.             |
 \********************************************************/
 
-var ws = new WebSocket('ws://' + window.location.host + '/stats/ws');
+const host = window.location.host || "127.0.0.1:8002"
+var ws = new WebSocket('ws://' + host + '/stats/ws');
 var handlers = {
   metric: function () {},
   history: function () {},
@@ -14,7 +15,7 @@ var handlers = {
 ws.onmessage = function (event) {
   var newData = event.data;
   if (newData.indexOf('metric::') == 0) handlers.metric(newData.replace('metric::', ''));
-  if (newData.indexOf('history::') == 0) handlers.history(newData.replace('history::', ''));
+  if (newData.indexOf('action::') == 0) handlers.history(newData.replace('action::', ''));
   if (newData.indexOf('error::') == 0) handlers.error(newData.replace('error::', ''));
 };
 

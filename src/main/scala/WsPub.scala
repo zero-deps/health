@@ -7,13 +7,10 @@ import scala.annotation.tailrec
 
 object WsPub {
   def props: Props = Props(new WsPub)
-
-  final case class OneMsg(v: Msg)
 }
 
 class WsPub extends ActorPublisher[Msg] with Actor with ActorLogging {
   import context.system
-  import WsPub.{OneMsg}
 
   override def preStart: Unit = system.eventStream.subscribe(self, classOf[Msg])
   override def postStop: Unit = system.eventStream.unsubscribe(self)
@@ -21,7 +18,7 @@ class WsPub extends ActorPublisher[Msg] with Actor with ActorLogging {
   var buf = Vector.empty[Msg]
 
   def receive: Receive = {
-    case OneMsg(msg) =>
+    case msg: (Stat, StatMeta) =>
       if (buf.isEmpty && totalDemand > 0) {
         onNext(msg)
       } else {

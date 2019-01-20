@@ -1,0 +1,13 @@
+{
+  "name": "purs",
+  "version": "0.0.0",
+  "dependencies": {
+    "purescript-react": "*",
+    "purescript-react-dom": "*",
+    "purescript-web-html": "*",
+    "purescript-web-socket": "*"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "*"
+  }
+}

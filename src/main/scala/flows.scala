@@ -1,6 +1,5 @@
 package .stats
 
-// import .kvs.en._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.ws.{TextMessage, Message => WsMessage}
 import akka.NotUsed
@@ -17,7 +16,7 @@ object Flows {
       import GraphDSL.Implicits._
 
       val msgIn = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
-      val logIn = Flow[String].map{ msg => system.log.debug(s"IN: ${msg}"); msg }
+      val logIn = Flow[String].map{ msg => system.log.info(s"IN: ${msg}"); msg }
       val logOut = Flow[String].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
       val kvspub = Source.actorPublisher(KvsPub.props(kvs))
       val wspub = Source.actorPublisher(WsPub.props)
@@ -60,6 +59,7 @@ object Flows {
         msg
       }
       val pub = Sink.foreach[Msg]{ msg =>
+        system.log.debug(s"pub=${msg}")
         system.eventStream.publish(msg)
       }
 

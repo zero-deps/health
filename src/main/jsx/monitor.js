@@ -15,8 +15,8 @@ ws.onmessage = function(event) {
   var newData = event.data;
   if (newData.indexOf('metric::') == 0)
     handlers.metric(newData.replace('metric::', ''))
-  if (newData.indexOf('history::') == 0)
-    handlers.history(newData.replace('history::', ''))
+  if (newData.indexOf('action::') == 0)
+    handlers.history(newData.replace('action::', ''))
   if (newData.indexOf('error::') == 0)
     handlers.error(newData.replace('error::', ''))
 };

@@ -1,5 +1,8 @@
-target/
 .DS_Store
+/bower_components/
+/logs/
 /native/
+/node_modules/
 /rng_data_*/
-/logs/stats.log
+/tmp/
+target/

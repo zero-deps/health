@@ -3,12 +3,8 @@ package .stats.client
 import akka.actor.Actor
 import akka.event.Logging
 import akka.event.Logging.{Error, InitializeLogger}
-import argonaut._
-import argonaut.Argonaut._
 
 class Logger extends Actor {
-  import Logger.StackTraceEncodeJson
-
   lazy val stats = StatsExtenstion(context.system)
 
   def receive: Receive = {
@@ -18,18 +14,7 @@ class Logger extends Actor {
       stats.error(
         className = cause.getClass.getName,
         message = cause.getMessage,
-        stacktrace = cause.getStackTrace.toList.asJson.nospaces,
+        stacktrace = cause.getStackTrace.toList.map(e => s"${e.getClassName}~${e.getMethodName}~${e.getFileName}~${e.getLineNumber}").mkString("~~"),
       )
-  }
-}
-
-object Logger {
-  implicit def StackTraceEncodeJson: EncodeJson[StackTraceElement] =
-  EncodeJson{ (element: StackTraceElement) =>
-    ("className" := element.getClassName) ->:
-    ("method" := element.getMethodName) ->:
-    ("fileName" := element.getFileName) ->:
-    ("lineNumber" := element.getLineNumber) ->:
-    jEmptyObject
   }
 }

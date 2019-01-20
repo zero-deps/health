@@ -7,29 +7,42 @@ import akka.http.scaladsl.model.ws.UpgradeToWebSocket
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import .ftier._
 import .kvs.Kvs
+import scala.concurrent.Future
 
-class Route(implicit val system: ExtendedActorSystem) extends RouteGrip[HttpRequest,HttpResponse] {
+class Route(implicit val system: ExtendedActorSystem) extends RouteGrip[HttpRequest,Future[HttpResponse]] {
   import system.log
 
   lazy val kvs = Kvs(system)
 
-  val route:PartialFunction[HttpRequest,HttpResponse] = {
+  val route:PartialFunction[HttpRequest,Future[HttpResponse]] = {
     case req@HttpRequest(GET,Path(Root/"stats"/"ws"),_,_,_) =>
       req.header[UpgradeToWebSocket] match {
         case Some(upg) =>
           log.debug(s"Run stream for websocket: $upg")
-          upg.handleMessages(Flows.ws(system, kvs))
-        case None => HttpResponse(BadRequest)
+          Future.successful(upg.handleMessages(Flows.ws(system, kvs)))
+        case None => Future.successful(HttpResponse(BadRequest))
       }
+
+    case HttpRequest(GET,Path(Root),_,_,_) =>
+      Future.successful(chunks(None,"nodes.html"))
+
     case HttpRequest(GET,Path(Root/"monitor.html"),_,_,_) =>
-      chunks(None,"monitor.html")
+      Future.successful(chunks(None,"monitor.html"))
+
+    case HttpRequest(GET,Path(Root/"assets"/"css"/request),_,_,_) =>
+      Future.successful(chunks(Some("assets/css"),request))
+    case HttpRequest(GET,Path(Root/"assets"/"fonts"/request),_,_,_) =>
+      Future.successful(chunks(Some("assets/fonts"),request))
+    case HttpRequest(GET,Path(Root/"assets"/"js"/request),_,_,_) =>
+      Future.successful(chunks(Some("assets/js"),request))
+
     case HttpRequest(GET,Path(Root/"stats"/request),_,_,_) =>
-      chunks(Some("stats"),request)
+      Future.successful(chunks(Some("stats"),request))
     case HttpRequest(GET,Path(Root/"stats"/"react"/request),_,_,_) =>
-      chunks(Some("stats/react"),request)
+      Future.successful(chunks(Some("stats/react"),request))
     case HttpRequest(GET,Path(Root/"stats"/"bootstrap"/request),_,_,_) =>
-      chunks(Some("stats/bootstrap"),request)
+      Future.successful(chunks(Some("stats/bootstrap"),request))
     case HttpRequest(GET,Path(Root/"stats"/"bootstrap"/"fonts"/request),_,_,_) =>
-      chunks(Some("stats/bootstrap/fonts"),request)
+      Future.successful(chunks(Some("stats/bootstrap/fonts"),request))
   }
 }

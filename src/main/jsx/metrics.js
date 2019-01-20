@@ -11,11 +11,11 @@ var Nodes = (function(){
     parseItem: function(rawData) {
       var arr = rawData.split('::');
       return {
-        name:  arr[0],
-        node:  arr[1],
-        param: arr[2],
-        time:  arr[3],
-        value: arr[4]
+        param: arr[0],
+        value: arr[1],
+        time:  arr[2],
+        name:  arr[3],
+        node:  arr[4]
       }
     },
     getInitialState: function() {

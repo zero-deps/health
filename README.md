@@ -29,10 +29,35 @@
 
 ## Build
 
-```
-npm install --global babel-cli
-npm install babel-preset-react
+Legacy:
+```bash
+npm i --global babel-cli
+npm i babel-preset-react
 babel --presets react "src/main/jsx" --watch --out-dir "src/main/resources/stats"
+```
+
+Before you start you need to have `npm`.
+
+One-time setup:
+```bash
+npm install
+npm i -g bower purescript
+npm -s run dep
+```
+
+To compile code:
+```bash
+npm -s run com
+```
+
+If you need REPL:
+```bash
+npm -s run rep
+```
+
+To see the result do:
+```
+open resources/index.html
 ```
 
 ## Run

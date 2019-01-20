@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "dep": "bower prune && bower update",
+    "com": "purs compile 'bower_components/purescript-*/src/**/*.purs' 'src/main/purs/**/*.purs' -o 'target/purs_out' && purs bundle 'target/purs_out/**/*.js' -o 'src/main/resources/main.js' -m Main",
+    "rep": "purs repl 'bower_components/purescript-*/src/**/*.purs'"
+  },
+  "devDependencies": {
+    "purescript": ">=0.12.2"
+  },
+  "engines": {
+    "node": ">=11.7.0"
+  }
+}
