@@ -6,16 +6,14 @@ import akka.io.{IO, Udp}
 import akka.util.ByteString
 
 object Client {
-  def props(remote: (String, Int), local: (String, String)): Props = {
+  def props(remote: (String, Int), localPort: String): Props = {
     val isa = { val (host, port) = remote; new InetSocketAddress(host, port) }
-    Props(new Client(isa, local))
+    Props(new Client(isa, localPort))
   }
 }
 
-class Client(remote: InetSocketAddress, local: (String,String)) extends Actor with ActorLogging {
+class Client(remote: InetSocketAddress, localPort: String) extends Actor with ActorLogging {
   import context.system
-  val (host, port) = local
-
   IO(Udp) ! Udp.SimpleSender
 
   def receive: Receive = {
@@ -30,13 +28,13 @@ class Client(remote: InetSocketAddress, local: (String,String)) extends Actor wi
     case m: Stat => m match {
       
       case MetricStat(name, value) =>
-        send(udp)(s"metric::${system.name}::${host}:${port}::${name}::${value}")
+        send(udp)(s"metric::${name}::${value}::${localPort}")
       
-      case ErrorStat(className, message, stacktrace) =>
-        send(udp)(s"error::${system.name}::${host}:${port}::${className}::${message}::${stacktrace}")
+      case ErrorStat(exception, stacktrace) =>
+        send(udp)(s"error::${exception}::${stacktrace}::${localPort}")
       
-      case ActionStat(user, action) =>
-        send(udp)(s"action::${system.name}::${host}:${port}::${user}::${action}")
+      case ActionStat(action) =>
+        send(udp)(s"action::${action}::${localPort}")
     }
   }
 }

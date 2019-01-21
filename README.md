@@ -27,14 +27,9 @@
                                         
 ```
 
-## Build
+See details in `presentation.pdf`.
 
-Legacy:
-```bash
-npm i --global babel-cli
-npm i babel-preset-react
-babel --presets react "src/main/jsx" --watch --out-dir "src/main/resources/stats"
-```
+## Build
 
 Before you start you need to have `npm`.
 

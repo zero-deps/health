@@ -18,7 +18,7 @@ class WsPub extends ActorPublisher[Msg] with Actor with ActorLogging {
   var buf = Vector.empty[Msg]
 
   def receive: Receive = {
-    case msg: (Stat, StatMeta) =>
+    case msg: Msg =>
       if (buf.isEmpty && totalDemand > 0) {
         onNext(msg)
       } else {

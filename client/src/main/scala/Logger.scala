@@ -10,11 +10,10 @@ class Logger extends Actor {
   def receive: Receive = {
     case msg: InitializeLogger =>
       sender ! Logging.loggerInitialized()
-    case event @ Error(cause, logSource, logClass, message) =>
+    case event @ Error(cause: Throwable, logSource: String, logClass: Class[_], message: Any) =>
       stats.error(
-        className = cause.getClass.getName,
-        message = cause.getMessage,
-        stacktrace = cause.getStackTrace.toList.map(e => s"${e.getClassName}~${e.getMethodName}~${e.getFileName}~${e.getLineNumber}").mkString("~~"),
+        exception = s"${message.toString}~${cause.getClass.getSimpleName}: ${cause.getMessage}",
+        stacktrace = cause.getStackTrace.toList.map(e => s"${e.getClassName}.${e.getMethodName}~${e.getFileName}:${e.getLineNumber}").mkString("~~"),
       )
   }
 }

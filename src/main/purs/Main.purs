@@ -2,40 +2,47 @@ module Main
   ( view
   ) where
 
-import Data.Array (findIndex, index, slice, updateAt, snoc)
+import Data.Array (findIndex, index, slice, updateAt, snoc, head, (:), (!!))
 import Data.List (List)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
-import DateOps (localDateTime)
 import DomOps as DomOps
 import Effect (Effect)
 import Effect.Console (error)
 import Prelude hiding (div)
-import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState)
-import React.DOM (a, button, div, h4, i, li, nav, p', span, table, tbody', td', text, th', thead, tr', ul, p)
-import React.DOM.Props (className, href, target)
+import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
+import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
+import React.DOM.Props (className, href, target, onClick)
 import ReactDOM as ReactDOM
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
+import Errors as ErrorsCom
+import Nodes as NodesCom
 
 type State = 
   { menu :: Menu
-  , nodes :: Array NodeInfo
+  , nodes :: Array NodesCom.NodeInfo
+  , errors :: Array ErrorsCom.ErrorInfo
   , ws :: WebSocket
   }
-data Menu = Nodes | Errors
-type NodeInfo =
-  { sys :: String
-  , addr :: String
-  , lastUpdate :: String
+data Menu = Nodes | Errors | Legacy
+derive instance eqMenu :: Eq Menu
+instance showMenu :: Show Menu where
+  show Nodes = "Nodes"
+  show Errors = "Errors"
+  show Legacy = "Legacy"
+type Props =
+  { menu :: Array Menu
   }
-type Props = {}
 
 view :: Effect Unit
 view = do
   container <- DomOps.byId "container"
-  let element = createLeafElement reactClass {}
+  let props =
+        { menu: [ Nodes, Errors, Legacy ]
+        }
+  let element = createLeafElement reactClass props
   void $ ReactDOM.render element container
 
 reactClass :: ReactClass Props
@@ -46,6 +53,7 @@ reactClass = component "Main" \this -> do
     { state:
       { menu: Nodes
       , nodes: []
+      , errors: []
       , ws: ws
       }
     , render: render this
@@ -56,30 +64,18 @@ reactClass = component "Main" \this -> do
     render :: ReactThis Props State -> Effect ReactElement
     render this = do
       s <- getState this
+      props <- getProps this
       pure $
         div [ className "wrapper" ]
           [ div [ className "sidebar" ]
             [ div [ className "sidebar-wrapper" ]
-              [ ul [ className "nav" ]
-                [ li [ className "active" ]
-                  [ a [ href "#" ]
-                    [ i [ className "tim-icons icon-app" ] []
-                    , p' [ text "Nodes" ]
+              [ ul [ className "nav" ] $ map (\x ->
+                  li (if x == s.menu then [ className "active" ] else [])
+                  [ a [ href "#", onClick \_ -> goto x ]
+                    [ i [ className $ "tim-icons " <> menuIcon x ] []
+                    , p' [ text $ show x ]
                     ]
-                  ]
-                , li []
-                  [ a [ href "#" ]
-                    [ i [ className "tim-icons icon-alert-circle-exc" ] []
-                    , p' [ text "Errors" ]
-                    ]
-                  ]
-                , li []
-                  [ a [ href "monitor.html" ]
-                    [ i [ className "tim-icons icon-compass-05" ] []
-                    , p' [ text "Legacy" ]
-                    ]
-                  ]
-                ]
+                  ]) props.menu
               ]
             ]
           , div [ className "main-panel" ]
@@ -93,7 +89,7 @@ reactClass = component "Main" \this -> do
                       , span [ className "navbar-toggler-bar bar3" ] []
                       ]
                     ]
-                  , a [ href "", className "navbar-brand" ]
+                  , a [ href "#", className "navbar-brand" ]
                     [ text "Monitor" ]
                   ]
                 , button [ className "navbar-toggler" ]
@@ -123,41 +119,13 @@ reactClass = component "Main" \this -> do
                 ]
               ]
             , div [ className "content" ]
-              [ div [ className "row" ]
-                [ div [ className "col-md-12" ]
-                  [ div [ className "card" ]
-                    [ div [ className "card-header" ]
-                      [ h4 [ className "card-title" ]
-                        [ text "Nodes" ]
-                      ]
-                    , div [ className "card-body" ]
-                      [ div [ className "table-responsive" ]
-                        [ table [ className "table tablesorter" ]
-                          [ thead [ className "text-primary" ]
-                            [ tr'
-                              [ th' [ text "System" ]
-                              , th' [ text "Address" ]
-                              , th' [ text "Last Update" ]
-                              ]
-                            ]
-                          , tbody' $ map (\x ->
-                              tr'
-                              [ td' [ text x.sys ]
-                              , td' [ text x.addr ]
-                              , td' [ text $ localDateTime x.lastUpdate ]
-                              ]) s.nodes
-                          ]
-                        ]
-                      ]
-                    ]
-                  ]
-                ]
+              [ menuContent s.menu s
               ]
             , div [ className "footer" ]
               [ div [ className "container-fluid" ]
                 [ ul [ className "nav" ]
                   [ li [ className "nav-item" ]
-                    [ a [ href "http://ua--doc.ee..corp", className "nav-link" ]
+                    [ a [ href "http://ua--doc.ee..corp/health.html", className "nav-link" ]
                       [ text "Documentation" ]
                     ]
                   ]
@@ -170,28 +138,71 @@ reactClass = component "Main" \this -> do
               ]
             ]
           ]
+      where
+      menuIcon :: Menu -> String
+      menuIcon Nodes = "icon-app"
+      menuIcon Errors = "icon-alert-circle-exc"
+      menuIcon Legacy = "icon-compass-05"
+
+      menuContent :: Menu -> State -> ReactElement
+      menuContent Nodes s = createLeafElement NodesCom.reactClass { nodes: s.nodes }
+      menuContent Errors s = createLeafElement ErrorsCom.reactClass { errors: s.errors }
+      menuContent Legacy _ = createLeafElement dummy {}
+        where
+        dummy :: ReactClass {}
+        dummy = component "Legacy" \_ -> pure { render: pure $ span' [] }
+
+      goto :: Menu -> Effect Unit
+      goto Legacy = DomOps.openUrl "../legacy/monitor.html"
+      goto menu = modifyState this _{ menu = menu }
 
     onMsg :: ReactThis Props State -> String -> Effect Unit
     onMsg this payload = do
       let xs = split (Pattern "::") payload
       case index xs 0 of
         Just "metric" ->
-          case slice 1 6 xs of
-            [ name, value, time, sys, addr ] -> do
+          case slice 1 5 xs of
+            [ name, value, time, addr ] -> do
               s <- getState this
               let lastUpdate = time
-              let node = { sys, addr, lastUpdate }
-              let nodes' = case findIndex (\x -> x.sys == sys && x.addr == addr) s.nodes of
+              let node = { addr, lastUpdate }
+              let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
                     Just a -> fromMaybe s.nodes $ updateAt a node s.nodes
                     Nothing -> snoc s.nodes node
               modifyState this _{ nodes = nodes' }
-            _ -> pure unit
-        Just "error" -> pure unit
-        -- : className : message : stacktrace : time : sys : addr
-        Just "action" -> pure unit
-        -- : user : action : time : sys : addr
-        _ -> pure unit
+            _ -> error "bad size"
+        Just "error" ->
+          case slice 1 5 xs of
+            [ exception', stacktrace', time, addr ] -> do
+              s <- getState this
+              let lastUpdate = time
+              let node = { addr, lastUpdate }
+              let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
+                    Just a -> fromMaybe s.nodes $ updateAt a node s.nodes
+                    Nothing -> snoc s.nodes node
+              modifyState this _{ nodes = nodes' }
+              let exception = split (Pattern "~") exception'
+              let stacktrace'' = map (split (Pattern "~")) $ split (Pattern "~~") stacktrace'
+              let stacktrace = map (case _ of
+                    [ method, file ] ->
+                      "at "<>method<>"("<>file<>")"
+                    _ -> "bad format") stacktrace''
+              let file = fromMaybe "bad format" $ head stacktrace'' >>= (_ !! 1)
+              let error = { exception, stacktrace, file, time, addr }
+              modifyState this _{ errors = error : s.errors }
+            _ -> error "bad size"
+        Just "action" ->
+          case slice 1 4 xs of
+            [ action, time, addr ] -> do
+              s <- getState this
+              let lastUpdate = time
+              let node = { addr, lastUpdate }
+              let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
+                    Just a -> fromMaybe s.nodes $ updateAt a node s.nodes
+                    Nothing -> snoc s.nodes node
+              modifyState this _{ nodes = nodes' }
+            _ -> error "bad size"
+        _ -> error "unknown type"
 
     errHandler :: List String -> Effect Unit
     errHandler xs = void $ sequence $ map error xs
-

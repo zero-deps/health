@@ -29,11 +29,8 @@ class Stats(implicit system: ActorSystem) extends Extension {
         cfg.getString("stats.client.remote.host"),
         cfg.getInt("stats.client.remote.port"),
       )
-      val local = (
-        cfg.getString("akka.remote.netty.tcp.hostname"),
-        cfg.getString("akka.remote.netty.tcp.port"),
-      )
-      Some(system.actorOf(Client.props(remote, local)))
+      val localPort = cfg.getString("akka.remote.netty.tcp.port")
+      Some(system.actorOf(Client.props(remote, localPort)))
     } else None
 
   private def send(m: Stat): Unit = {
@@ -48,12 +45,12 @@ class Stats(implicit system: ActorSystem) extends Extension {
     result
   }
 
-  def action(user: String, action: String): Unit = {
-    send(ActionStat(user, action))
+  def action(action: String): Unit = {
+    send(ActionStat(action))
   }
 
-  def error(className: String, message: String, stacktrace: String): Unit = {
-    send(ErrorStat(className, message, stacktrace))
+  def error(exception: String, stacktrace: String): Unit = {
+    send(ErrorStat(exception, stacktrace))
   }
 
   if (enabled) {

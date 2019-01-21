@@ -1,6 +1,7 @@
 module DomOps
   ( byId
   , host
+  , openUrl
   ) where
 
 import Data.Maybe (Maybe(Nothing, Just))
@@ -12,7 +13,7 @@ import Web.DOM.Element (Element)
 import Web.DOM.NonElementParentNode (NonElementParentNode, getElementById)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (HTMLDocument, toNonElementParentNode)
-import Web.HTML.Location (host) as DOM
+import Web.HTML.Location (host, setHref) as DOM
 import Web.HTML.Window (document, location)
 
 byId :: String -> Effect Element
@@ -31,3 +32,6 @@ host = do
   l <- window >>= location
   h <- DOM.host l
   pure $ if null h then Nothing else Just h
+
+openUrl :: String -> Effect Unit
+openUrl url = window >>= location >>= DOM.setHref url

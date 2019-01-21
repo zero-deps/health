@@ -22,12 +22,12 @@ object Flows {
       val wspub = Source.actorPublisher(WsPub.props)
       val pub = b.add(Merge[Msg](2))
       val toMsg = b.add(Flow[Msg].map{ 
-        case (MetricStat(name, value), StatMeta(time, sys, addr)) =>
-          s"metric::${name}::${value}::${time}::${sys}::${addr}"
-        case (ErrorStat(className, message, stacktrace), StatMeta(time, sys, addr)) =>
-          s"error::${className}::${message}::${stacktrace}::${time}::${sys}::${addr}"
-        case (ActionStat(user, action), StatMeta(time, sys, addr)) =>
-          s"action::${user}::${action}::${time}::${sys}::${addr}"
+        case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
+          s"metric::${name}::${value}::${time}::${addr}"
+        case Msg(ErrorStat(exception, stacktrace), StatMeta(time, addr)) =>
+          s"error::${exception}::${stacktrace}::${time}::${addr}"
+        case Msg(ActionStat(action), StatMeta(time, addr)) =>
+          s"action::${action}::${time}::${addr}"
       })
       val msgOut = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
 
@@ -47,12 +47,12 @@ object Flows {
       val convert = Flow[String].
         map(_.split("::").toList).
         collect{
-          case "metric" :: sys :: addr :: name :: value :: Nil =>
-            MetricStat(name, value) -> StatMeta(now_ms(), sys, addr)
-          case "error" :: sys :: addr :: className :: message :: stacktrace :: Nil =>
-            ErrorStat(className, message, stacktrace) -> StatMeta(now_ms(), sys, addr)
-          case "action" :: sys :: addr :: user :: action :: Nil =>
-            ActionStat(user, action) -> StatMeta(now_ms(), sys, addr)
+          case "metric" :: name :: value :: port :: host :: Nil =>
+            Msg(MetricStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))
+          case "error" :: exception :: stacktrace :: port :: host :: Nil =>
+            Msg(ErrorStat(exception, stacktrace), StatMeta(now_ms(), addr=s"${host}:${port}"))
+          case "action" :: action :: port :: host :: Nil =>
+            Msg(ActionStat(action), StatMeta(now_ms(), addr=s"${host}:${port}"))
         }
       val save = Flow[Msg].map{ msg =>
         //todo: save to kvs

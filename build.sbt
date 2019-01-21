@@ -8,6 +8,7 @@ ThisBuild / scalacOptions in Compile ++= Vector(
   "-feature",
   "-unchecked",
   "-deprecation",
+  "-language:_",
   "-encoding", "UTF-8",
   // "-Xfatal-warnings",
   "-Ywarn-unused-import",

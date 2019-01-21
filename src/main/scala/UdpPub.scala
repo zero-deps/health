@@ -33,8 +33,8 @@ class UdpPub extends ActorPublisher[String] with Actor with ActorLogging {
   }
 
   def ready(socket: ActorRef): Receive = {
-    case Udp.Received(data, _) =>
-      val decoded = data.decodeString("UTF-8")
+    case Udp.Received(data, remote) =>
+      val decoded = s"${data.decodeString("UTF-8")}::${remote.getHostString}"
       log.debug(s"Received: $decoded")
 
       if (buf.isEmpty && totalDemand > 0)
