@@ -1,27 +1,26 @@
 module Node
   ( reactClass
-  , NodeData
   ) where
 
-import DateOps (localDateTime)
 import DomOps (cn)
 import Effect (Effect)
 import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps)
-import React.DOM (div, h4, table, tbody', td', text, th', thead, tr, tr')
-import React.DOM.Props (onClick)
+import React.DOM (canvas, div, h2, h5, label, span, text)
+import React.DOM.Props (_id)
+import Nodes (NodeInfo, ChartValue)
 
 type State = {}
-type NodeData =
-  { addr :: String
-  }
-type Props = NodeData
+type Props = NodeInfo
 
 reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
+  p <- getProps this
   pure
     { state: {}
     , render: render this
+    , componentDidMount: createChart p.cpuLoad
+    , componentDidUpdate: \p' _ _ -> updateChart p'.cpuLoad
     }
   where
     render :: ReactThis Props State -> Effect ReactElement
@@ -32,7 +31,44 @@ reactClass = component "Node" \this -> do
         [ div [ cn "col-12" ]
           [ div [ cn "card card-chart" ]
             [ div [ cn "card-header" ]
-              []
+              [ div [ cn "row" ]
+                [ div [ cn "col-7 col-sm-6 text-left" ]
+                  [ h5 [ cn "card-category" ]
+                    [ text "Performance" ]
+                  , h2 [ cn "card-title" ]
+                    [ text $ props.cpuLast <> " / 547" ]
+                  ]
+                , div [ cn "col-5 col-sm-6" ]
+                  [ div [ cn "btn-group btn-group-toggle float-right" ]
+                    [ label [ cn "btn btn-sm btn-primary btn-simple" ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Hour" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "H" ]
+                      ]
+                    , label [ cn "btn btn-sm btn-primary btn-simple active" ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Day" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "D" ]
+                      ]
+                    , label [ cn "btn btn-sm btn-primary btn-simple" ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Week" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "W" ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            , div [ cn "card-body" ]
+              [ div [ cn "chart-area" ]
+                [ canvas [ _id "chartBig1" ] [] ]
+              ]
             ]
           ]
         ]
+
+foreign import createChart :: Array ChartValue -> Effect Unit
+foreign import updateChart :: Array ChartValue -> Effect Unit

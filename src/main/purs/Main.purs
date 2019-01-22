@@ -2,7 +2,7 @@ module Main
   ( view
   ) where
 
-import Data.Array (findIndex, index, slice, updateAt, snoc, head, (:), (!!))
+import Data.Array (findIndex, index, slice, modifyAt, snoc, head, find, (:), (!!))
 import Data.List (List)
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.String (Pattern(Pattern), split)
@@ -21,14 +21,16 @@ import React.DOM.Props (href, target, onClick)
 import ReactDOM as ReactDOM
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
+import Global (readInt)
 
 type State = 
   { menu :: Menu
   , nodes :: Array NodesCom.NodeInfo
-  , node :: Maybe NodeCom.NodeData
+  , node :: Maybe NodeAddr
   , errors :: Array ErrorsCom.ErrorInfo
   , ws :: WebSocket
   }
+type NodeAddr = String
 data Menu = Nodes | Errors | Legacy
 derive instance eqMenu :: Eq Menu
 instance showMenu :: Show Menu where
@@ -69,6 +71,7 @@ reactClass = component "Main" \this -> do
     render this = do
       s <- getState this
       props <- getProps this
+      menuContent' <- menuContent s
       pure $
         div [ cn "wrapper" ]
           [ div [ cn "sidebar" ]
@@ -123,7 +126,7 @@ reactClass = component "Main" \this -> do
                 ]
               ]
             , div [ cn "content" ]
-              [ menuContent s.menu s
+              [ menuContent'
               ]
             , div [ cn "footer" ]
               [ div [ cn "container-fluid" ]
@@ -148,19 +151,25 @@ reactClass = component "Main" \this -> do
       menuIcon Errors = "icon-alert-circle-exc"
       menuIcon Legacy = "icon-compass-05"
 
-      menuContent :: Menu -> State -> ReactElement
-      menuContent Nodes { node: Just node } = createLeafElement NodeCom.reactClass node
-      menuContent Nodes s = createLeafElement NodesCom.reactClass { nodes: s.nodes, openNode: \addr -> modifyState this _{ node = Just { addr } } }
-      menuContent Errors s = createLeafElement ErrorsCom.reactClass { errors: s.errors }
-      menuContent Legacy _ = createLeafElement dummy {}
-        where
-        dummy :: ReactClass {}
-        dummy = component "Legacy" \_ -> pure { render: pure $ span' [] }
+      menuContent :: State -> Effect ReactElement
+      menuContent { menu: Nodes, node: Just addr, nodes: nodes } =
+        case find (\a -> a.addr == addr) nodes of
+          Just node -> pure $ createLeafElement NodeCom.reactClass node
+          Nothing -> map (\_ -> createLeafElement dummy {}) $ error "bad node"
+      menuContent { menu: Nodes, nodes: nodes } =
+        pure $ createLeafElement NodesCom.reactClass { nodes: nodes, openNode: \addr -> modifyState this _{ node = Just addr } }
+      menuContent { menu: Errors, errors: errors } =
+        pure $ createLeafElement ErrorsCom.reactClass { errors: errors }
+      menuContent { menu: Legacy } =
+        map (\_ -> createLeafElement dummy {}) $ error "impossible"
+
+      dummy :: ReactClass {}
+      dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
       goto Errors = modifyState this _{ menu = Errors }
-      goto Legacy = DomOps.openUrl "../legacy/monitor.html"
+      goto Legacy = DomOps.openUrl "../legacy/index.html"
 
     onMsg :: ReactThis Props State -> String -> Effect Unit
     onMsg this payload = do
@@ -171,10 +180,11 @@ reactClass = component "Main" \this -> do
             [ name, value, time, addr ] -> do
               s <- getState this
               let lastUpdate = time
-              let node = { addr, lastUpdate }
+              let cpuLoad = if name == "cpu.load" then [{ t: readInt 10 time, y: readInt 10 value }] else []
+              let cpuLast = if name == "cpu.load" then Just value else Nothing
               let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
-                    Just a -> fromMaybe s.nodes $ updateAt a node s.nodes
-                    Nothing -> snoc s.nodes node
+                    Just a -> fromMaybe s.nodes $ modifyAt a (\b -> { addr: addr, lastUpdate: lastUpdate, cpuLoad: b.cpuLoad<>cpuLoad, cpuLast: fromMaybe b.cpuLast cpuLast }) s.nodes
+                    Nothing -> snoc s.nodes { addr: addr, lastUpdate: lastUpdate, cpuLoad: cpuLoad, cpuLast: fromMaybe "CPU" cpuLast }
               modifyState this _{ nodes = nodes' }
             _ -> error "bad size"
         Just "error" ->
@@ -182,10 +192,9 @@ reactClass = component "Main" \this -> do
             [ exception', stacktrace', time, addr ] -> do
               s <- getState this
               let lastUpdate = time
-              let node = { addr, lastUpdate }
               let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
-                    Just a -> fromMaybe s.nodes $ updateAt a node s.nodes
-                    Nothing -> snoc s.nodes node
+                    Just a -> fromMaybe s.nodes $ modifyAt a _{ addr=addr, lastUpdate=lastUpdate } s.nodes
+                    Nothing -> snoc s.nodes { addr: addr, lastUpdate: lastUpdate, cpuLoad: [], cpuLast: "CPU" }
               modifyState this _{ nodes = nodes' }
               let exception = split (Pattern "~") exception'
               let stacktrace'' = map (split (Pattern "~")) $ split (Pattern "~~") stacktrace'
@@ -201,10 +210,9 @@ reactClass = component "Main" \this -> do
             [ action, time, addr ] -> do
               s <- getState this
               let lastUpdate = time
-              let node = { addr, lastUpdate }
               let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
-                    Just a -> fromMaybe s.nodes $ updateAt a node s.nodes
-                    Nothing -> snoc s.nodes node
+                    Just a -> fromMaybe s.nodes $ modifyAt a _{ addr=addr, lastUpdate=lastUpdate } s.nodes
+                    Nothing -> snoc s.nodes { addr: addr, lastUpdate: lastUpdate, cpuLoad: [], cpuLast: "CPU" }
               modifyState this _{ nodes = nodes' }
             _ -> error "bad size"
         _ -> error "unknown type"

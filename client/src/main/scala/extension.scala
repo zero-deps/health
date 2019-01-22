@@ -62,11 +62,11 @@ class Stats(implicit system: ActorSystem) extends Extension {
       send(MetricStat("sys.uptime", system.uptime.toString))
     }
     // CPU load ([0,1])
-    scheduler.schedule(1 second, 15 seconds) {
-      send(MetricStat("cpu.load", sigar.getCpuPerc.getCombined.toString))
+    scheduler.schedule(1 second, 5 seconds) {
+      send(MetricStat("cpu.load", (100*sigar.getCpuPerc.getCombined).toInt.toString))
     }
     // Memory (bytes)
-    scheduler.schedule(1 second, 1 minute) {
+    scheduler.schedule(1 second, 5 seconds) {
       send(MetricStat("mem.used", sigar.getMem.getActualUsed.toString))
       send(MetricStat("mem.free", sigar.getMem.getActualFree.toString))
       send(MetricStat("mem.total", sigar.getMem.getTotal.toString))

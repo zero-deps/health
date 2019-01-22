@@ -17,7 +17,7 @@ object StatsApp extends App {
   import system.dispatcher
   val scheduler = system.scheduler
   // Uptime (seconds)
-  scheduler.schedule(1 second, 5 seconds) {
+  scheduler.schedule(1 second, 30 seconds) {
     system.log.error(new Exception("exc"), s"error occured at ${now_ms()}")
   }
 
