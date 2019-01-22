@@ -2,6 +2,7 @@ module DomOps
   ( byId
   , host
   , openUrl
+  , cn
   ) where
 
 import Data.Maybe (Maybe(Nothing, Just))
@@ -9,6 +10,7 @@ import Data.String (null)
 import Effect (Effect)
 import Effect.Exception (throw)
 import Prelude
+import React.DOM.Props (Props, className)
 import Web.DOM.Element (Element)
 import Web.DOM.NonElementParentNode (NonElementParentNode, getElementById)
 import Web.HTML (window)
@@ -35,3 +37,6 @@ host = do
 
 openUrl :: String -> Effect Unit
 openUrl url = window >>= location >>= DOM.setHref url
+
+cn :: String -> Props
+cn = className

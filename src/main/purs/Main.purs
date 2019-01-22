@@ -8,21 +8,24 @@ import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import DomOps as DomOps
+import DomOps (cn)
 import Effect (Effect)
 import Effect.Console (error)
+import Errors as ErrorsCom
+import Node as NodeCom
+import Nodes as NodesCom
 import Prelude hiding (div)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
-import React.DOM.Props (className, href, target, onClick)
+import React.DOM.Props (href, target, onClick)
 import ReactDOM as ReactDOM
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
-import Errors as ErrorsCom
-import Nodes as NodesCom
 
 type State = 
   { menu :: Menu
   , nodes :: Array NodesCom.NodeInfo
+  , node :: Maybe NodeCom.NodeData
   , errors :: Array ErrorsCom.ErrorInfo
   , ws :: WebSocket
   }
@@ -53,6 +56,7 @@ reactClass = component "Main" \this -> do
     { state:
       { menu: Nodes
       , nodes: []
+      , node: Nothing
       , errors: []
       , ws: ws
       }
@@ -66,71 +70,71 @@ reactClass = component "Main" \this -> do
       s <- getState this
       props <- getProps this
       pure $
-        div [ className "wrapper" ]
-          [ div [ className "sidebar" ]
-            [ div [ className "sidebar-wrapper" ]
-              [ ul [ className "nav" ] $ map (\x ->
-                  li (if x == s.menu then [ className "active" ] else [])
+        div [ cn "wrapper" ]
+          [ div [ cn "sidebar" ]
+            [ div [ cn "sidebar-wrapper" ]
+              [ ul [ cn "nav" ] $ map (\x ->
+                  li (if x == s.menu then [ cn "active" ] else [])
                   [ a [ href "#", onClick \_ -> goto x ]
-                    [ i [ className $ "tim-icons " <> menuIcon x ] []
+                    [ i [ cn $ "tim-icons " <> menuIcon x ] []
                     , p' [ text $ show x ]
                     ]
                   ]) props.menu
               ]
             ]
-          , div [ className "main-panel" ]
-            [ nav [ className "navbar navbar-expand-lg navbar-absolute navbar-transparent" ]
-              [ div [ className "container-fluid" ]
-                [ div [ className "navbar-wrapper" ]
-                  [ div [ className "navbar-toggle d-inline" ]
-                    [ button [ className "navbar-toggler" ]
-                      [ span [ className "navbar-toggler-bar bar1" ] []
-                      , span [ className "navbar-toggler-bar bar2" ] []
-                      , span [ className "navbar-toggler-bar bar3" ] []
+          , div [ cn "main-panel" ]
+            [ nav [ cn "navbar navbar-expand-lg navbar-absolute navbar-transparent" ]
+              [ div [ cn "container-fluid" ]
+                [ div [ cn "navbar-wrapper" ]
+                  [ div [ cn "navbar-toggle d-inline" ]
+                    [ button [ cn "navbar-toggler" ]
+                      [ span [ cn "navbar-toggler-bar bar1" ] []
+                      , span [ cn "navbar-toggler-bar bar2" ] []
+                      , span [ cn "navbar-toggler-bar bar3" ] []
                       ]
                     ]
-                  , a [ href "#", className "navbar-brand" ]
+                  , a [ href "#", cn "navbar-brand" ]
                     [ text "Monitor" ]
                   ]
-                , button [ className "navbar-toggler" ]
-                  [ span [ className "navbar-toggler-bar navbar-kebab" ] []
-                  , span [ className "navbar-toggler-bar navbar-kebab" ] []
-                  , span [ className "navbar-toggler-bar navbar-kebab" ] []
+                , button [ cn "navbar-toggler" ]
+                  [ span [ cn "navbar-toggler-bar navbar-kebab" ] []
+                  , span [ cn "navbar-toggler-bar navbar-kebab" ] []
+                  , span [ cn "navbar-toggler-bar navbar-kebab" ] []
                   ]
-                , div [ className "collapse navbar-collapse" ]
-                  [ ul [ className "navbar-nav ml-auto" ]
-                    [ li [ className "dropdown nav-item" ]
-                      [ a [ href "#", className "dropdown-toggle nav-link" ]
-                        [ div [ className "notification d-none d-lg-block d-xl-block" ] []
-                        , i [ className "tim-icons icon-sound-wave" ] []
-                        , p [ className "d-lg-none" ]
+                , div [ cn "collapse navbar-collapse" ]
+                  [ ul [ cn "navbar-nav ml-auto" ]
+                    [ li [ cn "dropdown nav-item" ]
+                      [ a [ href "#", cn "dropdown-toggle nav-link" ]
+                        [ div [ cn "notification d-none d-lg-block d-xl-block" ] []
+                        , i [ cn "tim-icons icon-sound-wave" ] []
+                        , p [ cn "d-lg-none" ]
                           [ text "Notifications" ]
                         ]
-                      , ul [ className "dropdown-menu dropdown-menu-right dropdown-navbar" ]
-                        [ li [ className "nav-link" ]
-                          [ a [ href "#", className "nav-item dropdown-item" ]
+                      , ul [ cn "dropdown-menu dropdown-menu-right dropdown-navbar" ]
+                        [ li [ cn "nav-link" ]
+                          [ a [ href "#", cn "nav-item dropdown-item" ]
                             [ text "No notifications" ]
                           ]
                         ]
                       ]
-                    , li [ className "separator d-lg-none" ] []
+                    , li [ cn "separator d-lg-none" ] []
                     ]
                   ]
                 ]
               ]
-            , div [ className "content" ]
+            , div [ cn "content" ]
               [ menuContent s.menu s
               ]
-            , div [ className "footer" ]
-              [ div [ className "container-fluid" ]
-                [ ul [ className "nav" ]
-                  [ li [ className "nav-item" ]
-                    [ a [ href "http://ua--doc.ee..corp/health.html", className "nav-link" ]
+            , div [ cn "footer" ]
+              [ div [ cn "container-fluid" ]
+                [ ul [ cn "nav" ]
+                  [ li [ cn "nav-item" ]
+                    [ a [ href "http://ua--doc.ee..corp/health.html", cn "nav-link" ]
                       [ text "Documentation" ]
                     ]
                   ]
-                , div [ className "copyright" ]
-                  [ text "© 2019 "
+                , div [ cn "copyright" ]
+                  [ text "© "
                   , a [ href "https://demos.creative-tim.com/black-dashboard/examples/dashboard.html", target "_blank" ]
                     [ text "CT" ]
                   ]
@@ -145,7 +149,8 @@ reactClass = component "Main" \this -> do
       menuIcon Legacy = "icon-compass-05"
 
       menuContent :: Menu -> State -> ReactElement
-      menuContent Nodes s = createLeafElement NodesCom.reactClass { nodes: s.nodes }
+      menuContent Nodes { node: Just node } = createLeafElement NodeCom.reactClass node
+      menuContent Nodes s = createLeafElement NodesCom.reactClass { nodes: s.nodes, openNode: \addr -> modifyState this _{ node = Just { addr } } }
       menuContent Errors s = createLeafElement ErrorsCom.reactClass { errors: s.errors }
       menuContent Legacy _ = createLeafElement dummy {}
         where
@@ -153,8 +158,9 @@ reactClass = component "Main" \this -> do
         dummy = component "Legacy" \_ -> pure { render: pure $ span' [] }
 
       goto :: Menu -> Effect Unit
+      goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
+      goto Errors = modifyState this _{ menu = Errors }
       goto Legacy = DomOps.openUrl "../legacy/monitor.html"
-      goto menu = modifyState this _{ menu = menu }
 
     onMsg :: ReactThis Props State -> String -> Effect Unit
     onMsg this payload = do
