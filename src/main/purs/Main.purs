@@ -184,12 +184,11 @@ reactClass = component "Main" \this -> do
               let exception = split (Pattern "~") exception'
               let stacktrace'' = map (split (Pattern "~")) $ split (Pattern "~~") stacktrace'
               let stacktrace = map (case _ of
-                    [ method, file ] ->
-                      "at "<>method<>"("<>file<>")"
+                    [ method, file ] -> method<>"("<>file<>")"
                     _ -> "bad format") stacktrace''
               let file = fromMaybe "bad format" $ head stacktrace'' >>= (_ !! 1)
               let error = { exception, stacktrace, file, time, addr }
-              modifyState this _{ errors = error : s.errors }
+              modifyState this _{ errors = error : (slice 0 100 s.errors) }
             _ -> error "bad size"
         Just "action" ->
           case slice 1 4 xs of

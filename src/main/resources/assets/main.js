@@ -3223,7 +3223,8 @@ var PS = {};
 
       return props;
     };
-  }                                             
+  }
+  exports.unsafeUnfoldProps = unsafeUnfoldProps;
 
   function unsafePrefixProps(prefix) {
     return function(value){
@@ -3266,12 +3267,14 @@ var PS = {};
   var Prelude = PS["Prelude"];
   var React = PS["React"];
   var React_SyntheticEvent = PS["React.SyntheticEvent"];
-  var target = $foreign.unsafeMkProps("target");
+  var target = $foreign.unsafeMkProps("target");  
+  var style = $foreign.unsafeUnfoldProps("style");
   var onClick = function (f) {
       return $foreign.unsafeMkProps("onClick")(Effect_Uncurried.mkEffectFn1(f));
   };                                                
   var href = $foreign.unsafeMkProps("href");      
   var className = $foreign.unsafeMkProps("className");
+  exports["style"] = style;
   exports["className"] = className;
   exports["href"] = href;
   exports["target"] = target;
@@ -3363,15 +3366,58 @@ var PS = {};
   var React = PS["React"];
   var React_DOM = PS["React.DOM"];
   var React_DOM_Props = PS["React.DOM.Props"];                 
+  var errorReactClass = (function () {
+      var render = function ($$this) {
+          var shortStack = React.modifyState($$this)(function (v) {
+              return {
+                  expandStack: false
+              };
+          });
+          var fullStack = React.modifyState($$this)(function (v) {
+              return {
+                  expandStack: true
+              };
+          });
+          return function __do() {
+              var v = React.getState($$this)();
+              var v1 = React.getProps($$this)();
+              return React_DOM["tr'"]([ React_DOM.td([ React_DOM_Props.className("align-top") ])([ React_DOM.text(v1.addr) ]), React_DOM.td([ React_DOM_Props.className("align-top") ])([ React_DOM.text(DateOps.localDateTime(v1.time)) ]), React_DOM.td([ React_DOM_Props.className("align-top") ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+                  return React_DOM["div'"]([ React_DOM.text(y) ]);
+              })(v1.exception)), (function () {
+                  if (!v.expandStack) {
+                      return React_DOM.td([ React_DOM_Props.className("align-top"), React_DOM_Props.onClick(function (v2) {
+                          return fullStack;
+                      }), React_DOM_Props.style({
+                          cursor: "zoom-in"
+                      }) ])([ React_DOM.text(v1.file) ]);
+                  };
+                  if (v.expandStack) {
+                      return React_DOM.td([ React_DOM_Props.className("align-top"), React_DOM_Props.onClick(function (v2) {
+                          return shortStack;
+                      }), React_DOM_Props.style({
+                          cursor: "zoom-out"
+                      }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+                          return React_DOM["div'"]([ React_DOM.text(y) ]);
+                      })(v1.stacktrace));
+                  };
+                  throw new Error("Failed pattern match at Errors (line 89, column 11 - line 95, column 50): " + [ v.expandStack.constructor.name ]);
+              })() ]);
+          };
+      };
+      return React.component(React.reactComponentSpec()())("Error")(function ($$this) {
+          return Control_Applicative.pure(Effect.applicativeEffect)({
+              state: {
+                  expandStack: false
+              },
+              render: render($$this)
+          });
+      });
+  })();
   var reactClass = (function () {
       var render = function ($$this) {
           return function __do() {
               var v = React.getProps($$this)();
-              return React_DOM.div([ React_DOM_Props.className("row") ])([ React_DOM.div([ React_DOM_Props.className("col-md-12") ])([ React_DOM.div([ React_DOM_Props.className("card") ])([ React_DOM.div([ React_DOM_Props.className("card-header") ])([ React_DOM.h4([ React_DOM_Props.className("card-title") ])([ React_DOM.text("Errors") ]) ]), React_DOM.div([ React_DOM_Props.className("card-body") ])([ React_DOM.div([ React_DOM_Props.className("table-responsive") ])([ React_DOM.table([ React_DOM_Props.className("table tablesorter") ])([ React_DOM.thead([ React_DOM_Props.className("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Address") ]), React_DOM["th'"]([ React_DOM.text("Time") ]), React_DOM["th'"]([ React_DOM.text("Exception") ]), React_DOM["th'"]([ React_DOM.text("Stacktrace") ]) ]) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(function (x) {
-                  return React_DOM["tr'"]([ React_DOM.td([ React_DOM_Props.className("align-top") ])([ React_DOM.text(x.addr) ]), React_DOM.td([ React_DOM_Props.className("align-top") ])([ React_DOM.text(DateOps.localDateTime(x.time)) ]), React_DOM.td([ React_DOM_Props.className("align-top") ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
-                      return React_DOM["div'"]([ React_DOM.text(y) ]);
-                  })(x.exception)), React_DOM.td([ React_DOM_Props.className("align-top") ])([ React_DOM.text(x.file) ]) ]);
-              })(v.errors)) ]) ]) ]) ]) ]) ]);
+              return React_DOM.div([ React_DOM_Props.className("row") ])([ React_DOM.div([ React_DOM_Props.className("col-md-12") ])([ React_DOM.div([ React_DOM_Props.className("card") ])([ React_DOM.div([ React_DOM_Props.className("card-header") ])([ React_DOM.h4([ React_DOM_Props.className("card-title") ])([ React_DOM.text("Errors") ]) ]), React_DOM.div([ React_DOM_Props.className("card-body") ])([ React_DOM.div([ React_DOM_Props.className("table-responsive") ])([ React_DOM.table([ React_DOM_Props.className("table tablesorter") ])([ React_DOM.thead([ React_DOM_Props.className("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Address") ]), React_DOM["th'"]([ React_DOM.text("Time") ]), React_DOM["th'"]([ React_DOM.text("Exception") ]), React_DOM["th'"]([ React_DOM.text("Stacktrace") ]) ]) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(React.createLeafElement(React.reactPropFields()())(errorReactClass))(v.errors)) ]) ]) ]) ]) ]) ]);
           };
       };
       return React.component(React.reactComponentSpec()())("Errors")(function ($$this) {
@@ -3678,7 +3724,7 @@ var PS = {};
           };
           var $$goto = function (v) {
               if (v instanceof Legacy) {
-                  return DomOps.openUrl("monitor.html");
+                  return DomOps.openUrl("../legacy/monitor.html");
               };
               return React.modifyState($$this)(function (v1) {
                   return {
@@ -3775,7 +3821,7 @@ var PS = {};
                           var stacktrace$prime$prime = Data_Functor.map(Data_Functor.functorArray)(Data_String_Common.split("~"))(Data_String_Common.split("~~")(v1[1]));
                           var stacktrace = Data_Functor.map(Data_Functor.functorArray)(function (v3) {
                               if (v3.length === 2) {
-                                  return "at " + (v3[0] + ("(" + (v3[1] + ")")));
+                                  return v3[0] + ("(" + (v3[1] + ")"));
                               };
                               return "bad format";
                           })(stacktrace$prime$prime);
@@ -3793,7 +3839,7 @@ var PS = {};
                               return {
                                   menu: v3.menu,
                                   nodes: v3.nodes,
-                                  errors: Data_Array.cons(error)(v2.errors),
+                                  errors: Data_Array.cons(error)(Data_Array.slice(0)(100)(v2.errors)),
                                   ws: v3.ws
                               };
                           })();
@@ -3820,7 +3866,7 @@ var PS = {};
                               if (v3 instanceof Data_Maybe.Nothing) {
                                   return Data_Array.snoc(v2.nodes)(node);
                               };
-                              throw new Error("Failed pattern match at Main (line 200, column 28 - line 202, column 49): " + [ v3.constructor.name ]);
+                              throw new Error("Failed pattern match at Main (line 199, column 28 - line 201, column 49): " + [ v3.constructor.name ]);
                           })();
                           return React.modifyState($$this)(function (v3) {
                               return {

@@ -6,9 +6,9 @@ module Errors
 import DateOps (localDateTime)
 import Effect (Effect)
 import Prelude hiding (div)
-import React (ReactClass, ReactElement, ReactThis, component, getProps)
+import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr', div')
-import React.DOM.Props (className)
+import React.DOM.Props (className, onClick, style)
 
 type State = 
   {
@@ -55,17 +55,47 @@ reactClass = component "Errors" \this -> do
                       , th' [ text "Stacktrace" ]
                       ]
                     ]
-                  , tbody' $ map (\x ->
-                      tr'
-                      [ td [ className "align-top" ] [ text x.addr ]
-                      , td [ className "align-top" ] [ text $ localDateTime x.time ]
-                      , td [ className "align-top" ] $ map (\y -> div' [ text y ]) x.exception
-                      , td [ className "align-top" ] [ text x.file ]
-                      -- , td [ className "align-top" ] $ map (\y -> div' [ text y ]) x.stacktrace
-                      ]) props.errors
+                  , tbody' $ map (createLeafElement errorReactClass) props.errors
                   ]
                 ]
               ]
             ]
           ]
         ]
+
+type ErrorState =
+  { expandStack :: Boolean
+  }
+type ErrorProps = ErrorInfo
+
+errorReactClass :: ReactClass ErrorProps
+errorReactClass = component "Error" \this -> do
+  pure
+    { state:
+      { expandStack: false
+      }
+    , render: render this
+    }
+  where
+    render :: ReactThis ErrorProps ErrorState -> Effect ReactElement
+    render this = do
+      s <- getState this
+      props <- getProps this
+      pure $
+        tr'
+        [ td [ className "align-top" ] [ text props.addr ]
+        , td [ className "align-top" ] [ text $ localDateTime props.time ]
+        , td [ className "align-top" ] $ map (\y -> div' [ text y ]) props.exception
+        , case s.expandStack of
+            false -> 
+              td [ className "align-top", onClick \_ -> fullStack, style { cursor: "zoom-in" } ]
+              [ text props.file ]
+            true -> 
+              td [ className "align-top", onClick \_ -> shortStack, style { cursor: "zoom-out" } ] $ map (\y -> 
+                div' [ text y ]) props.stacktrace
+        ]
+      where
+      fullStack :: Effect Unit
+      fullStack = modifyState this _{ expandStack = true }
+      shortStack :: Effect Unit
+      shortStack = modifyState this _{ expandStack = false }
