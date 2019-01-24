@@ -3942,28 +3942,37 @@ var PS = {};
     "use strict";
 
   var chart = null
-  var actionsMap = null
+  var actionsMap = new Map()
+
+  exports.destroyChart = function() {
+    if (chart === null) {
+      console.error("chart is not created")
+      return
+    }
+    chart.destroy()
+    chart = null
+  }
 
   exports.updateChart = function(cpuLoad) {
     return function(memLoad) {
       return function(actions) {
         return function() {
-          if (chart !== null) {
-            var data = chart.config.data
-            data.datasets[0].data = cpuLoad
-            data.datasets[1].data = actionsDataset(actions)
-            data.datasets[2].data = memLoad
-            chart.update()
-          } else {
-            console.log("chart is not created")
+          if (chart === null) {
+            console.error("chart is not created")
+            return
           }
+          var data = chart.config.data
+          data.datasets[0].data = cpuLoad
+          data.datasets[1].data = actionsDataset(actions)
+          data.datasets[2].data = memLoad
+          chart.update()
         }
       }
     }
   }
 
   function actionsDataset(actions) {
-    if (actionsMap === null) actionsMap = new Map()
+    actionsMap = new Map()
     return actions.map(function(x) {
       actionsMap.set(x.t, x.label)
       return { t: x.t, y: 0 }
@@ -3974,6 +3983,10 @@ var PS = {};
     return function(memLoad) {
       return function(actions) {
         return function() {
+          if (chart !== null) {
+            console.error("chart already exists")
+            return
+          }
           const ctx = document.getElementById("chartBig1").getContext('2d')
           const purpleBg = ctx.createLinearGradient(0, 230, 0, 50)
           purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
@@ -4157,7 +4170,8 @@ var PS = {};
                               return $foreign.updateChart(p$prime.cpuLoad)(p$prime.memLoad)(p$prime.actions);
                           };
                       };
-                  }
+                  },
+                  componentWillUnmount: $foreign.destroyChart
               };
           };
       });

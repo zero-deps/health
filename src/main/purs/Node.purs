@@ -21,6 +21,7 @@ reactClass = component "Node" \this -> do
     , render: render this
     , componentDidMount: createChart p.cpuLoad p.memLoad p.actions
     , componentDidUpdate: \p' _ _ -> updateChart p'.cpuLoad p'.memLoad p'.actions
+    , componentWillUnmount: destroyChart
     }
   where
   render :: ReactThis Props State -> Effect ReactElement
@@ -82,3 +83,5 @@ foreign import updateChart
   -> Array MemPoint
   -> Array ActionPoint
   -> Effect Unit
+foreign import destroyChart
+  :: Effect Unit
