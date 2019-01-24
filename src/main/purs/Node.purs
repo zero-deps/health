@@ -19,13 +19,13 @@ reactClass = component "Node" \this -> do
   pure
     { state: {}
     , render: render this
-    , componentDidMount: createChart p.cpuLoad p.actions
-    , componentDidUpdate: \p' _ _ -> updateChart p'.cpuLoad p'.actions
+    , componentDidMount: createChart p.cpuLoad p.memLoad p.actions
+    , componentDidUpdate: \p' _ _ -> updateChart p'.cpuLoad p'.memLoad p'.actions
     }
   where
   render :: ReactThis Props State -> Effect ReactElement
   render this = do
-    props <- getProps this
+    p <- getProps this
     pure $
       div [ cn "row" ]
       [ div [ cn "col-12" ]
@@ -37,7 +37,7 @@ reactClass = component "Node" \this -> do
                   [ text "Performance" ]
                 , h2 [ cn "card-title" ]
                   [ i [ cn "tim-icons icon-spaceship text-primary" ] []
-                  , text $ " " <> props.cpuLast <> " / 547"
+                  , text $ " " <> p.cpuLast <> "% / " <> p.memLast <> " MB"
                   ]
                 ]
               , div [ cn "col-5 col-sm-6" ]
@@ -72,5 +72,13 @@ reactClass = component "Node" \this -> do
         ]
       ]
 
-foreign import createChart :: Array CpuPoint -> Array ActionPoint -> Effect Unit
-foreign import updateChart :: Array CpuPoint -> Array ActionPoint -> Effect Unit
+foreign import createChart
+  :: Array CpuPoint
+  -> Array MemPoint
+  -> Array ActionPoint
+  -> Effect Unit
+foreign import updateChart
+  :: Array CpuPoint
+  -> Array MemPoint
+  -> Array ActionPoint
+  -> Effect Unit

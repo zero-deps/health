@@ -183,7 +183,8 @@ reactClass = component "Main" \this -> do
             [ name, value, time, addr ] -> updateWith
               { addr: addr
               , time: time
-              , cpu: if name == "cpu.load" then Just (readInt 10 value) else Nothing
+              , cpu: if name == "cpu.load" then Just value else Nothing
+              , mem: if name == "mem.used" then Just value else Nothing
               , err: Nothing
               , action: Nothing
               }
@@ -202,6 +203,7 @@ reactClass = component "Main" \this -> do
                 { addr: addr
                 , time: time
                 , cpu: Nothing
+                , mem: Nothing
                 , err: Just err
                 , action: Nothing
                 }
@@ -212,6 +214,7 @@ reactClass = component "Main" \this -> do
               { addr: addr
               , time: time
               , cpu: Nothing
+              , mem: Nothing
               , err: Nothing
               , action: Just action
               }
@@ -220,23 +223,27 @@ reactClass = component "Main" \this -> do
       where
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
-        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b }]) a.cpu
-        let cpuLast = map show a.cpu
+        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) a.cpu
+        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b / 1000.0 }]) a.mem
         let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
         s <- getState this
         let node' = case lookup a.addr s.nodes of
               Just node -> node
                 { lastUpdate = a.time
                 , cpuLoad = node.cpuLoad <> cpuLoad
-                , cpuLast = fromMaybe node.cpuLast cpuLast
+                , memLoad = node.memLoad <> memLoad
                 , actions = node.actions <> action
+                , cpuLast = fromMaybe node.cpuLast a.cpu
+                , memLast = fromMaybe node.memLast a.mem
                 }
               Nothing ->
                 { addr: a.addr
                 , lastUpdate: a.time
                 , cpuLoad: cpuLoad
-                , cpuLast: fromMaybe "CPU" cpuLast
+                , memLoad: memLoad
                 , actions: action
+                , cpuLast: fromMaybe "CPU" a.cpu
+                , memLast: fromMaybe "RAM" a.mem
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
         case a.err of

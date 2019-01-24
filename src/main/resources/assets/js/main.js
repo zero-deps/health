@@ -81,11 +81,6 @@ var PS = {};
     return n.toString();
   };
 
-  exports.showNumberImpl = function (n) {
-    var str = n.toString();
-    return isNaN(str + ".0") ? str : str + ".0";
-  };
-
   exports.showStringImpl = function (s) {
     var l = s.length;
     return "\"" + s.replace(
@@ -121,7 +116,6 @@ var PS = {};
       this.show = show;
   };
   var showString = new Show($foreign.showStringImpl);
-  var showNumber = new Show($foreign.showNumberImpl);
   var showInt = new Show($foreign.showIntImpl);
   var show = function (dict) {
       return dict.show;
@@ -129,7 +123,6 @@ var PS = {};
   exports["Show"] = Show;
   exports["show"] = show;
   exports["showInt"] = showInt;
-  exports["showNumber"] = showNumber;
   exports["showString"] = showString;
 })(PS["Data.Show"] = PS["Data.Show"] || {});
 (function(exports) {
@@ -3952,15 +3945,18 @@ var PS = {};
   var actionsMap = null
 
   exports.updateChart = function(cpuLoad) {
-    return function(actions) {
-      return function() {
-        if (chart !== null) {
-          var data = chart.config.data
-          data.datasets[0].data = cpuLoad
-          data.datasets[1].data = actionsDataset(actions)
-          chart.update()
-        } else {
-          console.log("chart is not created")
+    return function(memLoad) {
+      return function(actions) {
+        return function() {
+          if (chart !== null) {
+            var data = chart.config.data
+            data.datasets[0].data = cpuLoad
+            data.datasets[1].data = actionsDataset(actions)
+            data.datasets[2].data = memLoad
+            chart.update()
+          } else {
+            console.log("chart is not created")
+          }
         }
       }
     }
@@ -3975,100 +3971,153 @@ var PS = {};
   }
 
   exports.createChart = function(cpuLoad) {
-    return function(actions) {
-      return function() {
-        const ctx = document.getElementById("chartBig1").getContext('2d')
-        const purpleBg = ctx.createLinearGradient(0, 230, 0, 50)
-        purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
-        purpleBg.addColorStop(0.4, 'rgba(72,72,176,0.0)')
-        purpleBg.addColorStop(0, 'rgba(119,52,169,0)')
-        chart = new Chart(ctx, {
-          type: 'line',
-          data: {
-            datasets: [{
-              backgroundColor: purpleBg,
-              borderColor: '#d346b1',
-              borderDash: [],
-              borderDashOffset: 0.0,
-              borderWidth: 2,
-              cubicInterpolationMode: 'monotone',
-              data: cpuLoad,
-              fill: true,
-              label: "CPU Load",
-              pointBackgroundColor: '#d346b1',
-              pointBorderColor: 'rgba(255,255,255,0)',
-              pointBorderWidth: 20,
-              pointHoverBackgroundColor: '#d346b1',
-              pointHoverBorderWidth: 15,
-              pointHoverRadius: 4,
-              pointRadius: 4,
-            }, {
-              borderColor: '#1f8ef1',
-              borderDash: [],
-              borderDashOffset: 0.0,
-              borderWidth: 2,
-              data: actionsDataset(actions),
-              fill: false,
-              label: "Events",
-              showLine: false,
-            }]
-          },
-          options: {
-            maintainAspectRatio: false,
-            legend: {
-              display: false
+    return function(memLoad) {
+      return function(actions) {
+        return function() {
+          const ctx = document.getElementById("chartBig1").getContext('2d')
+          const purpleBg = ctx.createLinearGradient(0, 230, 0, 50)
+          purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
+          purpleBg.addColorStop(0.4, 'rgba(72,72,176,0.0)')
+          purpleBg.addColorStop(0, 'rgba(119,52,169,0)')
+          return chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              datasets: [{
+                backgroundColor: purpleBg,
+                borderColor: '#d346b1',
+                borderDash: [],
+                borderDashOffset: 0.0,
+                borderWidth: 2,
+                cubicInterpolationMode: 'monotone',
+                data: cpuLoad,
+                fill: true,
+                label: "CPU Load",
+                pointBackgroundColor: '#d346b1',
+                pointBorderColor: 'rgba(255,255,255,0)',
+                pointBorderWidth: 20,
+                pointHoverBackgroundColor: '#d346b1',
+                pointHoverBorderWidth: 15,
+                pointHoverRadius: 4,
+                pointRadius: 4,
+                yAxisID: 'left-y-axis'
+              }, {
+                borderColor: '#1f8ef1',
+                borderDash: [],
+                borderDashOffset: 0.0,
+                borderWidth: 2,
+                data: actionsDataset(actions),
+                fill: false,
+                label: "Events",
+                pointBackgroundColor: '#1f8ef1',
+                pointBorderColor: 'rgba(255,255,255,0)',
+                pointBorderWidth: 20,
+                pointHoverBackgroundColor: '#1f8ef1',
+                pointHoverBorderWidth: 15,
+                pointHoverRadius: 4,
+                pointRadius: 4,
+                showLine: false,
+                yAxisID: 'left-y-axis'
+              }, {
+                borderColor: '#00d6b4',
+                borderDash: [],
+                borderDashOffset: 0.0,
+                borderWidth: 2,
+                data: memLoad,
+                fill: false,
+                label: "Memory Usage",
+                lineTension: 0,
+                pointBackgroundColor: '#00d6b4',
+                pointBorderColor: 'rgba(255,255,255,0)',
+                pointBorderWidth: 20,
+                pointHoverBackgroundColor: '#00d6b4',
+                pointHoverBorderWidth: 15,
+                pointHoverRadius: 4,
+                pointRadius: 4,
+                yAxisID: 'right-y-axis'
+              }]
             },
-            tooltips: {
-              backgroundColor: '#f5f5f5',
-              titleFontColor: '#333',
-              bodyFontColor: '#666',
-              bodySpacing: 4,
-              xPadding: 12,
-              mode: "nearest",
-              position: "nearest",
-              callbacks: {
-                label: function(item, data) {
-                  var datasetIndex = item.datasetIndex
-                  var dataset = data.datasets[item.datasetIndex]
-                  var datasetLabel = dataset.label + ": "
-                  if (datasetIndex !== 1) return datasetLabel + item.yLabel
-                  else return datasetLabel + actionsMap.get(dataset.data[item.index].t)
+            options: {
+              maintainAspectRatio: false,
+              legend: {
+                display: false
+              },
+              tooltips: {
+                backgroundColor: '#f5f5f5',
+                titleFontColor: '#333',
+                bodyFontColor: '#666',
+                bodySpacing: 4,
+                xPadding: 12,
+                mode: "nearest",
+                position: "nearest",
+                callbacks: {
+                  label: function(item, data) {
+                    var datasetIndex = item.datasetIndex
+                    var dataset = data.datasets[item.datasetIndex]
+                    var datasetLabel = dataset.label + ": "
+                    switch (datasetIndex) {
+                      case 0:
+                        return datasetLabel + item.yLabel + "%"
+                      case 1:
+                        return datasetLabel + actionsMap.get(dataset.data[item.index].t)
+                      case 2:
+                        return datasetLabel + item.yLabel + " GB"
+                    }
+                  },
                 },
               },
-            },
-            responsive: true,
-            scales: {
-              yAxes: [{
-                barPercentage: 1.6,
-                gridLines: {
-                  drawBorder: false,
-                  color: 'rgba(29,140,248,0.0)',
-                  zeroLineColor: "transparent",
-                },
-                ticks: {
-                  suggestedMin: 0,
-                  // suggestedMax: 1,
-                  padding: 20,
-                  fontColor: "#9a9a9a"
-                }
-              }],
-              xAxes: [{
-                type: 'time',
-                barPercentage: 1.6,
-                gridLines: {
-                  drawBorder: false,
-                  color: 'rgba(225,78,202,0.1)',
-                  zeroLineColor: "transparent",
-                },
-                ticks: {
-                  padding: 20,
-                  fontColor: "#9a9a9a"
-                }
-              }]
+              responsive: true,
+              scales: {
+                yAxes: [{
+                  id: 'left-y-axis',
+                  type: 'logarithmic',
+                  position: 'left',
+                  barPercentage: 1.6,
+                  gridLines: {
+                    drawBorder: false,
+                    color: 'rgba(29,140,248,0.0)',
+                    zeroLineColor: "transparent",
+                  },
+                  ticks: {
+                    suggestedMin: 0,
+                    padding: 20,
+                    fontColor: "#9a9a9a",
+                  }
+                }, {
+                  id: 'right-y-axis',
+                  type: 'linear',
+                  position: 'right',
+                  barPercentage: 1.6,
+                  gridLines: {
+                    drawBorder: false,
+                    color: 'rgba(29,140,248,0.0)',
+                    zeroLineColor: "transparent",
+                  },
+                  ticks: {
+                    padding: 20,
+                    fontColor: "#9a9a9a",
+                    stepSize: 0.5,
+                  },
+                  gridLines: {
+                    drawOnChartArea: false,
+                  },
+                }],
+                xAxes: [{
+                  type: 'time',
+                  barPercentage: 1.6,
+                  gridLines: {
+                    drawBorder: false,
+                    color: 'rgba(225,78,202,0.1)',
+                    zeroLineColor: "transparent",
+                  },
+                  ticks: {
+                    padding: 20,
+                    fontColor: "#9a9a9a"
+                  }
+                }]
+              }
             }
-          }
-        })
-        return chart
+          })
+        }
       }
     }
   }
@@ -4092,7 +4141,7 @@ var PS = {};
       var render = function ($$this) {
           return function __do() {
               var v = React.getProps($$this)();
-              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (v.cpuLast + " / 547")) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Day") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("D") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]);
+              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (v.cpuLast + ("% / " + (v.memLast + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Day") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("D") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]);
           };
       };
       return React.component(React.reactComponentSpec()())("Node")(function ($$this) {
@@ -4101,11 +4150,11 @@ var PS = {};
               return {
                   state: {},
                   render: render($$this),
-                  componentDidMount: $foreign.createChart(v.cpuLoad)(v.actions),
+                  componentDidMount: $foreign.createChart(v.cpuLoad)(v.memLoad)(v.actions),
                   componentDidUpdate: function (p$prime) {
                       return function (v1) {
                           return function (v2) {
-                              return $foreign.updateChart(p$prime.cpuLoad)(p$prime.actions);
+                              return $foreign.updateChart(p$prime.cpuLoad)(p$prime.memLoad)(p$prime.actions);
                           };
                       };
                   }
@@ -4307,6 +4356,7 @@ var PS = {};
   var Control_Bind = PS["Control.Bind"];
   var Data_Array = PS["Data.Array"];
   var Data_Eq = PS["Data.Eq"];
+  var Data_EuclideanRing = PS["Data.EuclideanRing"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
   var Data_List = PS["Data.List"];
@@ -4495,10 +4545,15 @@ var PS = {};
                   var cpuLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                       return [ {
                           t: Global.readInt(10)(a.time),
-                          y: b
+                          y: Global.readInt(10)(b)
                       } ];
                   })(a.cpu));
-                  var cpuLast = Data_Functor.map(Data_Maybe.functorMaybe)(Data_Show.show(Data_Show.showNumber))(a.cpu);
+                  var memLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
+                      return [ {
+                          t: Global.readInt(10)(a.time),
+                          y: Global.readInt(10)(b) / 1000.0
+                      } ];
+                  })(a.mem));
                   var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                       return [ {
                           t: Global.readInt(10)(a.time),
@@ -4513,8 +4568,10 @@ var PS = {};
                               return {
                                   lastUpdate: a.time,
                                   cpuLoad: Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.cpuLoad)(cpuLoad),
-                                  cpuLast: Data_Maybe.fromMaybe(v1.value0.cpuLast)(cpuLast),
+                                  memLoad: Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.memLoad)(memLoad),
                                   actions: Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.actions)(action),
+                                  cpuLast: Data_Maybe.fromMaybe(v1.value0.cpuLast)(a.cpu),
+                                  memLast: Data_Maybe.fromMaybe(v1.value0.memLast)(a.mem),
                                   addr: v1.value0.addr
                               };
                           };
@@ -4523,11 +4580,13 @@ var PS = {};
                                   addr: a.addr,
                                   lastUpdate: a.time,
                                   cpuLoad: cpuLoad,
-                                  cpuLast: Data_Maybe.fromMaybe("CPU")(cpuLast),
-                                  actions: action
+                                  memLoad: memLoad,
+                                  actions: action,
+                                  cpuLast: Data_Maybe.fromMaybe("CPU")(a.cpu),
+                                  memLast: Data_Maybe.fromMaybe("RAM")(a.mem)
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 227, column 21 - line 240, column 18): " + [ v1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 230, column 21 - line 247, column 18): " + [ v1.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -4552,7 +4611,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 242, column 9 - line 244, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 249, column 9 - line 251, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
@@ -4566,7 +4625,14 @@ var PS = {};
                           cpu: (function () {
                               var $59 = v1[0] === "cpu.load";
                               if ($59) {
-                                  return new Data_Maybe.Just(Global.readInt(10)(v1[1]));
+                                  return new Data_Maybe.Just(v1[1]);
+                              };
+                              return Data_Maybe.Nothing.value;
+                          })(),
+                          mem: (function () {
+                              var $60 = v1[0] === "mem.used";
+                              if ($60) {
+                                  return new Data_Maybe.Just(v1[1]);
                               };
                               return Data_Maybe.Nothing.value;
                           })(),
@@ -4601,6 +4667,7 @@ var PS = {};
                           addr: v1[3],
                           time: v1[2],
                           cpu: Data_Maybe.Nothing.value,
+                          mem: Data_Maybe.Nothing.value,
                           err: new Data_Maybe.Just(err),
                           action: Data_Maybe.Nothing.value
                       });
@@ -4614,6 +4681,7 @@ var PS = {};
                           addr: v1[2],
                           time: v1[1],
                           cpu: Data_Maybe.Nothing.value,
+                          mem: Data_Maybe.Nothing.value,
                           err: Data_Maybe.Nothing.value,
                           action: new Data_Maybe.Just(v1[0])
                       });

@@ -15,20 +15,28 @@ type ErrorInfo =
 type UpdateData =
   { addr :: String
   , time :: String
-  , cpu :: Maybe Number
-  , err :: Maybe ErrorInfo
+  , cpu :: Maybe String
+  , mem :: Maybe String
   , action :: Maybe String
+  , err :: Maybe ErrorInfo
   }
 
 type NodeInfo =
   { addr :: String
   , lastUpdate :: String
   , cpuLoad :: Array CpuPoint
-  , cpuLast :: String
+  , memLoad :: Array MemPoint
   , actions :: Array ActionPoint
+  , cpuLast :: String
+  , memLast :: String
   }
 
 type CpuPoint =
+  { t :: Number
+  , y :: Number
+  }
+
+type MemPoint =
   { t :: Number
   , y :: Number
   }
