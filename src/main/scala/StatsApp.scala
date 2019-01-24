@@ -12,13 +12,15 @@ object StatsApp extends App {
 
   val ws = WsExtension(system)
   val kvs = Kvs(system)
-  // val stats = client.StatsExtenstion(system)
+  val stats = client.StatsExtenstion(system)
 
   import system.dispatcher
   val scheduler = system.scheduler
-  // Uptime (seconds)
-  scheduler.schedule(1 second, 30 seconds) {
+  scheduler.schedule(1 second, 13 seconds) {
     system.log.error(new Exception("exc"), s"error occured at ${now_ms()}")
+  }
+  scheduler.schedule(1 second, 7 seconds) {
+    stats.action(s"event ${now_ms()}")
   }
 
   Flows.udp(system, kvs).run()

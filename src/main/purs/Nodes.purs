@@ -1,7 +1,5 @@
 module Nodes
   ( reactClass
-  , NodeInfo
-  , ChartValue
   ) where
 
 import DateOps (localDateTime)
@@ -11,18 +9,9 @@ import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps)
 import React.DOM (div, h4, table, tbody', td', text, th', thead, tr, tr')
 import React.DOM.Props (onClick, style)
+import Schema
 
 type State = {}
-type ChartValue =
-  { t :: Number
-  , y :: Number
-  }
-type NodeInfo =
-  { addr :: String
-  , lastUpdate :: String
-  , cpuLoad :: Array ChartValue
-  , cpuLast :: String
-  }
 type Props =
   { nodes :: Array NodeInfo
   , openNode :: String -> Effect Unit

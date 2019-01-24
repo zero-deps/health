@@ -2,16 +2,19 @@ module Main
   ( view
   ) where
 
-import Data.Array (findIndex, index, slice, modifyAt, snoc, head, find, (:), (!!))
+import Data.Array (fromFoldable, index, slice, head, (:), (!!))
 import Data.List (List)
+import Data.Map (Map, lookup)
+import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
-import DomOps as DomOps
 import DomOps (cn)
+import DomOps as DomOps
 import Effect (Effect)
 import Effect.Console (error)
 import Errors as ErrorsCom
+import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
 import Prelude hiding (div)
@@ -19,27 +22,27 @@ import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyStat
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
 import ReactDOM as ReactDOM
+import Schema
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
-import Global (readInt)
 
 type State = 
   { menu :: Menu
-  , nodes :: Array NodesCom.NodeInfo
+  , nodes :: Map NodeAddr NodeInfo
   , node :: Maybe NodeAddr
-  , errors :: Array ErrorsCom.ErrorInfo
+  , errors :: Array ErrorInfo
   , ws :: WebSocket
   }
-type NodeAddr = String
+type Props =
+  { menu :: Array Menu
+  }
+
 data Menu = Nodes | Errors | Legacy
 derive instance eqMenu :: Eq Menu
 instance showMenu :: Show Menu where
   show Nodes = "Nodes"
   show Errors = "Errors"
   show Legacy = "Legacy"
-type Props =
-  { menu :: Array Menu
-  }
 
 view :: Effect Unit
 view = do
@@ -57,7 +60,7 @@ reactClass = component "Main" \this -> do
   pure
     { state:
       { menu: Nodes
-      , nodes: []
+      , nodes: Map.empty
       , node: Nothing
       , errors: []
       , ws: ws
@@ -153,11 +156,11 @@ reactClass = component "Main" \this -> do
 
       menuContent :: State -> Effect ReactElement
       menuContent { menu: Nodes, node: Just addr, nodes: nodes } =
-        case find (\a -> a.addr == addr) nodes of
+        case lookup addr nodes of
           Just node -> pure $ createLeafElement NodeCom.reactClass node
           Nothing -> map (\_ -> createLeafElement dummy {}) $ error "bad node"
       menuContent { menu: Nodes, nodes: nodes } =
-        pure $ createLeafElement NodesCom.reactClass { nodes: nodes, openNode: \addr -> modifyState this _{ node = Just addr } }
+        pure $ createLeafElement NodesCom.reactClass { nodes: fromFoldable nodes, openNode: \addr -> modifyState this _{ node = Just addr } }
       menuContent { menu: Errors, errors: errors } =
         pure $ createLeafElement ErrorsCom.reactClass { errors: errors }
       menuContent { menu: Legacy } =
@@ -177,45 +180,68 @@ reactClass = component "Main" \this -> do
       case index xs 0 of
         Just "metric" ->
           case slice 1 5 xs of
-            [ name, value, time, addr ] -> do
-              s <- getState this
-              let lastUpdate = time
-              let cpuLoad = if name == "cpu.load" then [{ t: readInt 10 time, y: readInt 10 value }] else []
-              let cpuLast = if name == "cpu.load" then Just value else Nothing
-              let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
-                    Just a -> fromMaybe s.nodes $ modifyAt a (\b -> { addr: addr, lastUpdate: lastUpdate, cpuLoad: b.cpuLoad<>cpuLoad, cpuLast: fromMaybe b.cpuLast cpuLast }) s.nodes
-                    Nothing -> snoc s.nodes { addr: addr, lastUpdate: lastUpdate, cpuLoad: cpuLoad, cpuLast: fromMaybe "CPU" cpuLast }
-              modifyState this _{ nodes = nodes' }
-            _ -> error "bad size"
+            [ name, value, time, addr ] -> updateWith
+              { addr: addr
+              , time: time
+              , cpu: if name == "cpu.load" then Just (readInt 10 value) else Nothing
+              , err: Nothing
+              , action: Nothing
+              }
+            _ -> error "bad format"
         Just "error" ->
           case slice 1 5 xs of
             [ exception', stacktrace', time, addr ] -> do
-              s <- getState this
-              let lastUpdate = time
-              let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
-                    Just a -> fromMaybe s.nodes $ modifyAt a _{ addr=addr, lastUpdate=lastUpdate } s.nodes
-                    Nothing -> snoc s.nodes { addr: addr, lastUpdate: lastUpdate, cpuLoad: [], cpuLast: "CPU" }
-              modifyState this _{ nodes = nodes' }
               let exception = split (Pattern "~") exception'
               let stacktrace'' = map (split (Pattern "~")) $ split (Pattern "~~") stacktrace'
               let stacktrace = map (case _ of
                     [ method, file ] -> method<>"("<>file<>")"
                     _ -> "bad format") stacktrace''
               let file = fromMaybe "bad format" $ head stacktrace'' >>= (_ !! 1)
-              let error = { exception, stacktrace, file, time, addr }
-              modifyState this _{ errors = error : (slice 0 100 s.errors) }
-            _ -> error "bad size"
+              let err = { exception, stacktrace, file, time, addr }
+              updateWith
+                { addr: addr
+                , time: time
+                , cpu: Nothing
+                , err: Just err
+                , action: Nothing
+                }
+            _ -> error "bad format"
         Just "action" ->
           case slice 1 4 xs of
-            [ action, time, addr ] -> do
-              s <- getState this
-              let lastUpdate = time
-              let nodes' = case findIndex (\x -> x.addr == addr) s.nodes of
-                    Just a -> fromMaybe s.nodes $ modifyAt a _{ addr=addr, lastUpdate=lastUpdate } s.nodes
-                    Nothing -> snoc s.nodes { addr: addr, lastUpdate: lastUpdate, cpuLoad: [], cpuLast: "CPU" }
-              modifyState this _{ nodes = nodes' }
-            _ -> error "bad size"
+            [ action, time, addr ] -> updateWith
+              { addr: addr
+              , time: time
+              , cpu: Nothing
+              , err: Nothing
+              , action: Just action
+              }
+            _ -> error "bad format"
         _ -> error "unknown type"
+      where
+      updateWith :: UpdateData -> Effect Unit
+      updateWith a = do
+        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b }]) a.cpu
+        let cpuLast = map show a.cpu
+        let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
+        s <- getState this
+        let node' = case lookup a.addr s.nodes of
+              Just node -> node
+                { lastUpdate = a.time
+                , cpuLoad = node.cpuLoad <> cpuLoad
+                , cpuLast = fromMaybe node.cpuLast cpuLast
+                , actions = node.actions <> action
+                }
+              Nothing ->
+                { addr: a.addr
+                , lastUpdate: a.time
+                , cpuLoad: cpuLoad
+                , cpuLast: fromMaybe "CPU" cpuLast
+                , actions: action
+                }
+        modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
+        case a.err of
+          Just err -> modifyState this \s' -> s' { errors = err : (slice 0 99 s'.errors) }
+          Nothing -> pure unit
 
     errHandler :: List String -> Effect Unit
     errHandler xs = void $ sequence $ map error xs
