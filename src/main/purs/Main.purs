@@ -2,7 +2,7 @@ module Main
   ( view
   ) where
 
-import Data.Array (fromFoldable, index, slice, head, (:), (!!))
+import Data.Array (fromFoldable, index, slice, head, last, dropEnd, filter, (:), (!!))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
@@ -181,6 +181,12 @@ reactClass = component "Main" \this -> do
               , metrics: Just
                 { cpu: if name == "cpu.load" then Just value else Nothing
                 , mem: if name == "mem.used" then Just value else Nothing 
+                , uptime: if name == "sys.uptime" then Just value else Nothing
+                , memFree: if name == "mem.free" then Just value else Nothing
+                , memTotal: if name == "mem.total" then Just value else Nothing
+                , fsUsed: if name == "fs./.used" then Just value else Nothing
+                , fsFree: if name == "fs./.free" then Just value else Nothing
+                , fsTotal: if name == "fs./.total" then Just value else Nothing
                 }
               , err: Nothing
               , action: Nothing
@@ -218,29 +224,58 @@ reactClass = component "Main" \this -> do
       where
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
+        let uptime' = a.metrics >>= _.uptime
         let cpu' = a.metrics >>= _.cpu
-        let mem' = a.metrics >>= _.mem
+        let mem' = map (readInt 10) $ a.metrics >>= _.mem
+        let memFree' = map (readInt 10) $ a.metrics >>= _.memFree
+        let memTotal' = map (readInt 10) $ a.metrics >>= _.memTotal
+        let fsUsed' = map (readInt 10) $ a.metrics >>= _.fsUsed
+        let fsFree' = map (readInt 10) $ a.metrics >>= _.fsFree
+        let fsTotal' = map (readInt 10) $ a.metrics >>= _.fsTotal
         let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu'
-        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b / 1000.0 }]) mem'
+        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b / 1000.0 }]) mem'
         let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
         s <- getState this
         let node' = case lookup a.addr s.nodes of
-              Just node -> node
-                { lastUpdate = a.time
-                , cpuLoad = node.cpuLoad <> cpuLoad
-                , memLoad = node.memLoad <> memLoad
-                , actions = node.actions <> action
-                , cpuLast = fromMaybe node.cpuLast cpu'
-                , memLast = fromMaybe node.memLast mem'
-                }
+              Just node -> do
+                let cpuLoad' = node.cpuLoad <> cpuLoad
+                let memLoad' = node.memLoad <> memLoad
+                let actions' = node.actions <> action
+                let minTime = max
+                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 cpuLoad') $ max
+                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 memLoad')
+                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 actions')
+                let cpuLoad'' = filter (\x -> x.t > minTime) cpuLoad'
+                let memLoad'' = filter (\x -> x.t > minTime) memLoad'
+                let actions'' = filter (\x -> x.t > minTime) actions'
+                node
+                  { lastUpdate = a.time
+                  , cpuLoad = cpuLoad''
+                  , memLoad = memLoad''
+                  , actions = actions''
+                  , cpuLast = fromMaybe node.cpuLast cpu'
+                  , memLast = fromMaybe node.memLast mem'
+                  , uptime = fromMaybe node.uptime uptime'
+                  , memFree = fromMaybe node.memFree memFree'
+                  , memTotal = fromMaybe node.memTotal memTotal'
+                  , fsUsed = fromMaybe node.fsUsed fsUsed'
+                  , fsFree = fromMaybe node.fsFree fsFree'
+                  , fsTotal = fromMaybe node.fsTotal fsTotal'
+                  }
               Nothing ->
                 { addr: a.addr
                 , lastUpdate: a.time
                 , cpuLoad: cpuLoad
                 , memLoad: memLoad
                 , actions: action
-                , cpuLast: fromMaybe "CPU" cpu'
-                , memLast: fromMaybe "RAM" mem'
+                , cpuLast: fromMaybe "0" cpu'
+                , memLast: fromMaybe 0.0 mem'
+                , uptime: fromMaybe "0" uptime'
+                , memFree: fromMaybe 0.0 memFree'
+                , memTotal: fromMaybe 0.0 memTotal'
+                , fsUsed: fromMaybe 0.0 fsUsed'
+                , fsFree: fromMaybe 0.0 fsFree'
+                , fsTotal: fromMaybe 0.0 fsTotal'
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
         case a.err of

@@ -1,5 +1,9 @@
 "use strict"
 
+exports.formatNum = function(num) {
+  return num.toLocaleString("en-GB")
+}
+
 var chart = null
 var actionsMap = new Map()
 

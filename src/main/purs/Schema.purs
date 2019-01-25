@@ -23,6 +23,12 @@ type UpdateData =
 type MetricsUpdate =
   { cpu :: Maybe String
   , mem :: Maybe String
+  , uptime :: Maybe String
+  , memFree :: Maybe String
+  , memTotal :: Maybe String
+  , fsUsed :: Maybe String
+  , fsFree :: Maybe String
+  , fsTotal :: Maybe String
   }
 
 type NodeInfo =
@@ -32,7 +38,13 @@ type NodeInfo =
   , memLoad :: Array MemPoint
   , actions :: Array ActionPoint
   , cpuLast :: String
-  , memLast :: String
+  , memLast :: Number
+  , uptime :: String
+  , memFree :: Number
+  , memTotal :: Number
+  , fsUsed :: Number
+  , fsFree :: Number
+  , fsTotal :: Number
   }
 
 type CpuPoint =

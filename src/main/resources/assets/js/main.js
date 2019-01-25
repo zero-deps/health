@@ -146,6 +146,7 @@ var PS = {};
       this.eq = eq;
   }; 
   var eqString = new Eq($foreign.refEq);
+  var eqNumber = new Eq($foreign.refEq);
   var eqInt = new Eq($foreign.refEq);
   var eqChar = new Eq($foreign.refEq);
   var eq = function (dict) {
@@ -154,6 +155,7 @@ var PS = {};
   exports["Eq"] = Eq;
   exports["eq"] = eq;
   exports["eqInt"] = eqInt;
+  exports["eqNumber"] = eqNumber;
   exports["eqChar"] = eqChar;
   exports["eqString"] = eqString;
 })(PS["Data.Eq"] = PS["Data.Eq"] || {});
@@ -348,6 +350,9 @@ var PS = {};
   var ordString = new Ord(function () {
       return Data_Eq.eqString;
   }, Data_Ord_Unsafe.unsafeCompare);
+  var ordNumber = new Ord(function () {
+      return Data_Eq.eqNumber;
+  }, Data_Ord_Unsafe.unsafeCompare);
   var ordInt = new Ord(function () {
       return Data_Eq.eqInt;
   }, Data_Ord_Unsafe.unsafeCompare);
@@ -357,9 +362,28 @@ var PS = {};
   var compare = function (dict) {
       return dict.compare;
   };
+  var max = function (dictOrd) {
+      return function (x) {
+          return function (y) {
+              var v = compare(dictOrd)(x)(y);
+              if (v instanceof Data_Ordering.LT) {
+                  return y;
+              };
+              if (v instanceof Data_Ordering.EQ) {
+                  return x;
+              };
+              if (v instanceof Data_Ordering.GT) {
+                  return x;
+              };
+              throw new Error("Failed pattern match at Data.Ord (line 128, column 3 - line 131, column 12): " + [ v.constructor.name ]);
+          };
+      };
+  };
   exports["Ord"] = Ord;
   exports["compare"] = compare;
+  exports["max"] = max;
   exports["ordInt"] = ordInt;
+  exports["ordNumber"] = ordNumber;
   exports["ordString"] = ordString;
   exports["ordChar"] = ordChar;
 })(PS["Data.Ord"] = PS["Data.Ord"] || {});
@@ -1387,6 +1411,12 @@ var PS = {};
     return result;
   };
 
+  exports.filter = function (f) {
+    return function (xs) {
+      return xs.filter(f);
+    };
+  };
+
   //------------------------------------------------------------------------------
   // Subarrays -------------------------------------------------------------------
   //------------------------------------------------------------------------------
@@ -1396,6 +1426,12 @@ var PS = {};
       return function (l) {
         return l.slice(s, e);
       };
+    };
+  };
+
+  exports.take = function (n) {
+    return function (l) {
+      return n < 1 ? [] : l.slice(0, n);
     };
   };
 })(PS["Data.Array"] = PS["Data.Array"] || {});
@@ -1555,17 +1591,28 @@ var PS = {};
   var Prelude = PS["Prelude"];
   var Unsafe_Coerce = PS["Unsafe.Coerce"];
   var index = $foreign.indexImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
+  var last = function (xs) {
+      return index(xs)($foreign.length(xs) - 1 | 0);
+  };
   var head = function (xs) {
       return index(xs)(0);
   };
   var fromFoldable = function (dictFoldable) {
       return $foreign.fromFoldableImpl(Data_Foldable.foldr(dictFoldable));
   };
+  var dropEnd = function (n) {
+      return function (xs) {
+          return $foreign.take($foreign.length(xs) - n | 0)(xs);
+      };
+  };
   exports["fromFoldable"] = fromFoldable;
   exports["head"] = head;
+  exports["last"] = last;
   exports["index"] = index;
+  exports["dropEnd"] = dropEnd;
   exports["length"] = $foreign.length;
   exports["cons"] = $foreign.cons;
+  exports["filter"] = $foreign.filter;
   exports["slice"] = $foreign.slice;
 })(PS["Data.Array"] = PS["Data.Array"] || {});
 (function(exports) {
@@ -3920,6 +3967,10 @@ var PS = {};
 (function(exports) {
     "use strict";
 
+  exports.formatNum = function(num) {
+    return num.toLocaleString("en-GB")
+  }
+
   var chart = null
   var actionsMap = new Map()
 
@@ -4140,7 +4191,23 @@ var PS = {};
       var render = function ($$this) {
           return function __do() {
               var v = React.getProps($$this)();
-              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (v.cpuLast + ("% / " + (v.memLast + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Day") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("D") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]);
+              return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (v.cpuLast + ("% / " + ($foreign.formatNum(v.memLast) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("All Metrics") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ]) ]), React_DOM["tbody'"]([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text(v.uptime) ]), React_DOM["td'"]([ React_DOM.text("sec") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("CPU Load") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text(v.cpuLast) ]), React_DOM["td'"]([ React_DOM.text("%") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Used") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text($foreign.formatNum(v.memLast)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Free") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text($foreign.formatNum(v.memFree)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Total") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text($foreign.formatNum(v.memTotal)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Used") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text($foreign.formatNum(v.fsUsed)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Free") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text($foreign.formatNum(v.fsFree)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Total") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text($foreign.formatNum(v.fsTotal)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]) ]) ]) ]) ]) ]) ]) ]) ]);
           };
       };
       return React.component(React.reactComponentSpec()())("Node")(function ($$this) {
@@ -4504,8 +4571,8 @@ var PS = {};
               var v2 = menuContent(v)();
               return React_DOM.div([ DomOps.cn("wrapper") ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $51 = Data_Eq.eq(eqMenu)(x)(v.menu);
-                      if ($51) {
+                      var $60 = Data_Eq.eq(eqMenu)(x)(v.menu);
+                      if ($60) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -4518,12 +4585,30 @@ var PS = {};
       var onMsg = function ($$this) {
           return function (payload) {
               var updateWith = function (a) {
+                  var uptime$prime = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                      return v.uptime;
+                  });
                   var cpu$prime = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
                       return v.cpu;
                   });
-                  var mem$prime = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                  var mem$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Global.readInt(10))(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
                       return v.mem;
-                  });
+                  }));
+                  var memFree$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Global.readInt(10))(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                      return v.memFree;
+                  }));
+                  var memTotal$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Global.readInt(10))(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                      return v.memTotal;
+                  }));
+                  var fsUsed$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Global.readInt(10))(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                      return v.fsUsed;
+                  }));
+                  var fsFree$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Global.readInt(10))(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                      return v.fsFree;
+                  }));
+                  var fsTotal$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Global.readInt(10))(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                      return v.fsTotal;
+                  }));
                   var cpuLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                       return [ {
                           t: Global.readInt(10)(a.time),
@@ -4533,7 +4618,7 @@ var PS = {};
                   var memLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                       return [ {
                           t: Global.readInt(10)(a.time),
-                          y: Global.readInt(10)(b) / 1000.0
+                          y: b / 1000.0
                       } ];
                   })(mem$prime));
                   var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
@@ -4547,13 +4632,38 @@ var PS = {};
                       var node$prime = (function () {
                           var v1 = Data_Map_Internal.lookup(Data_Ord.ordString)(a.addr)(v.nodes);
                           if (v1 instanceof Data_Maybe.Just) {
+                              var cpuLoad$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.cpuLoad)(cpuLoad);
+                              var memLoad$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.memLoad)(memLoad);
+                              var actions$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.actions)(action);
+                              var minTime = Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
+                                  return v2.t;
+                              })(Data_Array.last(Data_Array.dropEnd(20)(cpuLoad$prime)))))(Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
+                                  return v2.t;
+                              })(Data_Array.last(Data_Array.dropEnd(20)(memLoad$prime)))))(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
+                                  return v2.t;
+                              })(Data_Array.last(Data_Array.dropEnd(20)(actions$prime))))));
+                              var cpuLoad$prime$prime = Data_Array.filter(function (x) {
+                                  return x.t > minTime;
+                              })(cpuLoad$prime);
+                              var memLoad$prime$prime = Data_Array.filter(function (x) {
+                                  return x.t > minTime;
+                              })(memLoad$prime);
+                              var actions$prime$prime = Data_Array.filter(function (x) {
+                                  return x.t > minTime;
+                              })(actions$prime);
                               return {
                                   lastUpdate: a.time,
-                                  cpuLoad: Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.cpuLoad)(cpuLoad),
-                                  memLoad: Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.memLoad)(memLoad),
-                                  actions: Data_Semigroup.append(Data_Semigroup.semigroupArray)(v1.value0.actions)(action),
+                                  cpuLoad: cpuLoad$prime$prime,
+                                  memLoad: memLoad$prime$prime,
+                                  actions: actions$prime$prime,
                                   cpuLast: Data_Maybe.fromMaybe(v1.value0.cpuLast)(cpu$prime),
                                   memLast: Data_Maybe.fromMaybe(v1.value0.memLast)(mem$prime),
+                                  uptime: Data_Maybe.fromMaybe(v1.value0.uptime)(uptime$prime),
+                                  memFree: Data_Maybe.fromMaybe(v1.value0.memFree)(memFree$prime),
+                                  memTotal: Data_Maybe.fromMaybe(v1.value0.memTotal)(memTotal$prime),
+                                  fsUsed: Data_Maybe.fromMaybe(v1.value0.fsUsed)(fsUsed$prime),
+                                  fsFree: Data_Maybe.fromMaybe(v1.value0.fsFree)(fsFree$prime),
+                                  fsTotal: Data_Maybe.fromMaybe(v1.value0.fsTotal)(fsTotal$prime),
                                   addr: v1.value0.addr
                               };
                           };
@@ -4564,11 +4674,17 @@ var PS = {};
                                   cpuLoad: cpuLoad,
                                   memLoad: memLoad,
                                   actions: action,
-                                  cpuLast: Data_Maybe.fromMaybe("CPU")(cpu$prime),
-                                  memLast: Data_Maybe.fromMaybe("RAM")(mem$prime)
+                                  cpuLast: Data_Maybe.fromMaybe("0")(cpu$prime),
+                                  memLast: Data_Maybe.fromMaybe(0.0)(mem$prime),
+                                  uptime: Data_Maybe.fromMaybe("0")(uptime$prime),
+                                  memFree: Data_Maybe.fromMaybe(0.0)(memFree$prime),
+                                  memTotal: Data_Maybe.fromMaybe(0.0)(memTotal$prime),
+                                  fsUsed: Data_Maybe.fromMaybe(0.0)(fsUsed$prime),
+                                  fsFree: Data_Maybe.fromMaybe(0.0)(fsFree$prime),
+                                  fsTotal: Data_Maybe.fromMaybe(0.0)(fsTotal$prime)
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 227, column 21 - line 244, column 18): " + [ v1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 239, column 21 - line 279, column 18): " + [ v1.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -4593,7 +4709,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 246, column 9 - line 248, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 281, column 9 - line 283, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
@@ -4606,15 +4722,57 @@ var PS = {};
                           time: v1[2],
                           metrics: new Data_Maybe.Just({
                               cpu: (function () {
-                                  var $59 = v1[0] === "cpu.load";
-                                  if ($59) {
+                                  var $68 = v1[0] === "cpu.load";
+                                  if ($68) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               mem: (function () {
-                                  var $60 = v1[0] === "mem.used";
-                                  if ($60) {
+                                  var $69 = v1[0] === "mem.used";
+                                  if ($69) {
+                                      return new Data_Maybe.Just(v1[1]);
+                                  };
+                                  return Data_Maybe.Nothing.value;
+                              })(),
+                              uptime: (function () {
+                                  var $70 = v1[0] === "sys.uptime";
+                                  if ($70) {
+                                      return new Data_Maybe.Just(v1[1]);
+                                  };
+                                  return Data_Maybe.Nothing.value;
+                              })(),
+                              memFree: (function () {
+                                  var $71 = v1[0] === "mem.free";
+                                  if ($71) {
+                                      return new Data_Maybe.Just(v1[1]);
+                                  };
+                                  return Data_Maybe.Nothing.value;
+                              })(),
+                              memTotal: (function () {
+                                  var $72 = v1[0] === "mem.total";
+                                  if ($72) {
+                                      return new Data_Maybe.Just(v1[1]);
+                                  };
+                                  return Data_Maybe.Nothing.value;
+                              })(),
+                              fsUsed: (function () {
+                                  var $73 = v1[0] === "fs./.used";
+                                  if ($73) {
+                                      return new Data_Maybe.Just(v1[1]);
+                                  };
+                                  return Data_Maybe.Nothing.value;
+                              })(),
+                              fsFree: (function () {
+                                  var $74 = v1[0] === "fs./.free";
+                                  if ($74) {
+                                      return new Data_Maybe.Just(v1[1]);
+                                  };
+                                  return Data_Maybe.Nothing.value;
+                              })(),
+                              fsTotal: (function () {
+                                  var $75 = v1[0] === "fs./.total";
+                                  if ($75) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;

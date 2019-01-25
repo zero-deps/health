@@ -1,6 +1,7 @@
 package .stats.client
 
 import akka.actor.{ActorRef, ActorSystem, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
+import .stats.macros.Literals
 
 object StatsExtenstion extends ExtensionId[Stats] with ExtensionIdProvider {
   override def createExtension(system: ExtendedActorSystem): Stats = new Stats()(system)
@@ -61,24 +62,24 @@ class Stats(implicit system: ActorSystem) extends Extension {
     scheduler.schedule(1 second, 5 seconds) {
       send(MetricStat("sys.uptime", system.uptime.toString))
     }
-    // CPU load ([0,1])
+    // CPU load ([0,100])
     scheduler.schedule(1 second, 5 seconds) {
       send(MetricStat("cpu.load", (100*sigar.getCpuPerc.getCombined).toInt.toString))
     }
     // Memory (Mbytes)
     scheduler.schedule(1 second, 5 seconds) {
-      send(MetricStat("mem.used", (sigar.getMem.getActualUsed/1000000).toString))
-      send(MetricStat("mem.free", (sigar.getMem.getActualFree/1000000).toString))
-      send(MetricStat("mem.total", (sigar.getMem.getTotal/1000000).toString))
+      send(MetricStat("mem.used", (sigar.getMem.getActualUsed/i"1'000'000").toString))
+      send(MetricStat("mem.free", (sigar.getMem.getActualFree/i"1'000'000").toString))
+      send(MetricStat("mem.total", (sigar.getMem.getTotal/i"1'000'000").toString))
     }
-    // FS (KB)
-    scheduler.schedule(1 second, 1 hour) {
+    // FS (Mbytes)
+    scheduler.schedule(1 second, 5 seconds) {
       import scala.util._
       Try(sigar.getFileSystemUsage("/")) match {
         case Success(usage) =>
-          send(MetricStat("fs./.used", usage.getUsed.toString))
-          send(MetricStat("fs./.free", usage.getFree.toString))
-          send(MetricStat("fs./.total", usage.getTotal.toString))
+          send(MetricStat("fs./.used", (usage.getUsed/i"1'000").toString))
+          send(MetricStat("fs./.free", (usage.getFree/i"1'000").toString))
+          send(MetricStat("fs./.total", (usage.getTotal/i"1'000").toString))
         case Failure(_) =>
       }
     }
