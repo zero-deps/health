@@ -22,27 +22,13 @@ class Route(implicit val system: ExtendedActorSystem) extends RouteGrip[HttpRequ
           Future.successful(upg.handleMessages(Flows.ws(system, kvs)))
         case None => Future.successful(HttpResponse(BadRequest))
       }
-
     case HttpRequest(GET,Path(Root),_,_,_) =>
-      Future.successful(chunks(None,"nodes.html"))
-
-    case HttpRequest(GET,Path(Root/"monitor.html"),_,_,_) =>
-      Future.successful(chunks(None,"monitor.html"))
-
-    case HttpRequest(GET,Path(Root/"assets"/"css"/request),_,_,_) =>
+      Future.successful(chunks(Some("assets"),"index.html"))
+    case HttpRequest(GET,Path(Root/"css"/request),_,_,_) =>
       Future.successful(chunks(Some("assets/css"),request))
-    case HttpRequest(GET,Path(Root/"assets"/"fonts"/request),_,_,_) =>
-      Future.successful(chunks(Some("assets/fonts"),request))
-    case HttpRequest(GET,Path(Root/"assets"/"js"/request),_,_,_) =>
+    case HttpRequest(GET,Path(Root/"js"/request),_,_,_) =>
       Future.successful(chunks(Some("assets/js"),request))
-
-    case HttpRequest(GET,Path(Root/"stats"/request),_,_,_) =>
-      Future.successful(chunks(Some("stats"),request))
-    case HttpRequest(GET,Path(Root/"stats"/"react"/request),_,_,_) =>
-      Future.successful(chunks(Some("stats/react"),request))
-    case HttpRequest(GET,Path(Root/"stats"/"bootstrap"/request),_,_,_) =>
-      Future.successful(chunks(Some("stats/bootstrap"),request))
-    case HttpRequest(GET,Path(Root/"stats"/"bootstrap"/"fonts"/request),_,_,_) =>
-      Future.successful(chunks(Some("stats/bootstrap/fonts"),request))
+    case HttpRequest(GET,Path(Root/"fonts"/request),_,_,_) =>
+      Future.successful(chunks(Some("assets/fonts"),request))
   }
 }
