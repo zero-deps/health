@@ -2,7 +2,7 @@ module Main
   ( view
   ) where
 
-import Data.Array (fromFoldable, index, slice, head, last, dropEnd, filter, (:), (!!))
+import Data.Array (dropEnd, filter, fromFoldable, index, last, slice, (:))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
@@ -187,16 +187,12 @@ reactClass = component "Main" \this -> do
               }
             _ -> error "bad format"
         Just "error" ->
-          case slice 1 5 xs of
-            [ exception', stacktrace', time, addr ] -> do
+          case slice 1 6 xs of
+            [ exception', stacktrace', toptrace, time, addr ] -> do
               let exception = split (Pattern "~") exception'
-              let stacktrace'' = map (split (Pattern "~")) $ split (Pattern "~~") stacktrace'
-              let stacktrace = map (case _ of
-                    [ method, file ] -> method<>"("<>file<>")"
-                    _ -> "bad format") stacktrace''
-              let file = fromMaybe "bad format" $ head stacktrace'' >>= (_ !! 1)
+              let stacktrace = split (Pattern "~") stacktrace'
               let key = addr<>time
-              let err = { exception, stacktrace, file, time, addr, key }
+              let err = { exception, stacktrace, toptrace, time, addr, key }
               updateWith
                 { addr: addr
                 , time: time

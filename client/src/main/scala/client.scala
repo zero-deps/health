@@ -30,8 +30,8 @@ class Client(remote: InetSocketAddress, localPort: String) extends Actor with Ac
       case MetricStat(name, value) =>
         send(udp)(s"metric::${name}::${value}::${localPort}")
       
-      case ErrorStat(exception, stacktrace) =>
-        send(udp)(s"error::${exception}::${stacktrace}::${localPort}")
+      case ErrorStat(exception, stacktrace, toptrace) =>
+        send(udp)(s"error::${exception}::${stacktrace}::${toptrace}::${localPort}")
       
       case ActionStat(action) =>
         send(udp)(s"action::${action}::${localPort}")

@@ -50,8 +50,8 @@ class Stats(implicit system: ActorSystem) extends Extension {
     send(ActionStat(action))
   }
 
-  def error(exception: String, stacktrace: String): Unit = {
-    send(ErrorStat(exception, stacktrace))
+  def error(exception: String, stacktrace: String, toptrace: String): Unit = {
+    send(ErrorStat(exception, stacktrace, toptrace))
   }
 
   if (enabled) {

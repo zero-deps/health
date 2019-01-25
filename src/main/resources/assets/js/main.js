@@ -1594,9 +1594,6 @@ var PS = {};
   var last = function (xs) {
       return index(xs)($foreign.length(xs) - 1 | 0);
   };
-  var head = function (xs) {
-      return index(xs)(0);
-  };
   var fromFoldable = function (dictFoldable) {
       return $foreign.fromFoldableImpl(Data_Foldable.foldr(dictFoldable));
   };
@@ -1606,7 +1603,6 @@ var PS = {};
       };
   };
   exports["fromFoldable"] = fromFoldable;
-  exports["head"] = head;
   exports["last"] = last;
   exports["index"] = index;
   exports["dropEnd"] = dropEnd;
@@ -3893,6 +3889,7 @@ var PS = {};
   var Control_Bind = PS["Control.Bind"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
+  var Data_String = PS["Data.String"];
   var DateOps = PS["DateOps"];
   var DomOps = PS["DomOps"];
   var Effect = PS["Effect"];
@@ -3923,19 +3920,24 @@ var PS = {};
                       return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
                           return fullStack;
                       }), React_DOM_Props.style({
-                          cursor: "zoom-in"
-                      }) ])([ React_DOM.text(v1.file) ]);
+                          cursor: "zoom-in",
+                          fontFamily: "Fira Code",
+                          wordBreak: "break-all"
+                      }) ])([ React_DOM.text(v1.toptrace) ]);
                   };
                   if (v.expandStack) {
                       return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
                           return shortStack;
                       }), React_DOM_Props.style({
                           cursor: "zoom-out"
+                      }) ])([ React_DOM.div([ React_DOM_Props.style({
+                          fontFamily: "Fira Code",
+                          wordBreak: "break-all"
                       }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
                           return React_DOM["div'"]([ React_DOM.text(y) ]);
-                      })(v1.stacktrace));
+                      })(v1.stacktrace)) ]);
                   };
-                  throw new Error("Failed pattern match at Errors (line 79, column 11 - line 85, column 50): " + [ v.expandStack.constructor.name ]);
+                  throw new Error("Failed pattern match at Errors (line 80, column 11 - line 88, column 16): " + [ v.expandStack.constructor.name ]);
               })() ]);
           };
       };
@@ -4571,8 +4573,8 @@ var PS = {};
               var v2 = menuContent(v)();
               return React_DOM.div([ DomOps.cn("wrapper") ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $60 = Data_Eq.eq(eqMenu)(x)(v.menu);
-                      if ($60) {
+                      var $58 = Data_Eq.eq(eqMenu)(x)(v.menu);
+                      if ($58) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -4684,7 +4686,7 @@ var PS = {};
                                   fsTotal: Data_Maybe.fromMaybe(0.0)(fsTotal$prime)
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 234, column 21 - line 274, column 18): " + [ v1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 230, column 21 - line 270, column 18): " + [ v1.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -4709,7 +4711,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 276, column 9 - line 278, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 272, column 9 - line 274, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
@@ -4722,57 +4724,57 @@ var PS = {};
                           time: v1[2],
                           metrics: new Data_Maybe.Just({
                               cpu: (function () {
-                                  var $68 = v1[0] === "cpu.load";
-                                  if ($68) {
+                                  var $66 = v1[0] === "cpu.load";
+                                  if ($66) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               mem: (function () {
-                                  var $69 = v1[0] === "mem.used";
-                                  if ($69) {
+                                  var $67 = v1[0] === "mem.used";
+                                  if ($67) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               uptime: (function () {
-                                  var $70 = v1[0] === "sys.uptime";
-                                  if ($70) {
+                                  var $68 = v1[0] === "sys.uptime";
+                                  if ($68) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               memFree: (function () {
-                                  var $71 = v1[0] === "mem.free";
-                                  if ($71) {
+                                  var $69 = v1[0] === "mem.free";
+                                  if ($69) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               memTotal: (function () {
-                                  var $72 = v1[0] === "mem.total";
-                                  if ($72) {
+                                  var $70 = v1[0] === "mem.total";
+                                  if ($70) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               fsUsed: (function () {
-                                  var $73 = v1[0] === "fs./.used";
-                                  if ($73) {
+                                  var $71 = v1[0] === "fs./.used";
+                                  if ($71) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               fsFree: (function () {
-                                  var $74 = v1[0] === "fs./.free";
-                                  if ($74) {
+                                  var $72 = v1[0] === "fs./.free";
+                                  if ($72) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
                               fsTotal: (function () {
-                                  var $75 = v1[0] === "fs./.total";
-                                  if ($75) {
+                                  var $73 = v1[0] === "fs./.total";
+                                  if ($73) {
                                       return new Data_Maybe.Just(v1[1]);
                                   };
                                   return Data_Maybe.Nothing.value;
@@ -4785,30 +4787,22 @@ var PS = {};
                   return Effect_Console.error("bad format");
               };
               if (v instanceof Data_Maybe.Just && v.value0 === "error") {
-                  var v1 = Data_Array.slice(1)(5)(xs);
-                  if (v1.length === 4) {
+                  var v1 = Data_Array.slice(1)(6)(xs);
+                  if (v1.length === 5) {
                       var exception = Data_String_Common.split("~")(v1[0]);
-                      var stacktrace$prime$prime = Data_Functor.map(Data_Functor.functorArray)(Data_String_Common.split("~"))(Data_String_Common.split("~~")(v1[1]));
-                      var stacktrace = Data_Functor.map(Data_Functor.functorArray)(function (v2) {
-                          if (v2.length === 2) {
-                              return v2[0] + ("(" + (v2[1] + ")"));
-                          };
-                          return "bad format";
-                      })(stacktrace$prime$prime);
-                      var file = Data_Maybe.fromMaybe("bad format")(Control_Bind.bind(Data_Maybe.bindMaybe)(Data_Array.head(stacktrace$prime$prime))(function (v2) {
-                          return Data_Array.index(v2)(1);
-                      }));
+                      var stacktrace = Data_String_Common.split("~")(v1[1]);
+                      var key = v1[4] + v1[3];
                       var err = {
                           exception: exception,
                           stacktrace: stacktrace,
-                          file: file,
-                          time: v1[2],
-                          addr: v1[3],
-                          key: v1[2]
+                          toptrace: v1[2],
+                          time: v1[3],
+                          addr: v1[4],
+                          key: key
                       };
                       return updateWith({
-                          addr: v1[3],
-                          time: v1[2],
+                          addr: v1[4],
+                          time: v1[3],
                           metrics: Data_Maybe.Nothing.value,
                           err: new Data_Maybe.Just(err),
                           action: Data_Maybe.Nothing.value

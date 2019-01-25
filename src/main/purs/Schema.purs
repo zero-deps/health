@@ -7,7 +7,7 @@ type NodeAddr = String
 type ErrorInfo =
   { exception :: Array String
   , stacktrace :: Array String
-  , file :: String
+  , toptrace :: String
   , time :: String
   , addr :: String
   , key :: String -- for React

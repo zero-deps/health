@@ -8,7 +8,7 @@ import Effect (Effect)
 import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr', div')
-import React.DOM.Props (onClick, style, key)
+import React.DOM.Props (onClick, style)
 import Schema
 
 type State = {}
@@ -78,11 +78,13 @@ errorReactClass = component "Error" \this -> do
         , td [ cn "align-top" ] $ map (\y -> div' [ text y ]) props.exception
         , case s.expandStack of
             false -> 
-              td [ cn "align-top", onClick \_ -> fullStack, style { cursor: "zoom-in" } ]
-              [ text props.file ]
+              td [ cn "align-top", onClick \_ -> fullStack, style { cursor: "zoom-in", fontFamily: "Fira Code", wordBreak: "break-all" } ]
+              [ text props.toptrace ]
             true -> 
-              td [ cn "align-top", onClick \_ -> shortStack, style { cursor: "zoom-out" } ] $ map (\y -> 
-                div' [ text y ]) props.stacktrace
+              td [ cn "align-top", onClick \_ -> shortStack, style { cursor: "zoom-out" } ]
+              [ div [ style { fontFamily: "Fira Code", wordBreak: "break-all" } ] $ map (\y -> 
+                  div' [ text y ]) props.stacktrace
+              ]
         ]
       where
       fullStack :: Effect Unit

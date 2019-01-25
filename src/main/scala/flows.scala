@@ -24,8 +24,8 @@ object Flows {
       val toMsg = b.add(Flow[Msg].map{ 
         case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
           s"metric::${name}::${value}::${time}::${addr}"
-        case Msg(ErrorStat(exception, stacktrace), StatMeta(time, addr)) =>
-          s"error::${exception}::${stacktrace}::${time}::${addr}"
+        case Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr)) =>
+          s"error::${exception}::${stacktrace}::${toptrace}::${time}::${addr}"
         case Msg(ActionStat(action), StatMeta(time, addr)) =>
           s"action::${action}::${time}::${addr}"
       })
@@ -49,8 +49,8 @@ object Flows {
         collect{
           case "metric" :: name :: value :: port :: host :: Nil =>
             Msg(MetricStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))
-          case "error" :: exception :: stacktrace :: port :: host :: Nil =>
-            Msg(ErrorStat(exception, stacktrace), StatMeta(now_ms(), addr=s"${host}:${port}"))
+          case "error" :: exception :: stacktrace :: toptrace :: port :: host :: Nil =>
+            Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(now_ms(), addr=s"${host}:${port}"))
           case "action" :: action :: port :: host :: Nil =>
             Msg(ActionStat(action), StatMeta(now_ms(), addr=s"${host}:${port}"))
         }
