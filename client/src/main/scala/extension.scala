@@ -79,6 +79,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
           send(MetricStat("fs./.used", usage.getUsed.toString))
           send(MetricStat("fs./.free", usage.getFree.toString))
           send(MetricStat("fs./.total", usage.getTotal.toString))
+        case Failure(_) =>
       }
     }
   }

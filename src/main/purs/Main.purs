@@ -37,18 +37,17 @@ type Props =
   { menu :: Array Menu
   }
 
-data Menu = Nodes | Errors | Legacy
+data Menu = Nodes | Errors
 derive instance eqMenu :: Eq Menu
 instance showMenu :: Show Menu where
   show Nodes = "Nodes"
   show Errors = "Errors"
-  show Legacy = "Legacy"
 
 view :: Effect Unit
 view = do
   container <- DomOps.byId "container"
   let props =
-        { menu: [ Nodes, Errors, Legacy ]
+        { menu: [ Nodes, Errors ]
         }
   let element = createLeafElement reactClass props
   void $ ReactDOM.render element container
@@ -152,27 +151,23 @@ reactClass = component "Main" \this -> do
       menuIcon :: Menu -> String
       menuIcon Nodes = "icon-app"
       menuIcon Errors = "icon-alert-circle-exc"
-      menuIcon Legacy = "icon-compass-05"
 
       menuContent :: State -> Effect ReactElement
       menuContent { menu: Nodes, node: Just addr, nodes: nodes } =
         case lookup addr nodes of
           Just node -> pure $ createLeafElement NodeCom.reactClass node
           Nothing -> map (\_ -> createLeafElement dummy {}) $ error "bad node"
+        where
+        dummy :: ReactClass {}
+        dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
       menuContent { menu: Nodes, nodes: nodes } =
         pure $ createLeafElement NodesCom.reactClass { nodes: fromFoldable nodes, openNode: \addr -> modifyState this _{ node = Just addr } }
       menuContent { menu: Errors, errors: errors } =
         pure $ createLeafElement ErrorsCom.reactClass { errors: errors }
-      menuContent { menu: Legacy } =
-        map (\_ -> createLeafElement dummy {}) $ error "impossible"
-
-      dummy :: ReactClass {}
-      dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
       goto Errors = modifyState this _{ menu = Errors }
-      goto Legacy = DomOps.openUrl "../legacy/index.html"
 
     onMsg :: ReactThis Props State -> String -> Effect Unit
     onMsg this payload = do
@@ -183,8 +178,10 @@ reactClass = component "Main" \this -> do
             [ name, value, time, addr ] -> updateWith
               { addr: addr
               , time: time
-              , cpu: if name == "cpu.load" then Just value else Nothing
-              , mem: if name == "mem.used" then Just value else Nothing
+              , metrics: Just
+                { cpu: if name == "cpu.load" then Just value else Nothing
+                , mem: if name == "mem.used" then Just value else Nothing 
+                }
               , err: Nothing
               , action: Nothing
               }
@@ -202,8 +199,7 @@ reactClass = component "Main" \this -> do
               updateWith
                 { addr: addr
                 , time: time
-                , cpu: Nothing
-                , mem: Nothing
+                , metrics: Nothing
                 , err: Just err
                 , action: Nothing
                 }
@@ -213,8 +209,7 @@ reactClass = component "Main" \this -> do
             [ action, time, addr ] -> updateWith
               { addr: addr
               , time: time
-              , cpu: Nothing
-              , mem: Nothing
+              , metrics: Nothing
               , err: Nothing
               , action: Just action
               }
@@ -223,8 +218,10 @@ reactClass = component "Main" \this -> do
       where
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
-        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) a.cpu
-        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b / 1000.0 }]) a.mem
+        let cpu' = a.metrics >>= _.cpu
+        let mem' = a.metrics >>= _.mem
+        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu'
+        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b / 1000.0 }]) mem'
         let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
         s <- getState this
         let node' = case lookup a.addr s.nodes of
@@ -233,8 +230,8 @@ reactClass = component "Main" \this -> do
                 , cpuLoad = node.cpuLoad <> cpuLoad
                 , memLoad = node.memLoad <> memLoad
                 , actions = node.actions <> action
-                , cpuLast = fromMaybe node.cpuLast a.cpu
-                , memLast = fromMaybe node.memLast a.mem
+                , cpuLast = fromMaybe node.cpuLast cpu'
+                , memLast = fromMaybe node.memLast mem'
                 }
               Nothing ->
                 { addr: a.addr
@@ -242,8 +239,8 @@ reactClass = component "Main" \this -> do
                 , cpuLoad: cpuLoad
                 , memLoad: memLoad
                 , actions: action
-                , cpuLast: fromMaybe "CPU" a.cpu
-                , memLast: fromMaybe "RAM" a.mem
+                , cpuLast: fromMaybe "CPU" cpu'
+                , memLast: fromMaybe "RAM" mem'
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
         case a.err of

@@ -15,10 +15,14 @@ type ErrorInfo =
 type UpdateData =
   { addr :: String
   , time :: String
-  , cpu :: Maybe String
-  , mem :: Maybe String
+  , metrics :: Maybe MetricsUpdate
   , action :: Maybe String
   , err :: Maybe ErrorInfo
+  }
+
+type MetricsUpdate =
+  { cpu :: Maybe String
+  , mem :: Maybe String
   }
 
 type NodeInfo =
