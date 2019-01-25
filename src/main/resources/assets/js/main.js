@@ -4094,6 +4094,9 @@ var PS = {};
                     suggestedMin: 0,
                     padding: 20,
                     fontColor: "#9a9a9a",
+                    callback: function(value, index, values) {
+                      return value + "%";
+                    },
                   }
                 }, {
                   id: 'right-y-axis',
@@ -4109,6 +4112,9 @@ var PS = {};
                     padding: 20,
                     fontColor: "#9a9a9a",
                     stepSize: 0.5,
+                    callback: function(value, index, values) {
+                      return value + " GB";
+                    },
                   },
                   gridLines: {
                     drawOnChartArea: false,

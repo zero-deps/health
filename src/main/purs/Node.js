@@ -151,8 +151,12 @@ exports.createChart = function(cpuLoad) {
                 },
                 ticks: {
                   suggestedMin: 0,
+                  suggestedMax: 5,
                   padding: 20,
                   fontColor: "#9a9a9a",
+                  callback: function(value, index, values) {
+                    return value + "%";
+                  },
                 }
               }, {
                 id: 'right-y-axis',
@@ -168,6 +172,9 @@ exports.createChart = function(cpuLoad) {
                   padding: 20,
                   fontColor: "#9a9a9a",
                   stepSize: 0.5,
+                  callback: function(value, index, values) {
+                    return value + " GB";
+                  },
                 },
                 gridLines: {
                   drawOnChartArea: false,
