@@ -8,7 +8,7 @@ import Effect (Effect)
 import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr', div')
-import React.DOM.Props (onClick, style)
+import React.DOM.Props (onClick, style, key)
 import Schema
 
 type State = {}

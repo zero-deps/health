@@ -10,6 +10,7 @@ type ErrorInfo =
   , file :: String
   , time :: String
   , addr :: String
+  , key :: String -- for React
   }
 
 type UpdateData =

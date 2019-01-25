@@ -4497,7 +4497,7 @@ var PS = {};
               if (v instanceof Errors) {
                   return "icon-alert-circle-exc";
               };
-              throw new Error("Failed pattern match at Main (line 151, column 7 - line 151, column 33): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 145, column 7 - line 145, column 33): " + [ v.constructor.name ]);
           };
           var menuContent = function (v) {
               if (v.menu instanceof Nodes && v.node instanceof Data_Maybe.Just) {
@@ -4515,7 +4515,7 @@ var PS = {};
                           return React.createLeafElement(React.reactPropFields()())(dummy)({});
                       })(Effect_Console.error("bad node"));
                   };
-                  throw new Error("Failed pattern match at Main (line 157, column 9 - line 160, column 9): " + [ v1.constructor.name ]);
+                  throw new Error("Failed pattern match at Main (line 151, column 9 - line 154, column 9): " + [ v1.constructor.name ]);
               };
               if (v.menu instanceof Nodes) {
                   return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement(React.reactPropFields()())(Nodes_1.reactClass)({
@@ -4538,7 +4538,7 @@ var PS = {};
                       errors: v.errors
                   }));
               };
-              throw new Error("Failed pattern match at Main (line 155, column 7 - line 155, column 50): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 149, column 7 - line 149, column 50): " + [ v.constructor.name ]);
           };
           var $$goto = function (v) {
               if (v instanceof Nodes) {
@@ -4563,7 +4563,7 @@ var PS = {};
                       };
                   });
               };
-              throw new Error("Failed pattern match at Main (line 168, column 7 - line 168, column 34): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 162, column 7 - line 162, column 34): " + [ v.constructor.name ]);
           };
           return function __do() {
               var v = React.getState($$this)();
@@ -4684,7 +4684,7 @@ var PS = {};
                                   fsTotal: Data_Maybe.fromMaybe(0.0)(fsTotal$prime)
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 239, column 21 - line 279, column 18): " + [ v1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 234, column 21 - line 274, column 18): " + [ v1.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -4709,7 +4709,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 281, column 9 - line 283, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 276, column 9 - line 278, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
@@ -4803,7 +4803,8 @@ var PS = {};
                           stacktrace: stacktrace,
                           file: file,
                           time: v1[2],
-                          addr: v1[3]
+                          addr: v1[3],
+                          key: v1[2]
                       };
                       return updateWith({
                           addr: v1[3],

@@ -98,8 +98,7 @@ reactClass = component "Main" \this -> do
                       , span [ cn "navbar-toggler-bar bar3" ] []
                       ]
                     ]
-                  , a [ href "#", cn "navbar-brand" ]
-                    [ text "Monitor" ]
+                  , a [ href "#", cn "navbar-brand" ] [ text "Monitor" ]
                   ]
                 , button [ cn "navbar-toggler" ]
                   [ span [ cn "navbar-toggler-bar navbar-kebab" ] []
@@ -127,21 +126,16 @@ reactClass = component "Main" \this -> do
                   ]
                 ]
               ]
-            , div [ cn "content" ]
-              [ menuContent'
-              ]
+            , div [ cn "content" ] [ menuContent' ]
             , div [ cn "footer" ]
               [ div [ cn "container-fluid" ]
                 [ ul [ cn "nav" ]
                   [ li [ cn "nav-item" ]
-                    [ a [ href "http://ua--doc.ee..corp/health.html", cn "nav-link" ]
-                      [ text "Documentation" ]
-                    ]
+                    [ a [ href "http://ua--doc.ee..corp/health.html", cn "nav-link" ] [ text "Documentation" ] ]
                   ]
                 , div [ cn "copyright" ]
                   [ text "© "
-                  , a [ href "https://demos.creative-tim.com/black-dashboard/examples/dashboard.html", target "_blank" ]
-                    [ text "CT" ]
+                  , a [ href "https://demos.creative-tim.com/black-dashboard/examples/dashboard.html", target "_blank" ] [ text "CT" ]
                   ]
                 ]
               ]
@@ -201,7 +195,8 @@ reactClass = component "Main" \this -> do
                     [ method, file ] -> method<>"("<>file<>")"
                     _ -> "bad format") stacktrace''
               let file = fromMaybe "bad format" $ head stacktrace'' >>= (_ !! 1)
-              let err = { exception, stacktrace, file, time, addr }
+              let key = addr<>time
+              let err = { exception, stacktrace, file, time, addr, key }
               updateWith
                 { addr: addr
                 , time: time
