@@ -76,13 +76,9 @@ class Stats(implicit system: ActorSystem) extends Extension {
       import scala.util._
       Try(sigar.getFileSystemUsage("/")) match {
         case Success(usage) =>
-          send(MetricStat("root./.used", usage.getUsed.toString))
-          send(MetricStat("root./.free", usage.getFree.toString))
-          send(MetricStat("root./.total", usage.getTotal.toString))
-        case Failure(_) =>
-          send(MetricStat("root./.used", "--"))
-          send(MetricStat("root./.free", "--"))
-          send(MetricStat("root./.total", "--"))
+          send(MetricStat("fs./.used", usage.getUsed.toString))
+          send(MetricStat("fs./.free", usage.getFree.toString))
+          send(MetricStat("fs./.total", usage.getTotal.toString))
       }
     }
   }
