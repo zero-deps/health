@@ -32,6 +32,9 @@ type State =
   , node :: Maybe NodeAddr
   , errors :: Array ErrorInfo
   , ws :: WebSocket
+  , leftMenu :: Boolean
+  , notifications :: Boolean
+  , topMenu :: Boolean
   }
 type Props =
   { menu :: Array Menu
@@ -63,6 +66,9 @@ reactClass = component "Main" \this -> do
       , node: Nothing
       , errors: []
       , ws: ws
+      , leftMenu: false
+      , notifications: false
+      , topMenu: false
       }
     , render: render this
     , componentDidMount: do
@@ -75,72 +81,72 @@ reactClass = component "Main" \this -> do
       props <- getProps this
       menuContent' <- menuContent s
       pure $
-        div [ cn "wrapper" ]
-          [ div [ cn "sidebar" ]
-            [ div [ cn "sidebar-wrapper" ]
-              [ ul [ cn "nav" ] $ map (\x ->
-                  li (if x == s.menu then [ cn "active" ] else [])
-                  [ a [ href "#", onClick \_ -> goto x ]
-                    [ i [ cn $ "tim-icons " <> menuIcon x ] []
-                    , p' [ text $ show x ]
-                    ]
-                  ]) props.menu
-              ]
+        div [ cn $ "wrapper"<>if s.leftMenu then " nav-open" else "" ]
+        [ div [ cn "sidebar" ]
+          [ div [ cn "sidebar-wrapper" ]
+            [ ul [ cn "nav" ] $ map (\x ->
+                li (if x == s.menu then [ cn "active" ] else [])
+                [ a [ href "#", onClick \_ -> goto x ]
+                  [ i [ cn $ "tim-icons " <> menuIcon x ] []
+                  , p' [ text $ show x ]
+                  ]
+                ]) props.menu
             ]
-          , div [ cn "main-panel" ]
-            [ nav [ cn "navbar navbar-expand-lg navbar-absolute navbar-transparent" ]
-              [ div [ cn "container-fluid" ]
-                [ div [ cn "navbar-wrapper" ]
-                  [ div [ cn "navbar-toggle d-inline" ]
-                    [ button [ cn "navbar-toggler" ]
-                      [ span [ cn "navbar-toggler-bar bar1" ] []
-                      , span [ cn "navbar-toggler-bar bar2" ] []
-                      , span [ cn "navbar-toggler-bar bar3" ] []
+          ]
+        , div [ cn "main-panel" ]
+          [ nav [ cn $ "navbar navbar-expand-lg navbar-absolute"<>if s.topMenu then " bg-white" else " navbar-transparent" ]
+            [ div [ cn "container-fluid" ]
+              [ div [ cn "navbar-wrapper" ]
+                [ div [ cn $ "navbar-toggle d-inline"<>if s.leftMenu then " toggled" else "" ]
+                  [ button [ cn "navbar-toggler", onClick \_ -> toggleLeftMenu ]
+                    [ span [ cn "navbar-toggler-bar bar1" ] []
+                    , span [ cn "navbar-toggler-bar bar2" ] []
+                    , span [ cn "navbar-toggler-bar bar3" ] []
+                    ]
+                  ]
+                , a [ href "#", cn "navbar-brand" ] [ text "Monitor" ]
+                ]
+              , button [ cn "navbar-toggler", onClick \_ -> toggleTopMenu ]
+                [ span [ cn "navbar-toggler-bar navbar-kebab" ] []
+                , span [ cn "navbar-toggler-bar navbar-kebab" ] []
+                , span [ cn "navbar-toggler-bar navbar-kebab" ] []
+                ]
+              , div [ cn $ "collapse navbar-collapse"<>if s.topMenu then " show" else "" ]
+                [ ul [ cn "navbar-nav ml-auto" ]
+                  [ li [ cn $ "dropdown nav-item"<>if s.notifications then " show" else "" ]
+                    [ a [ href "#", cn "dropdown-toggle nav-link", onClick \_ -> toggleNotifications ]
+                      [ div [ cn "notification d-none d-lg-block d-xl-block" ] []
+                      , i [ cn "tim-icons icon-sound-wave" ] []
+                      , p [ cn "d-lg-none" ]
+                        [ text "Notifications" ]
+                      ]
+                    , ul [ cn $ "dropdown-menu dropdown-menu-right dropdown-navbar"<>if s.notifications then " show" else "" ]
+                      [ li [ cn "nav-link" ]
+                        [ a [ href "#", cn "nav-item dropdown-item" ]
+                          [ text "No notifications" ]
+                        ]
                       ]
                     ]
-                  , a [ href "#", cn "navbar-brand" ] [ text "Monitor" ]
-                  ]
-                , button [ cn "navbar-toggler" ]
-                  [ span [ cn "navbar-toggler-bar navbar-kebab" ] []
-                  , span [ cn "navbar-toggler-bar navbar-kebab" ] []
-                  , span [ cn "navbar-toggler-bar navbar-kebab" ] []
-                  ]
-                , div [ cn "collapse navbar-collapse" ]
-                  [ ul [ cn "navbar-nav ml-auto" ]
-                    [ li [ cn "dropdown nav-item" ]
-                      [ a [ href "#", cn "dropdown-toggle nav-link" ]
-                        [ div [ cn "notification d-none d-lg-block d-xl-block" ] []
-                        , i [ cn "tim-icons icon-sound-wave" ] []
-                        , p [ cn "d-lg-none" ]
-                          [ text "Notifications" ]
-                        ]
-                      , ul [ cn "dropdown-menu dropdown-menu-right dropdown-navbar" ]
-                        [ li [ cn "nav-link" ]
-                          [ a [ href "#", cn "nav-item dropdown-item" ]
-                            [ text "No notifications" ]
-                          ]
-                        ]
-                      ]
-                    , li [ cn "separator d-lg-none" ] []
-                    ]
+                  , li [ cn "separator d-lg-none" ] []
                   ]
                 ]
               ]
-            , div [ cn "content" ] [ menuContent' ]
-            , div [ cn "footer" ]
-              [ div [ cn "container-fluid" ]
-                [ ul [ cn "nav" ]
-                  [ li [ cn "nav-item" ]
-                    [ a [ href "http://ua--doc.ee..corp/health.html", cn "nav-link" ] [ text "Documentation" ] ]
-                  ]
-                , div [ cn "copyright" ]
-                  [ text "© "
-                  , a [ href "https://demos.creative-tim.com/black-dashboard/examples/dashboard.html", target "_blank" ] [ text "CT" ]
-                  ]
+            ]
+          , div [ cn "content" ] [ menuContent' ]
+          , div [ cn "footer" ]
+            [ div [ cn "container-fluid" ]
+              [ ul [ cn "nav" ]
+                [ li [ cn "nav-item" ]
+                  [ a [ href "http://ua--doc.ee..corp/health.html", cn "nav-link" ] [ text "Documentation" ] ]
+                ]
+              , div [ cn "copyright" ]
+                [ text "© "
+                , a [ href "https://demos.creative-tim.com/black-dashboard/examples/dashboard.html", target "_blank" ] [ text "CT" ]
                 ]
               ]
             ]
           ]
+        ]
       where
       menuIcon :: Menu -> String
       menuIcon Nodes = "icon-app"
@@ -162,6 +168,15 @@ reactClass = component "Main" \this -> do
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
       goto Errors = modifyState this _{ menu = Errors }
+
+      toggleLeftMenu :: Effect Unit
+      toggleLeftMenu = modifyState this \s -> s{ leftMenu = not s.leftMenu }
+
+      toggleNotifications :: Effect Unit
+      toggleNotifications = modifyState this \s -> s{ notifications = not s.notifications }
+
+      toggleTopMenu :: Effect Unit
+      toggleTopMenu = modifyState this \s -> s{ topMenu = not s.topMenu }
 
     onMsg :: ReactThis Props State -> String -> Effect Unit
     onMsg this payload = do
