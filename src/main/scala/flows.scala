@@ -3,11 +3,8 @@ package .stats
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.ws.{TextMessage, Message => WsMessage}
 import akka.NotUsed
-import akka.stream.ClosedShape
-import akka.stream.FlowShape
-import akka.stream.scaladsl.GraphDSL
-import akka.stream.scaladsl.RunnableGraph
-import akka.stream.scaladsl.{Flow, Sink, Source, Merge}
+import akka.stream.scaladsl.{Flow, Sink, Source, Merge, GraphDSL, RunnableGraph}
+import akka.stream.{ClosedShape, FlowShape}
 import .kvs.Kvs
 
 object Flows {
@@ -18,8 +15,8 @@ object Flows {
       val msgIn = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
       val logIn = Flow[String].map{ msg => system.log.info(s"IN: ${msg}"); msg }
       val logOut = Flow[String].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
-      val kvspub = Source.actorPublisher(KvsPub.props(kvs))
-      val wspub = Source.actorPublisher(WsPub.props)
+      val kvspub = Source.fromGraph(new MsgSource(system.actorOf(KvsPub.props(kvs))))
+      val wspub = Source.fromGraph(new MsgSource(system.actorOf(WsPub.props)))
       val pub = b.add(Merge[Msg](2))
       val toMsg = b.add(Flow[Msg].map{ 
         case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
@@ -42,18 +39,8 @@ object Flows {
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
 
-      val udpPub = Source.actorPublisher(UdpPub.props)
-      val logIn = Flow[String].map{ msg => system.log.debug(s"UDP: ${msg}"); msg }
-      val convert = Flow[String].
-        map(_.split("::").toList).
-        collect{
-          case "metric" :: name :: value :: port :: host :: Nil =>
-            Msg(MetricStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))
-          case "error" :: exception :: stacktrace :: toptrace :: port :: host :: Nil =>
-            Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(now_ms(), addr=s"${host}:${port}"))
-          case "action" :: action :: port :: host :: Nil =>
-            Msg(ActionStat(action), StatMeta(now_ms(), addr=s"${host}:${port}"))
-        }
+      val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
+      val logIn = Flow[Msg].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save = Flow[Msg].map{ msg =>
         //todo: save to kvs
         msg
@@ -63,7 +50,7 @@ object Flows {
         system.eventStream.publish(msg)
       }
 
-      udpPub ~> logIn ~> convert ~> save ~> pub
+      udppub ~> logIn ~> save ~> pub
 
       ClosedShape
     })

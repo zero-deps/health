@@ -1,55 +1,30 @@
 package .stats
 
-import akka.actor.{ ActorLogging, Actor, Props }
-import akka.stream.actor.ActorPublisher
-import scala.annotation.tailrec
-import akka.stream.actor.ActorPublisherMessage._
+import akka.actor.{ActorLogging, Actor, ActorRef, Props, Stash}
 import .kvs.Kvs
 
 object KvsPub {
   def props(kvs: Kvs): Props = Props(new KvsPub(kvs))
-
-  final case class BulkMsg(v: List[Msg])
 }
 
-class KvsPub(kvs: Kvs) extends ActorPublisher[Msg] with Actor with ActorLogging {
-  import KvsPub.{BulkMsg}
-
-  var buf = Vector.empty[Msg]
-
-  self ! "init data"
-
-  def receive: Receive = {
-    case "init data" =>
-      //todo: get first N actions/errors/metrics(distinct) from kvs
-      val xs: List[Msg] = Nil
-      self ! xs
-    case BulkMsg(ms) =>
-      if (buf.isEmpty && totalDemand > 0 && ms.nonEmpty) {
-        buf ++= ms.tail
-        onNext(ms.head)
-      } else {
-        buf ++= ms
-        deliverBuf()
-      }
-    case Request(_) =>
-      deliverBuf()
-    case Cancel =>
-      log.debug(s"publisher canceled $this")
-      context.stop(self)
+class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
+  override def preStart(): Unit = {
+    // get data from kvs
+    val xs: List[Msg] = Nil
+    xs foreach (self ! _)
   }
 
-  @tailrec final def deliverBuf(): Unit =
-    if (totalDemand > 0) {
-      if (totalDemand <= Int.MaxValue) {
-        val (use, keep) = buf.splitAt(totalDemand.toInt)
-        buf = keep
-        use foreach onNext
-      } else {
-        val (use, keep) = buf.splitAt(Int.MaxValue)
-        buf = keep
-        use foreach onNext
-        deliverBuf()
-      }
-    }
+  def receive: Receive = {
+    case _: Msg => stash()
+    case stageActor: ActorRef =>
+      log.debug("got stage actor")
+      unstashAll()
+      context.become(ready(stageActor))
+  }
+
+  def ready(stageActor: ActorRef): Receive = {
+    case msg: Msg =>
+      log.debug("sourceFeeder received message, forwarding to stage: {} ", msg)
+      stageActor ! msg
+  }
 }
