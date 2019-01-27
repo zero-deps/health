@@ -10,7 +10,7 @@ ThisBuild / scalacOptions in Compile ++= Vector(
   "-deprecation",
   "-language:_",
   "-encoding", "UTF-8",
-  // "-Xfatal-warnings",
+  "-Xfatal-warnings",
   "-Ywarn-unused-import",
 )
 ThisBuild / publishTo := Some(" Releases" at "http://nexus.mobile..com/nexus3/repository/releases")
@@ -29,8 +29,6 @@ lazy val stats = project.in(file(".")).settings(
 
 lazy val client = project.in(file("client")).withId("stats_client").settings(
   libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.19",
-  libraryDependencies += "io.kamon" % "sigar-loader" % "1.6.6-rev002",
-  libraryDependencies += ("org.slf4j" % "jul-to-slf4j" % "1.7.25").exclude("org.slf4j", "slf4j-api"), // for sigar loader
 ).dependsOn(macros)
 
 lazy val macros = project.in(file("macros")).settings(

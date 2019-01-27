@@ -10,16 +10,8 @@ object StatsExtenstion extends ExtensionId[Stats] with ExtensionIdProvider {
 
 class Stats(implicit system: ActorSystem) extends Extension {
   import system.dispatcher
+  import system.log
   import scala.concurrent.duration._
-  import org.hyperic.sigar._
-  import scala.language.postfixOps
-
-  { // Sigar loader
-    import org.slf4j.bridge.SLF4JBridgeHandler
-    SLF4JBridgeHandler.removeHandlersForRootLogger()
-    SLF4JBridgeHandler.install()
-    kamon.sigar.SigarProvisioner.provision()
-  }
 
   private val cfg = system.settings.config
   private val enabled = cfg.getBoolean("stats.client.enabled")
@@ -55,33 +47,62 @@ class Stats(implicit system: ActorSystem) extends Extension {
   }
 
   if (enabled) {
-    val sigar = new Sigar
+    import java.lang.management.ManagementFactory
+    import scala.util.{Try, Success, Failure}
+    import java.nio.file.{FileSystems, Files}
+    import scala.collection.JavaConverters._
+
+    val os = ManagementFactory.getOperatingSystemMXBean
 
     val scheduler = system.scheduler
     // Uptime (seconds)
     scheduler.schedule(1 second, 5 seconds) {
       send(MetricStat("sys.uptime", system.uptime.toString))
     }
-    // CPU load ([0,100])
-    scheduler.schedule(1 second, 5 seconds) {
-      send(MetricStat("cpu.load", (100*sigar.getCpuPerc.getCombined).toInt.toString))
-    }
-    // Memory (Mbytes)
-    scheduler.schedule(1 second, 5 seconds) {
-      send(MetricStat("mem.used", (sigar.getMem.getActualUsed/i"1'000'000").toString))
-      send(MetricStat("mem.free", (sigar.getMem.getActualFree/i"1'000'000").toString))
-      send(MetricStat("mem.total", (sigar.getMem.getTotal/i"1'000'000").toString))
+    os match {
+      case os: com.sun.management.OperatingSystemMXBean =>
+        // CPU load (percentage)
+        scheduler.schedule(1 second, 5 seconds) {
+          os.getSystemCpuLoad match {
+            case x if x < 0 => // not available
+            case x => send(MetricStat("cpu.load", (100*x).toInt.toString))
+          }
+        }
+        // Memory (Mbytes)
+        scheduler.schedule(1 second, 5 seconds) {
+          val free = os.getFreePhysicalMemorySize
+          val total = os.getTotalPhysicalMemorySize
+          val used = total - free
+          send(MetricStat("mem.used", (used/i"1'000'000").toString))
+          send(MetricStat("mem.free", (free/i"1'000'000").toString))
+          send(MetricStat("mem.total", (total/i"1'000'000").toString))
+        }
+      case _ =>
+        log.error("bad os implementation (impossible)")
     }
     // FS (Mbytes)
-    scheduler.schedule(1 second, 5 seconds) {
-      import scala.util._
-      Try(sigar.getFileSystemUsage("/")) match {
-        case Success(usage) =>
-          send(MetricStat("fs./.used", (usage.getUsed/i"1'000").toString))
-          send(MetricStat("fs./.free", (usage.getFree/i"1'000").toString))
-          send(MetricStat("fs./.total", (usage.getTotal/i"1'000").toString))
-        case Failure(_) =>
-      }
+    FileSystems.getDefault.getRootDirectories.asScala.toList.headOption match {
+      case Some(root) =>
+        Try(Files.getFileStore(root)) match {
+          case Success(store) =>
+            def usable = Try(store.getUsableSpace)
+            def total = Try(store.getTotalSpace)
+            scheduler.schedule(1 second, 5 seconds) {
+              (usable, total) match {
+                case (Success(usable), Success(total)) =>
+                  val used = total - usable
+                  send(MetricStat("fs./.used", (used/i"1'000'000").toString))
+                  send(MetricStat("fs./.free", (usable/i"1'000'000").toString))
+                  send(MetricStat("fs./.total", (total/i"1'000'000").toString))
+                case _ =>
+                  log.error("can't get disk usage")
+              }
+            }
+          case Failure(t) =>
+            log.error("can't get file store", t)
+        }
+      case None =>
+        log.error("no root directory (impossible)")
     }
   }
 }
