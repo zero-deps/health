@@ -23,13 +23,9 @@ type UpdateData =
 
 type MetricsUpdate =
   { cpu :: Maybe String
-  , mem :: Maybe String
+  , mem :: Maybe (Array String)
   , uptime :: Maybe String
-  , memFree :: Maybe String
-  , memTotal :: Maybe String
-  , fsUsed :: Maybe String
-  , fsFree :: Maybe String
-  , fsTotal :: Maybe String
+  , fs :: Maybe (Array String)
   }
 
 type NodeInfo =

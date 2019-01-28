@@ -74,10 +74,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
         scheduler.schedule(1 second, 5 seconds) {
           val free = os.getFreePhysicalMemorySize
           val total = os.getTotalPhysicalMemorySize
-          val used = total - free
-          send(MetricStat("mem.used", (used/i"1'000'000").toString))
-          send(MetricStat("mem.free", (free/i"1'000'000").toString))
-          send(MetricStat("mem.total", (total/i"1'000'000").toString))
+          send(MetricStat("mem", s"${(free/i"1'000'000").toString}~${(total/i"1'000'000").toString}"))
         }
       case _ =>
         log.error("bad os implementation (impossible)")
@@ -113,10 +110,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
             scheduler.schedule(1 second, 5 seconds) {
               (usable, total) match {
                 case (Success(usable), Success(total)) =>
-                  val used = total - usable
-                  send(MetricStat("fs./.used", (used/i"1'000'000").toString))
-                  send(MetricStat("fs./.free", (usable/i"1'000'000").toString))
-                  send(MetricStat("fs./.total", (total/i"1'000'000").toString))
+                  send(MetricStat("fs./", s"${(usable/i"1'000'000").toString}~${(total/i"1'000'000").toString}"))
                 case _ =>
                   log.error("can't get disk usage")
               }

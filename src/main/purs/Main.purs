@@ -183,27 +183,28 @@ reactClass = component "Main" \this -> do
       let xs = split (Pattern "::") payload
       case index xs 0 of
         Just "metric" ->
-          case slice 1 5 xs of
-            [ name, value, time, addr ] -> updateWith
-              { addr: addr
-              , time: time
-              , metrics: Just
-                { cpu: if name == "cpu.load" then Just value else Nothing
-                , mem: if name == "mem.used" then Just value else Nothing 
-                , uptime: if name == "sys.uptime" then Just value else Nothing
-                , memFree: if name == "mem.free" then Just value else Nothing
-                , memTotal: if name == "mem.total" then Just value else Nothing
-                , fsUsed: if name == "fs./.used" then Just value else Nothing
-                , fsFree: if name == "fs./.free" then Just value else Nothing
-                , fsTotal: if name == "fs./.total" then Just value else Nothing
+          case xs of
+            [ _, name, value, time, addr ] -> do
+              let mem = if name == "mem" then Just value else Nothing
+              let mem' = map (split (Pattern "~")) mem
+              let fs = if name == "fs./" then Just value else Nothing
+              let fs' = map (split (Pattern "~")) fs
+              updateWith
+                { addr: addr
+                , time: time
+                , metrics: Just
+                  { cpu: if name == "cpu.load" then Just value else Nothing
+                  , mem: mem'
+                  , uptime: if name == "sys.uptime" then Just value else Nothing
+                  , fs: fs'
+                  }
+                , err: Nothing
+                , action: Nothing
                 }
-              , err: Nothing
-              , action: Nothing
-              }
             _ -> error "bad format"
         Just "error" ->
-          case slice 1 6 xs of
-            [ exception', stacktrace', toptrace, time, addr ] -> do
+          case xs of
+            [ _, exception', stacktrace', toptrace, time, addr ] -> do
               let exception = split (Pattern "~") exception'
               let stacktrace = split (Pattern "~") stacktrace'
               let key = addr<>time
@@ -217,8 +218,8 @@ reactClass = component "Main" \this -> do
                 }
             _ -> error "bad format"
         Just "action" ->
-          case slice 1 4 xs of
-            [ action, time, addr ] -> updateWith
+          case xs of
+            [ _, action, time, addr ] -> updateWith
               { addr: addr
               , time: time
               , metrics: Nothing
@@ -230,16 +231,32 @@ reactClass = component "Main" \this -> do
       where
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
-        let uptime' = a.metrics >>= _.uptime
-        let cpu' = a.metrics >>= _.cpu
-        let mem' = map (readInt 10) $ a.metrics >>= _.mem
-        let memFree' = map (readInt 10) $ a.metrics >>= _.memFree
-        let memTotal' = map (readInt 10) $ a.metrics >>= _.memTotal
-        let fsUsed' = map (readInt 10) $ a.metrics >>= _.fsUsed
-        let fsFree' = map (readInt 10) $ a.metrics >>= _.fsFree
-        let fsTotal' = map (readInt 10) $ a.metrics >>= _.fsTotal
-        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu'
-        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b / 1000.0 }]) mem'
+        let uptime = a.metrics >>= _.uptime
+        let cpu = a.metrics >>= _.cpu
+        mem <- case a.metrics >>= _.mem of
+          Just ([ free', total' ]) -> do
+            let free = readInt 10 free'
+            let total = readInt 10 total'
+            let used = total - free
+            pure $ Just { used, free, total }
+          Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
+          Nothing -> pure Nothing
+        let memUsed = map _.used mem
+        let memFree = map _.free mem
+        let memTotal = map _.total mem
+        fs <- case a.metrics >>= _.fs of
+          Just ([ usable', total' ]) -> do
+            let usable = readInt 10 usable'
+            let total = readInt 10 total'
+            let used = total - usable
+            pure $ Just { used, usable, total }
+          Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
+          Nothing -> pure Nothing
+        let fsUsed = map _.used fs
+        let fsFree = map _.usable fs
+        let fsTotal = map _.total fs
+        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu
+        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b.used / 1000.0 }]) mem
         let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
         s <- getState this
         let node' = case lookup a.addr s.nodes of
@@ -259,14 +276,14 @@ reactClass = component "Main" \this -> do
                   , cpuLoad = cpuLoad''
                   , memLoad = memLoad''
                   , actions = actions''
-                  , cpuLast = fromMaybe node.cpuLast cpu'
-                  , memLast = fromMaybe node.memLast mem'
-                  , uptime = fromMaybe node.uptime uptime'
-                  , memFree = fromMaybe node.memFree memFree'
-                  , memTotal = fromMaybe node.memTotal memTotal'
-                  , fsUsed = fromMaybe node.fsUsed fsUsed'
-                  , fsFree = fromMaybe node.fsFree fsFree'
-                  , fsTotal = fromMaybe node.fsTotal fsTotal'
+                  , cpuLast = fromMaybe node.cpuLast cpu
+                  , memLast = fromMaybe node.memLast memUsed
+                  , uptime = fromMaybe node.uptime uptime
+                  , memFree = fromMaybe node.memFree memFree
+                  , memTotal = fromMaybe node.memTotal memTotal
+                  , fsUsed = fromMaybe node.fsUsed fsUsed
+                  , fsFree = fromMaybe node.fsFree fsFree
+                  , fsTotal = fromMaybe node.fsTotal fsTotal
                   }
               Nothing ->
                 { addr: a.addr
@@ -274,14 +291,14 @@ reactClass = component "Main" \this -> do
                 , cpuLoad: cpuLoad
                 , memLoad: memLoad
                 , actions: action
-                , cpuLast: fromMaybe "0" cpu'
-                , memLast: fromMaybe 0.0 mem'
-                , uptime: fromMaybe "0" uptime'
-                , memFree: fromMaybe 0.0 memFree'
-                , memTotal: fromMaybe 0.0 memTotal'
-                , fsUsed: fromMaybe 0.0 fsUsed'
-                , fsFree: fromMaybe 0.0 fsFree'
-                , fsTotal: fromMaybe 0.0 fsTotal'
+                , cpuLast: fromMaybe "0" cpu
+                , memLast: fromMaybe 0.0 memUsed
+                , uptime: fromMaybe "0" uptime
+                , memFree: fromMaybe 0.0 memFree
+                , memTotal: fromMaybe 0.0 memTotal
+                , fsUsed: fromMaybe 0.0 fsUsed
+                , fsFree: fromMaybe 0.0 fsFree
+                , fsTotal: fromMaybe 0.0 fsTotal
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
         case a.err of
