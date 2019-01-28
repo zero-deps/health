@@ -51,8 +51,10 @@ class Stats(implicit system: ActorSystem) extends Extension {
     import scala.util.{Try, Success, Failure}
     import java.nio.file.{FileSystems, Files}
     import scala.collection.JavaConverters._
+    import javax.management.{NotificationBroadcaster, NotificationListener, Notification}
 
     val os = ManagementFactory.getOperatingSystemMXBean
+    val gc = ManagementFactory.getGarbageCollectorMXBeans
 
     val scheduler = system.scheduler
     // Uptime (seconds)
@@ -79,6 +81,27 @@ class Stats(implicit system: ActorSystem) extends Extension {
         }
       case _ =>
         log.error("bad os implementation (impossible)")
+    }
+    gc.asScala.toList.foreach{ gc =>
+      gc match {
+        case gc: NotificationBroadcaster =>
+          gc.addNotificationListener(new NotificationListener {
+            def handleNotification(notification: Notification, handback: Any): Unit = {
+              import com.sun.management.{GarbageCollectionNotificationInfo => Info}
+              import javax.management.openmbean.CompositeData
+              if (notification.getType == Info.GARBAGE_COLLECTION_NOTIFICATION) {
+                notification.getUserData match {
+                  case data: CompositeData => 
+                    val info = Info.from(data)
+                    send(ActionStat(s"${info.getGcAction} in ${info.getGcInfo.getDuration} ms"))
+                  case _ =>
+                }
+              } else ()
+            }
+          }, null, null)
+        case _ =>
+          log.error(s"gc=${gc.getClass.getName} is not a NotificationBroadcaster")
+      }
     }
     // FS (Mbytes)
     FileSystems.getDefault.getRootDirectories.asScala.toList.headOption match {
