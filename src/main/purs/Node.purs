@@ -4,6 +4,7 @@ module Node
 
 import DomOps (cn)
 import Effect (Effect)
+import FormatOps (formatNum, duration)
 import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps)
 import React.DOM (canvas, div, div', h2, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
@@ -94,8 +95,8 @@ reactClass = component "Node" \this -> do
                     [ tr'
                       [ td' [ text "Uptime" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text p.uptime ]
-                      , td' [ text "sec" ]
+                        [ text $ duration p.uptime ]
+                      , td' [ text "HH:MM:SS" ]
                       ]
                     , tr'
                       [ td' [ text "CPU Load" ]
@@ -160,5 +161,3 @@ foreign import updateChart
   -> Effect Unit
 foreign import destroyChart
   :: Effect Unit
-
-foreign import formatNum :: Number -> String

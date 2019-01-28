@@ -2,7 +2,7 @@ module Errors
   ( reactClass
   ) where
 
-import DateOps (localDateTime)
+import FormatOps (localDateTime)
 import DomOps (cn)
 import Effect (Effect)
 import Prelude hiding (div)
