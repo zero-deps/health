@@ -1,7 +1,13 @@
 package .stats.client
 
 import akka.actor.{ActorRef, ActorSystem, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
+import java.lang.management.ManagementFactory
+import java.nio.file.{FileSystems, Files}
+import javax.management.{NotificationBroadcaster, NotificationListener, Notification}
 import .stats.macros.Literals
+import scala.collection.JavaConverters._
+import scala.concurrent.duration._
+import scala.util.{Try, Success, Failure}
 
 object StatsExtenstion extends ExtensionId[Stats] with ExtensionIdProvider {
   override def createExtension(system: ExtendedActorSystem): Stats = new Stats()(system)
@@ -11,7 +17,6 @@ object StatsExtenstion extends ExtensionId[Stats] with ExtensionIdProvider {
 class Stats(implicit system: ActorSystem) extends Extension {
   import system.dispatcher
   import system.log
-  import scala.concurrent.duration._
 
   private val cfg = system.settings.config
   private val enabled = cfg.getBoolean("stats.client.enabled")
@@ -47,31 +52,34 @@ class Stats(implicit system: ActorSystem) extends Extension {
   }
 
   if (enabled) {
-    import java.lang.management.ManagementFactory
-    import scala.util.{Try, Success, Failure}
-    import java.nio.file.{FileSystems, Files}
-    import scala.collection.JavaConverters._
-    import javax.management.{NotificationBroadcaster, NotificationListener, Notification}
-
     val os = ManagementFactory.getOperatingSystemMXBean
     val gc = ManagementFactory.getGarbageCollectorMXBeans
 
     val scheduler = system.scheduler
     // Uptime (seconds)
-    scheduler.schedule(1 second, 5 seconds) {
-      send(MetricStat("sys.uptime", system.uptime.toString))
+    def scheduleUptime(): Unit = {
+      val uptime = system.uptime
+      val t =
+        if (uptime < 60) 5 seconds
+        else if (uptime < 3600) 1 minute
+        else 5.minutes
+      scheduler.scheduleOnce(t) {
+        send(MetricStat("sys.uptime", uptime.toString))
+        scheduleUptime()
+      }
     }
+    scheduleUptime()
     os match {
       case os: com.sun.management.OperatingSystemMXBean =>
         // CPU load (percentage)
-        scheduler.schedule(1 second, 5 seconds) {
+        scheduler.schedule(1 second, 30 seconds) {
           os.getSystemCpuLoad match {
             case x if x < 0 => // not available
             case x => send(MetricStat("cpu.load", (100*x).toInt.toString))
           }
         }
         // Memory (Mbytes)
-        scheduler.schedule(1 second, 5 seconds) {
+        scheduler.schedule(1 second, 5 minutes) {
           val free = os.getFreePhysicalMemorySize
           val total = os.getTotalPhysicalMemorySize
           send(MetricStat("mem", s"${(free/i"1'000'000").toString}~${(total/i"1'000'000").toString}"))
@@ -107,7 +115,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
           case Success(store) =>
             def usable = Try(store.getUsableSpace)
             def total = Try(store.getTotalSpace)
-            scheduler.schedule(1 second, 5 seconds) {
+            scheduler.schedule(1 second, 1 hour) {
               (usable, total) match {
                 case (Success(usable), Success(total)) =>
                   send(MetricStat("fs./", s"${(usable/i"1'000'000").toString}~${(total/i"1'000'000").toString}"))
