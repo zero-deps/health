@@ -70,10 +70,12 @@ lazy val stats = project.in(file(".")).settings(
   ),
 ).aggregate(client, macros).dependsOn(client).enablePlugins(JavaAppPackaging, DeploySSH)
 
-lazy val client = project.in(file("client")).withId("stats_client").settings(
+lazy val client = project.in(file("client")).settings(
+  organization := organization.value + ".stats",
   libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.19",
 ).dependsOn(macros)
 
 lazy val macros = project.in(file("macros")).settings(
+  organization := organization.value + ".stats",
   libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Compile, 
 )
