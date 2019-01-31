@@ -73,7 +73,7 @@ lazy val stats = project.in(file(".")).settings(
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats",
   libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.19",
-).dependsOn(macros)
+).dependsOn(macros).aggregate(macros)
 
 lazy val macros = project.in(file("macros")).settings(
   organization := organization.value + ".stats",
