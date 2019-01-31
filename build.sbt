@@ -24,7 +24,7 @@ ThisBuild / resolvers += " Releases" at "http://nexus.mobile..com/nexus3/reposit
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
-  libraryDependencies += "com.." %% "ftier" % "0.0.13-12-g5b9a4ad",
+  libraryDependencies += "com.." %% "ftier" % "2.0.1",
   libraryDependencies += "com.." %% "kvs" % "4.1.2",
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
   deployConfigs ++= Seq(
