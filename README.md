@@ -87,7 +87,7 @@ Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 Examples:
 ```
 echo -n "metric::::127.0.0.1:4245::mem.heap::153.97" >/dev/udp/127.0.0.1/50123
-echo -n 'history::casino1::user1::{"$type":"LoginRequest"}' >/dev/udp/127.0.0.1/50123
+echo -n 'action::test::101' >/dev/udp/127.0.0.1/50123
 echo -n 'error::TEST::local::Test Exception::[{"className":".stats.handlers.ErrorHandlerTest$$anonfun$1$$anonfun$apply$mcV$sp$1","method":"apply$mcV$sp","fileName":"ErrorHandlerTest.scala","lineNumber":14}]' >/dev/udp/localhost/50123
 ```
 
