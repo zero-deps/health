@@ -42,8 +42,6 @@ lazy val stats = project.in(file(".")).settings(
         shell.execute(s"kill ${pid}; sleep 5; kill -9 ${pid}")
       } else ()
       shell.execute("rm pid")
-      val name = (packageName in Universal).value
-      shell.execute(s"rm -v -rf *")
     }
   ),
   deploySshExecAfter ++= Seq(
@@ -55,8 +53,8 @@ lazy val stats = project.in(file(".")).settings(
         val name = (packageName in Universal).value
         val script = (executableScriptName in Universal).value
         shell.execute("cd stats")
-        shell.execute(s"rm -v -rf ${name}")
         shell.execute(s"unzip -q -o ${name}.zip")
+        shell.execute(s"rm ${name}.zip")
         shell.execute(s"nohup ./${name}/bin/${script} -Dconfig.file=/home/anle/stats/app.conf &")
         shell.execute("echo $! > pid")
         shell.execute("touch pid")
