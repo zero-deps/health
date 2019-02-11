@@ -2,6 +2,7 @@ module Node
   ( reactClass
   ) where
 
+import Data.Maybe (fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
 import FormatOps (formatNum, duration)
@@ -40,7 +41,7 @@ reactClass = component "Node" \this -> do
                     [ text "Performance" ]
                   , h2 [ cn "card-title" ]
                     [ i [ cn "tim-icons icon-spaceship text-primary" ] []
-                    , text $ " " <> p.cpuLast <> "% / " <> formatNum p.memLast <> " MB"
+                    , text $ " " <> fromMaybe "--" p.cpuLast <> "% / " <> fromMaybe "--" (map formatNum p.memLast) <> " MB"
                     ]
                   ]
                 , div [ cn "col-5 col-sm-6" ]
@@ -95,50 +96,62 @@ reactClass = component "Node" \this -> do
                     [ tr'
                       [ td' [ text "Uptime" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text $ duration p.uptime ]
+                        [ text $ fromMaybe "--" $ map duration p.uptime ]
                       , td' [ text "HH:MM:SS" ]
                       ]
                     , tr'
                       [ td' [ text "CPU Load" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text p.cpuLast ]
+                        [ text $ fromMaybe "--" p.cpuLast ]
                       , td' [ text "%" ]
                       ]
                     , tr'
                       [ td' [ text "Memory: Used" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text $ formatNum p.memLast ]
+                        [ text $ fromMaybe "--" $ map formatNum p.memLast ]
                       , td' [ text "MB" ]
                       ]
                     , tr'
                       [ td' [ text "Memory: Free" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text $ formatNum p.memFree ]
+                        [ text $ fromMaybe "--" $ map formatNum p.memFree ]
                       , td' [ text "MB" ]
                       ]
                     , tr'
                       [ td' [ text "Memory: Total" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text $ formatNum p.memTotal ]
+                        [ text $ fromMaybe "--" $ map formatNum p.memTotal ]
                       , td' [ text "MB" ]
                       ]
                     , tr'
                       [ td' [ text "Storage: Used" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text $ formatNum p.fsUsed ]
+                        [ text $ fromMaybe "--" $ map formatNum p.fsUsed ]
                       , td' [ text "MB" ]
                       ]
                     , tr'
                       [ td' [ text "Storage: Free" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text $ formatNum p.fsFree ]
+                        [ text $ fromMaybe "--" $ map formatNum p.fsFree ]
                       , td' [ text "MB" ]
                       ]
                     , tr'
                       [ td' [ text "Storage: Total" ]
                       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                        [ text $ formatNum p.fsTotal ]
+                        [ text $ fromMaybe "--" $ map formatNum p.fsTotal ]
                       , td' [ text "MB" ]
+                      ]
+                    , tr'
+                      [ td' [ text "Descriptors: Open" ]
+                      , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
+                        [ text $ fromMaybe "--" $ map formatNum p.fdOpen ]
+                      , td' [ text "count" ]
+                      ]
+                    , tr'
+                      [ td' [ text "Descriptors: Max" ]
+                      , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
+                        [ text $ fromMaybe "--" $ map formatNum p.fdMax ]
+                      , td' [ text "count" ]
                       ]
                     ]
                   ]

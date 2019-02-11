@@ -84,8 +84,17 @@ class Stats(implicit system: ActorSystem) extends Extension {
           val total = os.getTotalPhysicalMemorySize
           send(MetricStat("mem", s"${(free/i"1'000'000").toString}~${(total/i"1'000'000").toString}"))
         }
-      case _ =>
-        log.error("bad os implementation (impossible)")
+        os match {
+          case os: com.sun.management.UnixOperatingSystemMXBean =>
+            // File descriptor count
+            scheduler.schedule(1 second, 5 minutes) {
+              val open = os.getOpenFileDescriptorCount
+              val max = os.getMaxFileDescriptorCount
+              send(MetricStat("fd", s"${open.toString}~${max.toString}"))
+            }
+          case _ => log.info("unix descriptors are unavailable")
+        }
+      case _ => log.error("bad os implementation (impossible)")
     }
     gc.asScala.toList.foreach{ gc =>
       gc match {

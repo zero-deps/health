@@ -828,6 +828,16 @@ var PS = {};
           throw new Error("Failed pattern match at Data.Maybe (line 125, column 1 - line 125, column 33): " + [ v.constructor.name, v1.constructor.name ]);
       };
   });
+  var altMaybe = new Control_Alt.Alt(function () {
+      return functorMaybe;
+  }, function (v) {
+      return function (v1) {
+          if (v instanceof Nothing) {
+              return v1;
+          };
+          return v;
+      };
+  });
   exports["Nothing"] = Nothing;
   exports["Just"] = Just;
   exports["maybe"] = maybe;
@@ -836,6 +846,7 @@ var PS = {};
   exports["fromJust"] = fromJust;
   exports["functorMaybe"] = functorMaybe;
   exports["applyMaybe"] = applyMaybe;
+  exports["altMaybe"] = altMaybe;
   exports["bindMaybe"] = bindMaybe;
 })(PS["Data.Maybe"] = PS["Data.Maybe"] || {});
 (function(exports) {
@@ -4214,6 +4225,8 @@ var PS = {};
   var Control_Applicative = PS["Control.Applicative"];
   var Control_Bind = PS["Control.Bind"];
   var Data_Function = PS["Data.Function"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
   var Data_Semigroup = PS["Data.Semigroup"];
   var DomOps = PS["DomOps"];
   var Effect = PS["Effect"];
@@ -4227,23 +4240,27 @@ var PS = {};
       var render = function ($$this) {
           return function __do() {
               var v = React.getProps($$this)();
-              return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (v.cpuLast + ("% / " + (FormatOps.formatNum(v.memLast) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("All Metrics") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ]) ]), React_DOM["tbody'"]([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(v.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("All Metrics") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ]) ]), React_DOM["tbody'"]([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(FormatOps.duration(v.uptime)) ]), React_DOM["td'"]([ React_DOM.text("HH:MM:SS") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("CPU Load") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.duration)(v.uptime))) ]), React_DOM["td'"]([ React_DOM.text("HH:MM:SS") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("CPU Load") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(v.cpuLast) ]), React_DOM["td'"]([ React_DOM.text("%") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Used") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(v.cpuLast)) ]), React_DOM["td'"]([ React_DOM.text("%") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Used") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(FormatOps.formatNum(v.memLast)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Free") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memLast))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Free") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(FormatOps.formatNum(v.memFree)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Total") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memFree))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Total") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(FormatOps.formatNum(v.memTotal)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Used") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memTotal))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Used") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(FormatOps.formatNum(v.fsUsed)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Free") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.fsUsed))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Free") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(FormatOps.formatNum(v.fsFree)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Total") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.fsFree))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Storage: Total") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
                   fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(FormatOps.formatNum(v.fsTotal)) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]) ]) ]) ]) ]) ]) ]) ]) ]);
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.fsTotal))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Descriptors: Open") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.fdOpen))) ]), React_DOM["td'"]([ React_DOM.text("count") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Descriptors: Max") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.fdMax))) ]), React_DOM["td'"]([ React_DOM.text("count") ]) ]) ]) ]) ]) ]) ]) ]) ]) ]);
           };
       };
       return React.component(React.reactComponentSpec()())("Node")(function ($$this) {
@@ -4459,6 +4476,7 @@ var PS = {};
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
+  var Control_Alt = PS["Control.Alt"];
   var Control_Applicative = PS["Control.Applicative"];
   var Control_Bind = PS["Control.Bind"];
   var Data_Array = PS["Data.Array"];
@@ -4517,7 +4535,7 @@ var PS = {};
       if (v instanceof Errors) {
           return "Errors";
       };
-      throw new Error("Failed pattern match at Main (line 45, column 1 - line 45, column 31): " + [ v.constructor.name ]);
+      throw new Error("Failed pattern match at Main (line 46, column 1 - line 46, column 31): " + [ v.constructor.name ]);
   });
   var eqMenu = new Data_Eq.Eq(function (x) {
       return function (y) {
@@ -4575,7 +4593,7 @@ var PS = {};
               if (v instanceof Errors) {
                   return "icon-alert-circle-exc";
               };
-              throw new Error("Failed pattern match at Main (line 151, column 7 - line 151, column 33): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 152, column 7 - line 152, column 33): " + [ v.constructor.name ]);
           };
           var menuContent = function (v) {
               if (v.menu instanceof Nodes && v.node instanceof Data_Maybe.Just) {
@@ -4593,7 +4611,7 @@ var PS = {};
                           return React.createLeafElement(React.reactPropFields()())(dummy)({});
                       })(Effect_Console.error("bad node"));
                   };
-                  throw new Error("Failed pattern match at Main (line 157, column 9 - line 160, column 9): " + [ v1.constructor.name ]);
+                  throw new Error("Failed pattern match at Main (line 158, column 9 - line 161, column 9): " + [ v1.constructor.name ]);
               };
               if (v.menu instanceof Nodes) {
                   return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement(React.reactPropFields()())(Nodes_1.reactClass)({
@@ -4619,7 +4637,7 @@ var PS = {};
                       errors: v.errors
                   }));
               };
-              throw new Error("Failed pattern match at Main (line 155, column 7 - line 155, column 50): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 156, column 7 - line 156, column 50): " + [ v.constructor.name ]);
           };
           var $$goto = function (v) {
               if (v instanceof Nodes) {
@@ -4650,7 +4668,7 @@ var PS = {};
                       };
                   });
               };
-              throw new Error("Failed pattern match at Main (line 168, column 7 - line 168, column 34): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 169, column 7 - line 169, column 34): " + [ v.constructor.name ]);
           };
           return function __do() {
               var v = React.getState($$this)();
@@ -4663,8 +4681,8 @@ var PS = {};
                   return "";
               })()) ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $70 = Data_Eq.eq(eqMenu)(x)(v.menu);
-                      if ($70) {
+                      var $76 = Data_Eq.eq(eqMenu)(x)(v.menu);
+                      if ($76) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -4714,6 +4732,12 @@ var PS = {};
                   var cpu = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
                       return v.cpu;
                   });
+                  var cpuLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
+                      return [ {
+                          t: Global.readInt(10)(a.time),
+                          y: Global.readInt(10)(b)
+                      } ];
+                  })(cpu));
                   return function __do() {
                       var v = (function () {
                           var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
@@ -4737,7 +4761,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 236, column 16 - line 243, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 238, column 16 - line 245, column 34): " + [ v.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v1) {
                           return v1.used;
@@ -4748,6 +4772,12 @@ var PS = {};
                       var memTotal = Data_Functor.map(Data_Maybe.functorMaybe)(function (v1) {
                           return v1.total;
                       })(v);
+                      var memLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
+                          return [ {
+                              t: Global.readInt(10)(a.time),
+                              y: b.used / 1000.0
+                          } ];
+                      })(v));
                       var v1 = (function () {
                           var v1 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v2) {
                               return v2.fs;
@@ -4770,7 +4800,7 @@ var PS = {};
                           if (v1 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 247, column 15 - line 254, column 34): " + [ v1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 250, column 15 - line 257, column 34): " + [ v1.constructor.name ]);
                       })();
                       var fsUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
                           return v2.used;
@@ -4781,37 +4811,53 @@ var PS = {};
                       var fsTotal = Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
                           return v2.total;
                       })(v1);
-                      var cpuLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
-                          return [ {
-                              t: Global.readInt(10)(a.time),
-                              y: Global.readInt(10)(b)
-                          } ];
-                      })(cpu));
-                      var memLoad = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
-                          return [ {
-                              t: Global.readInt(10)(a.time),
-                              y: b.used / 1000.0
-                          } ];
-                      })(v));
+                      var v2 = (function () {
+                          var v2 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v3) {
+                              return v3.fd;
+                          });
+                          if (v2 instanceof Data_Maybe.Just && v2.value0.length === 2) {
+                              var open = Global.readInt(10)(v2["value0"][0]);
+                              var max = Global.readInt(10)(v2["value0"][1]);
+                              return new Data_Maybe.Just({
+                                  open: open,
+                                  max: max
+                              });
+                          };
+                          if (v2 instanceof Data_Maybe.Just) {
+                              return Data_Functor.map(Effect.functorEffect)(function (v3) {
+                                  return Data_Maybe.Nothing.value;
+                              })(Effect_Console.error("bad format=" + Data_Show.show(Data_Show.showArray(Data_Show.showString))(v2.value0)))();
+                          };
+                          if (v2 instanceof Data_Maybe.Nothing) {
+                              return Data_Maybe.Nothing.value;
+                          };
+                          throw new Error("Failed pattern match at Main (line 261, column 15 - line 267, column 34): " + [ v2.constructor.name ]);
+                      })();
+                      var fdOpen = Data_Functor.map(Data_Maybe.functorMaybe)(function (v3) {
+                          return v3.open;
+                      })(v2);
+                      var fdMax = Data_Functor.map(Data_Maybe.functorMaybe)(function (v3) {
+                          return v3.max;
+                      })(v2);
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
                               t: Global.readInt(10)(a.time),
                               label: b
                           } ];
                       })(a.action));
-                      var v2 = React.getState($$this)();
+                      var v3 = React.getState($$this)();
                       var node$prime = (function () {
-                          var v3 = Data_Map_Internal.lookup(Data_Ord.ordString)(a.addr)(v2.nodes);
-                          if (v3 instanceof Data_Maybe.Just) {
-                              var cpuLoad$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v3.value0.cpuLoad)(cpuLoad);
-                              var memLoad$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v3.value0.memLoad)(memLoad);
-                              var actions$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v3.value0.actions)(action);
-                              var minTime = Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v4) {
-                                  return v4.t;
-                              })(Data_Array.last(Data_Array.dropEnd(20)(cpuLoad$prime)))))(Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v4) {
-                                  return v4.t;
-                              })(Data_Array.last(Data_Array.dropEnd(20)(memLoad$prime)))))(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v4) {
-                                  return v4.t;
+                          var v4 = Data_Map_Internal.lookup(Data_Ord.ordString)(a.addr)(v3.nodes);
+                          if (v4 instanceof Data_Maybe.Just) {
+                              var cpuLoad$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v4.value0.cpuLoad)(cpuLoad);
+                              var memLoad$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v4.value0.memLoad)(memLoad);
+                              var actions$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v4.value0.actions)(action);
+                              var minTime = Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v5) {
+                                  return v5.t;
+                              })(Data_Array.last(Data_Array.dropEnd(20)(cpuLoad$prime)))))(Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v5) {
+                                  return v5.t;
+                              })(Data_Array.last(Data_Array.dropEnd(20)(memLoad$prime)))))(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v5) {
+                                  return v5.t;
                               })(Data_Array.last(Data_Array.dropEnd(20)(actions$prime))))));
                               var cpuLoad$prime$prime = Data_Array.filter(function (x) {
                                   return x.t > minTime;
@@ -4827,35 +4873,39 @@ var PS = {};
                                   cpuLoad: cpuLoad$prime$prime,
                                   memLoad: memLoad$prime$prime,
                                   actions: actions$prime$prime,
-                                  cpuLast: Data_Maybe.fromMaybe(v3.value0.cpuLast)(cpu),
-                                  memLast: Data_Maybe.fromMaybe(v3.value0.memLast)(memUsed),
-                                  uptime: Data_Maybe.fromMaybe(v3.value0.uptime)(uptime),
-                                  memFree: Data_Maybe.fromMaybe(v3.value0.memFree)(memFree),
-                                  memTotal: Data_Maybe.fromMaybe(v3.value0.memTotal)(memTotal),
-                                  fsUsed: Data_Maybe.fromMaybe(v3.value0.fsUsed)(fsUsed),
-                                  fsFree: Data_Maybe.fromMaybe(v3.value0.fsFree)(fsFree),
-                                  fsTotal: Data_Maybe.fromMaybe(v3.value0.fsTotal)(fsTotal),
-                                  addr: v3.value0.addr
+                                  cpuLast: Control_Alt.alt(Data_Maybe.altMaybe)(cpu)(v4.value0.cpuLast),
+                                  memLast: Control_Alt.alt(Data_Maybe.altMaybe)(memUsed)(v4.value0.memLast),
+                                  uptime: Control_Alt.alt(Data_Maybe.altMaybe)(uptime)(v4.value0.uptime),
+                                  memFree: Control_Alt.alt(Data_Maybe.altMaybe)(memFree)(v4.value0.memFree),
+                                  memTotal: Control_Alt.alt(Data_Maybe.altMaybe)(memTotal)(v4.value0.memTotal),
+                                  fsUsed: Control_Alt.alt(Data_Maybe.altMaybe)(fsUsed)(v4.value0.fsUsed),
+                                  fsFree: Control_Alt.alt(Data_Maybe.altMaybe)(fsFree)(v4.value0.fsFree),
+                                  fsTotal: Control_Alt.alt(Data_Maybe.altMaybe)(fsTotal)(v4.value0.fsTotal),
+                                  fdOpen: Control_Alt.alt(Data_Maybe.altMaybe)(fdOpen)(v4.value0.fdOpen),
+                                  fdMax: Control_Alt.alt(Data_Maybe.altMaybe)(fdMax)(v4.value0.fdMax),
+                                  addr: v4.value0.addr
                               };
                           };
-                          if (v3 instanceof Data_Maybe.Nothing) {
+                          if (v4 instanceof Data_Maybe.Nothing) {
                               return {
                                   addr: a.addr,
                                   lastUpdate: a.time,
                                   cpuLoad: cpuLoad,
                                   memLoad: memLoad,
                                   actions: action,
-                                  cpuLast: Data_Maybe.fromMaybe("0")(cpu),
-                                  memLast: Data_Maybe.fromMaybe(0.0)(memUsed),
-                                  uptime: Data_Maybe.fromMaybe("0")(uptime),
-                                  memFree: Data_Maybe.fromMaybe(0.0)(memFree),
-                                  memTotal: Data_Maybe.fromMaybe(0.0)(memTotal),
-                                  fsUsed: Data_Maybe.fromMaybe(0.0)(fsUsed),
-                                  fsFree: Data_Maybe.fromMaybe(0.0)(fsFree),
-                                  fsTotal: Data_Maybe.fromMaybe(0.0)(fsTotal)
+                                  cpuLast: cpu,
+                                  memLast: memUsed,
+                                  uptime: uptime,
+                                  memFree: memFree,
+                                  memTotal: memTotal,
+                                  fsUsed: fsUsed,
+                                  fsFree: fsFree,
+                                  fsTotal: fsTotal,
+                                  fdOpen: Data_Maybe.Nothing.value,
+                                  fdMax: Data_Maybe.Nothing.value
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 262, column 21 - line 302, column 18): " + [ v3.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 272, column 21 - line 316, column 18): " + [ v4.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -4886,49 +4936,55 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 304, column 9 - line 306, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 318, column 9 - line 320, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
               var v = Data_Array.index(xs)(0);
               if (v instanceof Data_Maybe.Just && v.value0 === "metric") {
                   if (xs.length === 5) {
-                      var mem = (function () {
-                          var $95 = xs[1] === "mem";
-                          if ($95) {
+                      var mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
+                          var $107 = xs[1] === "mem";
+                          if ($107) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
-                      })();
-                      var mem$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))(mem);
-                      var fs = (function () {
-                          var $96 = xs[1] === "fs./";
-                          if ($96) {
+                      })());
+                      var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
+                          var $108 = xs[1] === "fs./";
+                          if ($108) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
-                      })();
-                      var fs$prime = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))(fs);
+                      })());
+                      var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
+                          var $109 = xs[1] === "fd";
+                          if ($109) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })());
                       return updateWith({
                           addr: xs[4],
                           time: xs[3],
                           metrics: new Data_Maybe.Just({
                               cpu: (function () {
-                                  var $97 = xs[1] === "cpu.load";
-                                  if ($97) {
+                                  var $110 = xs[1] === "cpu.load";
+                                  if ($110) {
                                       return new Data_Maybe.Just(xs[2]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
-                              mem: mem$prime,
+                              mem: mem,
                               uptime: (function () {
-                                  var $98 = xs[1] === "sys.uptime";
-                                  if ($98) {
+                                  var $111 = xs[1] === "sys.uptime";
+                                  if ($111) {
                                       return new Data_Maybe.Just(xs[2]);
                                   };
                                   return Data_Maybe.Nothing.value;
                               })(),
-                              fs: fs$prime
+                              fs: fs,
+                              fd: fd
                           }),
                           err: Data_Maybe.Nothing.value,
                           action: Data_Maybe.Nothing.value

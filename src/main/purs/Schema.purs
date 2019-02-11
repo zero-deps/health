@@ -26,6 +26,7 @@ type MetricsUpdate =
   , mem :: Maybe (Array String)
   , uptime :: Maybe String
   , fs :: Maybe (Array String)
+  , fd :: Maybe (Array String)
   }
 
 type NodeInfo =
@@ -34,14 +35,16 @@ type NodeInfo =
   , cpuLoad :: Array CpuPoint
   , memLoad :: Array MemPoint
   , actions :: Array ActionPoint
-  , cpuLast :: String
-  , memLast :: Number
-  , uptime :: String
-  , memFree :: Number
-  , memTotal :: Number
-  , fsUsed :: Number
-  , fsFree :: Number
-  , fsTotal :: Number
+  , cpuLast :: Maybe String
+  , memLast :: Maybe Number
+  , uptime :: Maybe String
+  , memFree :: Maybe Number
+  , memTotal :: Maybe Number
+  , fsUsed :: Maybe Number
+  , fsFree :: Maybe Number
+  , fsTotal :: Maybe Number
+  , fdOpen :: Maybe Number
+  , fdMax :: Maybe Number
   }
 
 type CpuPoint =
