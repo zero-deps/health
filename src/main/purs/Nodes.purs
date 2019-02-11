@@ -7,7 +7,7 @@ import DomOps (cn)
 import Effect (Effect)
 import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps)
-import React.DOM (div, h4, table, tbody', td', text, th', thead, tr, tr')
+import React.DOM (div, h4, table, tbody', td, text, th', thead, tr, tr')
 import React.DOM.Props (onClick, style)
 import Schema
 
@@ -46,8 +46,8 @@ reactClass = component "Errors" \this -> do
                     ]
                   , tbody' $ map (\x ->
                       tr [ onClick \_ -> props.openNode x.addr, style { cursor: "zoom-in" } ]
-                      [ td' [ text x.addr ]
-                      , td' [ text $ localDateTime x.lastUpdate ]
+                      [ td [ style { fontFamily: "Fira Code" } ] [ text x.addr ]
+                      , td [ style { fontFamily: "Fira Code" } ] [ text $ localDateTime x.lastUpdate ]
                       ]) props.nodes
                   ]
                 ]

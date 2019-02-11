@@ -26,7 +26,7 @@ class UdpPub extends Actor with Stash with ActorLogging {
     case _: Udp.Bound =>
       socket = sender.some
     case Udp.Received(data, remote) =>
-      val host = remote.getHostString
+      val host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
       data.decodeString("UTF-8").split("::").toList match {
         case "metric" :: name :: value :: port :: Nil =>
           self ! Msg(MetricStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))

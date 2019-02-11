@@ -61,11 +61,10 @@ Do `sbt run`
 
 ## Deploy
 
-Do `sbt deploy`
-
-## Configuration
-
-To change hostname set env variable `HOST_IP`.
+```
+sbt
+deploySsh cms2
+```
 
 ## Input
 

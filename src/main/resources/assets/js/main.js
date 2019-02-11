@@ -4291,7 +4291,11 @@ var PS = {};
                       return v.openNode(x.addr);
                   }), React_DOM_Props.style({
                       cursor: "zoom-in"
-                  }) ])([ React_DOM["td'"]([ React_DOM.text(x.addr) ]), React_DOM["td'"]([ React_DOM.text(FormatOps.localDateTime(x.lastUpdate)) ]) ]);
+                  }) ])([ React_DOM.td([ React_DOM_Props.style({
+                      fontFamily: "Fira Code"
+                  }) ])([ React_DOM.text(x.addr) ]), React_DOM.td([ React_DOM_Props.style({
+                      fontFamily: "Fira Code"
+                  }) ])([ React_DOM.text(FormatOps.localDateTime(x.lastUpdate)) ]) ]);
               })(v.nodes)) ]) ]) ]) ]) ]) ]);
           };
       };
