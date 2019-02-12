@@ -1625,6 +1625,9 @@ var PS = {};
   var last = function (xs) {
       return index(xs)($foreign.length(xs) - 1 | 0);
   };
+  var head = function (xs) {
+      return index(xs)(0);
+  };
   var fromFoldable = function (dictFoldable) {
       return $foreign.fromFoldableImpl(Data_Foldable.foldr(dictFoldable));
   };
@@ -1634,6 +1637,7 @@ var PS = {};
       };
   };
   exports["fromFoldable"] = fromFoldable;
+  exports["head"] = head;
   exports["last"] = last;
   exports["index"] = index;
   exports["dropEnd"] = dropEnd;
@@ -4703,8 +4707,8 @@ var PS = {};
                   return "";
               })()) ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $75 = Data_Eq.eq(eqMenu)(x)(v.menu);
-                      if ($75) {
+                      var $74 = Data_Eq.eq(eqMenu)(x)(v.menu);
+                      if ($74) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -4751,9 +4755,10 @@ var PS = {};
                   var uptime = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
                       return v.uptime;
                   });
-                  var cpu = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
-                      return v.cpu;
+                  var cpu_mem = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
+                      return v.cpu_mem;
                   });
+                  var cpu = Control_Bind.bind(Data_Maybe.bindMaybe)(cpu_mem)(Data_Array.head);
                   var cpuPoints = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                       return [ {
                           t: Global.readInt(10)(a.time),
@@ -4762,9 +4767,7 @@ var PS = {};
                   })(cpu));
                   return function __do() {
                       var v = (function () {
-                          var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
-                              return v1.mem;
-                          });
+                          var v = Data_Functor.map(Data_Maybe.functorMaybe)(Data_Array.slice(1)(3))(cpu_mem);
                           if (v instanceof Data_Maybe.Just && v.value0.length === 2) {
                               var free = Global.readInt(10)(v["value0"][0]);
                               var total = Global.readInt(10)(v["value0"][1]);
@@ -4783,7 +4786,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 241, column 16 - line 248, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 236, column 16 - line 243, column 34): " + [ v.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v1) {
                           return v1.used;
@@ -4822,7 +4825,7 @@ var PS = {};
                           if (v1 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 254, column 15 - line 261, column 34): " + [ v1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 249, column 15 - line 256, column 34): " + [ v1.constructor.name ]);
                       })();
                       var v2 = (function () {
                           var v2 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v3) {
@@ -4844,7 +4847,7 @@ var PS = {};
                           if (v2 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 263, column 15 - line 269, column 34): " + [ v2.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 258, column 15 - line 264, column 34): " + [ v2.constructor.name ]);
                       })();
                       var v3 = (function () {
                           var v3 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v4) {
@@ -4872,7 +4875,7 @@ var PS = {};
                           if (v3 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 271, column 16 - line 280, column 34): " + [ v3.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 266, column 16 - line 275, column 34): " + [ v3.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
@@ -4936,7 +4939,7 @@ var PS = {};
                                   thr: Data_Maybe.Nothing.value
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 285, column 21 - line 325, column 18): " + [ v5.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 280, column 21 - line 320, column 18): " + [ v5.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -4967,20 +4970,27 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 327, column 9 - line 329, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 322, column 9 - line 324, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
               var v = Data_Array.index(xs)(0);
               if (v instanceof Data_Maybe.Just && v.value0 === "metric") {
                   if (xs.length === 5) {
-                      var mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                          var $114 = xs[1] === "mem";
-                          if ($114) {
+                      var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
+                          var $113 = xs[1] === "cpu_mem";
+                          if ($113) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
                       })());
+                      var uptime = (function () {
+                          var $114 = xs[1] === "uptime";
+                          if ($114) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
                       var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
                           var $115 = xs[1] === "fs./";
                           if ($115) {
@@ -5006,21 +5016,8 @@ var PS = {};
                           addr: xs[4],
                           time: xs[3],
                           metrics: new Data_Maybe.Just({
-                              cpu: (function () {
-                                  var $118 = xs[1] === "cpu.load";
-                                  if ($118) {
-                                      return new Data_Maybe.Just(xs[2]);
-                                  };
-                                  return Data_Maybe.Nothing.value;
-                              })(),
-                              mem: mem,
-                              uptime: (function () {
-                                  var $119 = xs[1] === "uptime";
-                                  if ($119) {
-                                      return new Data_Maybe.Just(xs[2]);
-                                  };
-                                  return Data_Maybe.Nothing.value;
-                              })(),
+                              cpu_mem: cpu_mem,
+                              uptime: uptime,
                               fs: fs,
                               fd: fd,
                               thr: thr

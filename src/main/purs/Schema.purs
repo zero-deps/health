@@ -22,8 +22,7 @@ type UpdateData =
   }
 
 type MetricsUpdate =
-  { cpu :: Maybe String
-  , mem :: Maybe (Array String)
+  { cpu_mem :: Maybe (Array String)
   , uptime :: Maybe String
   , fs :: Maybe (Array String)
   , fd :: Maybe (Array String)

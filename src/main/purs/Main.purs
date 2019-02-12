@@ -3,7 +3,7 @@ module Main
   ) where
 
 import Control.Alt ((<|>))
-import Data.Array (dropEnd, filter, fromFoldable, index, last, slice, (:))
+import Data.Array (dropEnd, filter, fromFoldable, index, last, slice, head, (:))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
@@ -186,21 +186,15 @@ reactClass = component "Main" \this -> do
         Just "metric" ->
           case xs of
             [ _, name, value, time, addr ] -> do
-              let mem = map (split (Pattern "~")) $ if name == "mem" then Just value else Nothing
+              let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
+              let uptime = if name == "uptime" then Just value else Nothing
               let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
               let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
               let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
               updateWith
                 { addr: addr
                 , time: time
-                , metrics: Just
-                  { cpu: if name == "cpu.load" then Just value else Nothing
-                  , mem: mem
-                  , uptime: if name == "uptime" then Just value else Nothing
-                  , fs: fs
-                  , fd: fd
-                  , thr: thr
-                  }
+                , metrics: Just { cpu_mem, uptime, fs, fd, thr }
                 , err: Nothing
                 , action: Nothing
                 }
@@ -235,10 +229,11 @@ reactClass = component "Main" \this -> do
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
         let uptime = a.metrics >>= _.uptime
-        let cpu = a.metrics >>= _.cpu
+        let cpu_mem = a.metrics >>= _.cpu_mem
+        let cpu = cpu_mem >>= head
         let cpuPoints = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu
         
-        mem <- case a.metrics >>= _.mem of
+        mem <- case map (slice 1 3) cpu_mem of
           Just ([ free', total' ]) -> do
             let free = readInt 10 free'
             let total = readInt 10 total'

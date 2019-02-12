@@ -59,13 +59,11 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val scheduler = system.scheduler
     object timeout {
       val thr = 5 minutes
-      val cpu = 30 seconds
-      val mem = 5 minutes
+      val cpu_mem = 30 seconds
       val fd = 5 minutes
       val fs = 1 hour
       // val thr = 5 seconds
-      // val cpu = 5 seconds
-      // val mem = 5 seconds
+      // val cpu_mem = 5 seconds
       // val fd = 5 seconds
       // val fs = 5 seconds
     }
@@ -92,18 +90,16 @@ class Stats(implicit system: ActorSystem) extends Extension {
     scheduleUptime()
     os match {
       case os: com.sun.management.OperatingSystemMXBean =>
-        // CPU load (percentage)
-        scheduler.schedule(1 second, timeout.cpu) {
-          os.getSystemCpuLoad match {
-            case x if x < 0 => // not available
-            case x => send(MetricStat("cpu.load", (100*x).toInt.toString))
+        scheduler.schedule(1 second, timeout.cpu_mem) {
+          // CPU load (percentage)
+          val cpu = os.getSystemCpuLoad match {
+            case x if x < 0 => "" // not available
+            case x => (100*x).toInt.toString
           }
-        }
-        // Memory (Mbytes)
-        scheduler.schedule(1 second, timeout.mem) {
+          // Memory (Mbytes)
           val free = os.getFreePhysicalMemorySize
           val total = os.getTotalPhysicalMemorySize
-          send(MetricStat("mem", s"${free/i"1'000'000"}~${total/i"1'000'000"}"))
+          send(MetricStat("cpu_mem", s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}"))
         }
         os match {
           case os: com.sun.management.UnixOperatingSystemMXBean =>
