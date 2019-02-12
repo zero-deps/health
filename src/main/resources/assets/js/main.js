@@ -4241,21 +4241,31 @@ var PS = {};
   var React_DOM_Props = PS["React.DOM.Props"];
   var Schema = PS["Schema"];                 
   var reactClass = (function () {
-      var thrCard = function (x) {
-          return React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("Threads") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Count") ]) ]) ]), React_DOM["tbody'"]([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("All") ]), React_DOM.td([ React_DOM_Props.style({
+      var card = function (title) {
+          return function (xs) {
+              return function (ys) {
+                  return React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text(title) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"](xs) ]), React_DOM["tbody'"](ys) ]) ]) ]) ]) ]);
+              };
+          };
+      };
+      var fdCard = function (x) {
+          return card("File Descriptors")([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Count") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Open") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.all)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Non-daemon") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.open)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Max") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.nondaemon)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Daemon") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.max)) ]) ]) ]);
+      };
+      var fsCard = function (x) {
+          return card("File System")([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Megabytes") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Used") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.daemon)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Peak") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.used)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Usable") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.peak)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Total") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.usable)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Total") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.total)) ]) ]) ]) ]) ]) ]) ]) ]);
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.total)) ]) ]) ]);
       };
       var othCard = function (p) {
-          return React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("Other Metrics") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ]) ]), React_DOM["tbody'"]([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+          return card("Other Metrics")([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
               fontFamily: "Fira Code"
           }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.duration)(p.uptime))) ]), React_DOM["td'"]([ React_DOM.text("HH:MM:SS") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("CPU Load") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
               fontFamily: "Fira Code"
@@ -4265,23 +4275,20 @@ var PS = {};
               fontFamily: "Fira Code"
           }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memFree))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Total") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memTotal))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]) ]) ]) ]) ]) ]) ]);
+          }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memTotal))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]) ]);
       };
-      var fsCard = function (x) {
-          return React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("File System") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Megabytes") ]) ]) ]), React_DOM["tbody'"]([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Used") ]), React_DOM.td([ React_DOM_Props.style({
+      var thrCard = function (x) {
+          return card("Threads")([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Count") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("All") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.used)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Usable") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.all)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Non-daemon") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.usable)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Total") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.nondaemon)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Daemon") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.total)) ]) ]) ]) ]) ]) ]) ]) ]);
-      };
-      var fdCard = function (x) {
-          return React_DOM.div([ DomOps.cn("col-lg-6 col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("File Descriptors") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Count") ]) ]) ]), React_DOM["tbody'"]([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Open") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.daemon)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Peak") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.open)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Max") ]), React_DOM.td([ React_DOM_Props.style({
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.peak)) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Total") ]), React_DOM.td([ React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(FormatOps.formatNum(x.max)) ]) ]) ]) ]) ]) ]) ]) ]);
+          }) ])([ React_DOM.text(FormatOps.formatNum(x.total)) ]) ]) ]);
       };
       var render = function ($$this) {
           return function __do() {
