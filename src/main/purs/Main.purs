@@ -236,7 +236,7 @@ reactClass = component "Main" \this -> do
       updateWith a = do
         let uptime = a.metrics >>= _.uptime
         let cpu = a.metrics >>= _.cpu
-        let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu
+        let cpuPoints = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu
         
         mem <- case a.metrics >>= _.mem of
           Just ([ free', total' ]) -> do
@@ -249,7 +249,7 @@ reactClass = component "Main" \this -> do
         let memUsed = map _.used mem
         let memFree = map _.free mem
         let memTotal = map _.total mem
-        let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b.used / 1000.0 }]) mem
+        let memPoints = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b.used / 1000.0 }]) mem
         
         fs <- case a.metrics >>= _.fs of
           Just ([ usable', total' ]) -> do
@@ -259,9 +259,6 @@ reactClass = component "Main" \this -> do
             pure $ Just { used, usable, total }
           Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
           Nothing -> pure Nothing
-        let fsUsed = map _.used fs
-        let fsFree = map _.usable fs
-        let fsTotal = map _.total fs
         
         fd <- case a.metrics >>= _.fd of
           Just ([ open', max' ]) -> do
@@ -270,8 +267,6 @@ reactClass = component "Main" \this -> do
             pure $ Just { open, max }
           Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
           Nothing -> pure Nothing
-        let fdOpen = map _.open fd
-        let fdMax = map _.max fd
 
         thr <- case a.metrics >>= _.thr of
           Just [ all', daemon', peak', total' ] -> do
@@ -289,49 +284,43 @@ reactClass = component "Main" \this -> do
         s <- getState this
         let node' = case lookup a.addr s.nodes of
               Just node -> do
-                let cpuLoad' = node.cpuLoad <> cpuLoad
-                let memLoad' = node.memLoad <> memLoad
-                let actions' = node.actions <> action
+                let cpuPoints' = node.cpuPoints <> cpuPoints
+                let memPoints' = node.memPoints <> memPoints
+                let actionPoints' = node.actionPoints <> action
                 let minTime = max
-                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 cpuLoad') $ max
-                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 memLoad')
-                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 actions')
-                let cpuLoad'' = filter (\x -> x.t > minTime) cpuLoad'
-                let memLoad'' = filter (\x -> x.t > minTime) memLoad'
-                let actions'' = filter (\x -> x.t > minTime) actions'
+                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 cpuPoints') $ max
+                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 memPoints')
+                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 actionPoints')
+                let cpuPoints'' = filter (\x -> x.t > minTime) cpuPoints'
+                let memPoints'' = filter (\x -> x.t > minTime) memPoints'
+                let actionPoints'' = filter (\x -> x.t > minTime) actionPoints'
                 node
                   { lastUpdate = a.time
-                  , cpuLoad = cpuLoad''
-                  , memLoad = memLoad''
-                  , actions = actions''
+                  , cpuPoints = cpuPoints''
+                  , memPoints = memPoints''
+                  , actionPoints = actionPoints''
                   , cpuLast = cpu <|> node.cpuLast
                   , memLast = memUsed <|> node.memLast
                   , uptime = uptime <|> node.uptime
                   , memFree = memFree <|> node.memFree
                   , memTotal = memTotal <|> node.memTotal
-                  , fsUsed = fsUsed <|> node.fsUsed
-                  , fsFree = fsFree <|> node.fsFree
-                  , fsTotal = fsTotal <|> node.fsTotal
-                  , fdOpen = fdOpen <|> node.fdOpen
-                  , fdMax = fdMax <|> node.fdMax
+                  , fs = fs <|> node.fs
+                  , fd = fd <|> node.fd
                   , thr = thr <|> node.thr
                   }
               Nothing ->
                 { addr: a.addr
                 , lastUpdate: a.time
-                , cpuLoad: cpuLoad
-                , memLoad: memLoad
-                , actions: action
+                , cpuPoints: cpuPoints
+                , memPoints: memPoints
+                , actionPoints: action
                 , cpuLast: cpu
                 , memLast: memUsed
                 , uptime: uptime
                 , memFree: memFree
                 , memTotal: memTotal
-                , fsUsed: fsUsed
-                , fsFree: fsFree
-                , fsTotal: fsTotal
-                , fdOpen: Nothing
-                , fdMax: Nothing
+                , fs: Nothing
+                , fd: Nothing
                 , thr: Nothing
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }

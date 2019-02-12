@@ -33,20 +33,28 @@ type MetricsUpdate =
 type NodeInfo =
   { addr :: String
   , lastUpdate :: String
-  , cpuLoad :: Array CpuPoint
-  , memLoad :: Array MemPoint
-  , actions :: Array ActionPoint
+  , cpuPoints :: Array CpuPoint
+  , memPoints :: Array MemPoint
+  , actionPoints :: Array ActionPoint
+  , uptime :: Maybe String
   , cpuLast :: Maybe String
   , memLast :: Maybe Number
-  , uptime :: Maybe String
   , memFree :: Maybe Number
   , memTotal :: Maybe Number
-  , fsUsed :: Maybe Number
-  , fsFree :: Maybe Number
-  , fsTotal :: Maybe Number
-  , fdOpen :: Maybe Number
-  , fdMax :: Maybe Number
+  , fs :: Maybe FsInfo
+  , fd :: Maybe FdInfo
   , thr :: Maybe ThrInfo
+  }
+
+type FsInfo =
+  { used :: Number
+  , usable :: Number
+  , total :: Number
+  }
+
+type FdInfo =
+  { open :: Number
+  , max :: Number
   }
 
 type ThrInfo =

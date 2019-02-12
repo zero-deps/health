@@ -21,8 +21,8 @@ reactClass = component "Node" \this -> do
   pure
     { state: {}
     , render: render this
-    , componentDidMount: createChart p.cpuLoad p.memLoad p.actions
-    , componentDidUpdate: \p' _ _ -> updateChart p'.cpuLoad p'.memLoad p'.actions
+    , componentDidMount: createChart p.cpuPoints p.memPoints p.actionPoints
+    , componentDidUpdate: \p' _ _ -> updateChart p'.cpuPoints p'.memPoints p'.actionPoints
     , componentWillUnmount: destroyChart
     }
   where
@@ -76,7 +76,9 @@ reactClass = component "Node" \this -> do
           ]
         ]
       , div [ cn "row" ]
-        [ fromMaybe (div' []) (map thrCard p.thr)
+        [ fromMaybe (div' []) (map fsCard p.fs)
+        , fromMaybe (div' []) (map fdCard p.fd)
+        , fromMaybe (div' []) (map thrCard p.thr)
         , othCard p
         ]
       ]
@@ -129,35 +131,78 @@ reactClass = component "Node" \this -> do
                     [ text $ fromMaybe "--" $ map formatNum p.memTotal ]
                   , td' [ text "MB" ]
                   ]
-                , tr'
-                  [ td' [ text "Storage: Used" ]
-                  , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                    [ text $ fromMaybe "--" $ map formatNum p.fsUsed ]
-                  , td' [ text "MB" ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+  fsCard :: FsInfo -> ReactElement
+  fsCard x =
+    div [ cn "col-lg-6 col-md-12" ]
+      [ div [ cn "card" ]
+        [ div [ cn "card-header" ]
+          [ h4 [ cn "card-title" ]
+            [ text "File System" ]
+          ]
+        , div [ cn "card-body" ]
+          [ div [ cn "table-responsive" ]
+            [ table [ cn "table tablesorter" ]
+              [ thead [ cn "text-primary" ]
+                [ tr'
+                  [ th' [ text "" ]
+                  , th' [ text "Megabytes" ]
+                  ]
+                ]
+              , tbody'
+                [ tr'
+                  [ td' [ text "Used" ]
+                  , td [ style { fontFamily: "Fira Code" } ]
+                    [ text $ formatNum x.used ]
                   ]
                 , tr'
-                  [ td' [ text "Storage: Free" ]
-                  , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                    [ text $ fromMaybe "--" $ map formatNum p.fsFree ]
-                  , td' [ text "MB" ]
+                  [ td' [ text "Usable" ]
+                  , td [ style { fontFamily: "Fira Code" } ]
+                    [ text $ formatNum x.usable ]
                   ]
                 , tr'
-                  [ td' [ text "Storage: Total" ]
-                  , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                    [ text $ fromMaybe "--" $ map formatNum p.fsTotal ]
-                  , td' [ text "MB" ]
+                  [ td' [ text "Total" ]
+                  , td [ style { fontFamily: "Fira Code" } ]
+                    [ text $ formatNum x.total ]
+                  ]
+                ]
+              ]
+            ]
+          ]
+        ]
+      ]
+  fdCard :: FdInfo -> ReactElement
+  fdCard x =
+    div [ cn "col-lg-6 col-md-12" ]
+      [ div [ cn "card" ]
+        [ div [ cn "card-header" ]
+          [ h4 [ cn "card-title" ]
+            [ text "File Descriptors" ]
+          ]
+        , div [ cn "card-body" ]
+          [ div [ cn "table-responsive" ]
+            [ table [ cn "table tablesorter" ]
+              [ thead [ cn "text-primary" ]
+                [ tr'
+                  [ th' [ text "" ]
+                  , th' [ text "Count" ]
+                  ]
+                ]
+              , tbody'
+                [ tr'
+                  [ td' [ text "Open" ]
+                  , td [ style { fontFamily: "Fira Code" } ]
+                    [ text $ formatNum x.open ]
                   ]
                 , tr'
-                  [ td' [ text "Descriptors: Open" ]
-                  , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                    [ text $ fromMaybe "--" $ map formatNum p.fdOpen ]
-                  , td' [ text "count" ]
-                  ]
-                , tr'
-                  [ td' [ text "Descriptors: Max" ]
-                  , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-                    [ text $ fromMaybe "--" $ map formatNum p.fdMax ]
-                  , td' [ text "count" ]
+                  [ td' [ text "Max" ]
+                  , td [ style { fontFamily: "Fira Code" } ]
+                    [ text $ formatNum x.max ]
                   ]
                 ]
               ]
@@ -178,7 +223,7 @@ reactClass = component "Node" \this -> do
             [ table [ cn "table tablesorter" ]
               [ thead [ cn "text-primary" ]
                 [ tr'
-                  [ th' [ text "Name" ]
+                  [ th' [ text "" ]
                   , th' [ text "Count" ]
                   ]
                 ]

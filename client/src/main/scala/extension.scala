@@ -57,9 +57,20 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val thr = ManagementFactory.getThreadMXBean
 
     val scheduler = system.scheduler
+    object timeout {
+      val thr = 5 minutes
+      val cpu = 30 seconds
+      val mem = 5 minutes
+      val fd = 5 minutes
+      val fs = 1 hour
+      // val thr = 5 seconds
+      // val cpu = 5 seconds
+      // val mem = 5 seconds
+      // val fd = 5 seconds
+      // val fs = 5 seconds
+    }
     // Threads
-    // scheduler.schedule(1 second, 5 minutes) {
-    scheduler.schedule(1 second, 5 seconds) {
+    scheduler.schedule(1 second, timeout.thr) {
       val all = thr.getThreadCount
       val daemon = thr.getDaemonThreadCount
       val peak = thr.getPeakThreadCount
@@ -82,14 +93,14 @@ class Stats(implicit system: ActorSystem) extends Extension {
     os match {
       case os: com.sun.management.OperatingSystemMXBean =>
         // CPU load (percentage)
-        scheduler.schedule(1 second, 30 seconds) {
+        scheduler.schedule(1 second, timeout.cpu) {
           os.getSystemCpuLoad match {
             case x if x < 0 => // not available
             case x => send(MetricStat("cpu.load", (100*x).toInt.toString))
           }
         }
         // Memory (Mbytes)
-        scheduler.schedule(1 second, 5 minutes) {
+        scheduler.schedule(1 second, timeout.mem) {
           val free = os.getFreePhysicalMemorySize
           val total = os.getTotalPhysicalMemorySize
           send(MetricStat("mem", s"${free/i"1'000'000"}~${total/i"1'000'000"}"))
@@ -97,7 +108,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
         os match {
           case os: com.sun.management.UnixOperatingSystemMXBean =>
             // File descriptor count
-            scheduler.schedule(1 second, 5 minutes) {
+            scheduler.schedule(1 second, timeout.fd) {
               val open = os.getOpenFileDescriptorCount
               val max = os.getMaxFileDescriptorCount
               send(MetricStat("fd", s"${open}~${max}"))
@@ -133,7 +144,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
           case Success(store) =>
             def usable = Try(store.getUsableSpace)
             def total = Try(store.getTotalSpace)
-            scheduler.schedule(1 second, 1 hour) {
+            scheduler.schedule(1 second, timeout.fs) {
               (usable, total) match {
                 case (Success(usable), Success(total)) =>
                   send(MetricStat("fs./", s"${usable/i"1'000'000"}~${total/i"1'000'000"}"))
