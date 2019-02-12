@@ -54,8 +54,18 @@ class Stats(implicit system: ActorSystem) extends Extension {
   if (enabled) {
     val os = ManagementFactory.getOperatingSystemMXBean
     val gc = ManagementFactory.getGarbageCollectorMXBeans
+    val thr = ManagementFactory.getThreadMXBean
 
     val scheduler = system.scheduler
+    // Threads
+    // scheduler.schedule(1 second, 5 minutes) {
+    scheduler.schedule(1 second, 5 seconds) {
+      val all = thr.getThreadCount
+      val daemon = thr.getDaemonThreadCount
+      val peak = thr.getPeakThreadCount
+      val total = thr.getTotalStartedThreadCount
+      send(MetricStat("thr", s"${all}~${daemon}~${peak}~${total}"))
+    }
     // Uptime (seconds)
     def scheduleUptime(): Unit = {
       val uptime = system.uptime
@@ -64,7 +74,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
         else if (uptime < 3600) 1 minute
         else 5.minutes
       scheduler.scheduleOnce(t) {
-        send(MetricStat("sys.uptime", uptime.toString))
+        send(MetricStat("uptime", uptime.toString))
         scheduleUptime()
       }
     }
@@ -82,7 +92,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
         scheduler.schedule(1 second, 5 minutes) {
           val free = os.getFreePhysicalMemorySize
           val total = os.getTotalPhysicalMemorySize
-          send(MetricStat("mem", s"${(free/i"1'000'000").toString}~${(total/i"1'000'000").toString}"))
+          send(MetricStat("mem", s"${free/i"1'000'000"}~${total/i"1'000'000"}"))
         }
         os match {
           case os: com.sun.management.UnixOperatingSystemMXBean =>
@@ -90,7 +100,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
             scheduler.schedule(1 second, 5 minutes) {
               val open = os.getOpenFileDescriptorCount
               val max = os.getMaxFileDescriptorCount
-              send(MetricStat("fd", s"${open.toString}~${max.toString}"))
+              send(MetricStat("fd", s"${open}~${max}"))
             }
           case _ => log.info("unix descriptors are unavailable")
         }
@@ -113,8 +123,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
               } else ()
             }
           }, null, null)
-        case _ =>
-          log.error(s"gc=${gc.getClass.getName} is not a NotificationBroadcaster")
+        case _ => log.error(s"gc=${gc.getClass.getName} is not a NotificationBroadcaster")
       }
     }
     // FS (Mbytes)
@@ -127,16 +136,13 @@ class Stats(implicit system: ActorSystem) extends Extension {
             scheduler.schedule(1 second, 1 hour) {
               (usable, total) match {
                 case (Success(usable), Success(total)) =>
-                  send(MetricStat("fs./", s"${(usable/i"1'000'000").toString}~${(total/i"1'000'000").toString}"))
-                case _ =>
-                  log.error("can't get disk usage")
+                  send(MetricStat("fs./", s"${usable/i"1'000'000"}~${total/i"1'000'000"}"))
+                case _ => log.error("can't get disk usage")
               }
             }
-          case Failure(t) =>
-            log.error("can't get file store", t)
+          case Failure(t) => log.error("can't get file store", t)
         }
-      case None =>
-        log.error("no root directory (impossible)")
+      case None => log.error("no root directory (impossible)")
     }
   }
 }

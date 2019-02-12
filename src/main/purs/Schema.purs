@@ -27,6 +27,7 @@ type MetricsUpdate =
   , uptime :: Maybe String
   , fs :: Maybe (Array String)
   , fd :: Maybe (Array String)
+  , thr :: Maybe (Array String)
   }
 
 type NodeInfo =
@@ -45,6 +46,15 @@ type NodeInfo =
   , fsTotal :: Maybe Number
   , fdOpen :: Maybe Number
   , fdMax :: Maybe Number
+  , thr :: Maybe ThrInfo
+  }
+
+type ThrInfo =
+  { all :: Number
+  , daemon :: Number
+  , nondaemon :: Number
+  , peak :: Number
+  , total :: Number
   }
 
 type CpuPoint =

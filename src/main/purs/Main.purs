@@ -189,15 +189,17 @@ reactClass = component "Main" \this -> do
               let mem = map (split (Pattern "~")) $ if name == "mem" then Just value else Nothing
               let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
               let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
+              let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
               updateWith
                 { addr: addr
                 , time: time
                 , metrics: Just
                   { cpu: if name == "cpu.load" then Just value else Nothing
                   , mem: mem
-                  , uptime: if name == "sys.uptime" then Just value else Nothing
+                  , uptime: if name == "uptime" then Just value else Nothing
                   , fs: fs
                   , fd: fd
+                  , thr: thr
                   }
                 , err: Nothing
                 , action: Nothing
@@ -235,6 +237,7 @@ reactClass = component "Main" \this -> do
         let uptime = a.metrics >>= _.uptime
         let cpu = a.metrics >>= _.cpu
         let cpuLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu
+        
         mem <- case a.metrics >>= _.mem of
           Just ([ free', total' ]) -> do
             let free = readInt 10 free'
@@ -247,6 +250,7 @@ reactClass = component "Main" \this -> do
         let memFree = map _.free mem
         let memTotal = map _.total mem
         let memLoad = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b.used / 1000.0 }]) mem
+        
         fs <- case a.metrics >>= _.fs of
           Just ([ usable', total' ]) -> do
             let usable = readInt 10 usable'
@@ -258,6 +262,7 @@ reactClass = component "Main" \this -> do
         let fsUsed = map _.used fs
         let fsFree = map _.usable fs
         let fsTotal = map _.total fs
+        
         fd <- case a.metrics >>= _.fd of
           Just ([ open', max' ]) -> do
             let open = readInt 10 open'
@@ -267,7 +272,20 @@ reactClass = component "Main" \this -> do
           Nothing -> pure Nothing
         let fdOpen = map _.open fd
         let fdMax = map _.max fd
+
+        thr <- case a.metrics >>= _.thr of
+          Just [ all', daemon', peak', total' ] -> do
+            let all = readInt 10 all'
+            let daemon = readInt 10 daemon'
+            let nondaemon = all - daemon
+            let peak = readInt 10 peak'
+            let total = readInt 10 total'
+            pure $ Just { all, daemon, nondaemon, peak, total }
+          Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
+          Nothing -> pure Nothing
+
         let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
+        
         s <- getState this
         let node' = case lookup a.addr s.nodes of
               Just node -> do
@@ -296,6 +314,7 @@ reactClass = component "Main" \this -> do
                   , fsTotal = fsTotal <|> node.fsTotal
                   , fdOpen = fdOpen <|> node.fdOpen
                   , fdMax = fdMax <|> node.fdMax
+                  , thr = thr <|> node.thr
                   }
               Nothing ->
                 { addr: a.addr
@@ -313,6 +332,7 @@ reactClass = component "Main" \this -> do
                 , fsTotal: fsTotal
                 , fdOpen: Nothing
                 , fdMax: Nothing
+                , thr: Nothing
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
         case a.err of

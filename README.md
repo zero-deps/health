@@ -127,7 +127,7 @@ Some of Metric's functionality is added automatically when you add ActorSystem E
 
 | Metric                   | Metric alias | Period |
 | ------------------------ | ------------ | ------ |
-| Boot time                | sys.uptime   | 5 sec  |
+| Boot time                | uptime       | 5 sec  |
 | CPU load                 | cpu.load     | 15 sec |
 | Used memory              | mem.used     | 1 min  |
 | Free memory              | mem.free     | 1 min  |
