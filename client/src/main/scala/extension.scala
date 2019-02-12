@@ -79,9 +79,9 @@ class Stats(implicit system: ActorSystem) extends Extension {
     def scheduleUptime(): Unit = {
       val uptime = system.uptime
       val t =
-        if (uptime < 60) 5 seconds
+        if (uptime < 60 + 5) 5 seconds
         else if (uptime < 3600) 1 minute
-        else 5.minutes
+        else 1 hour;
       scheduler.scheduleOnce(t) {
         send(MetricStat("uptime", uptime.toString))
         scheduleUptime()

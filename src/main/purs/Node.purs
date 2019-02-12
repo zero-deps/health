@@ -102,7 +102,7 @@ reactClass = component "Node" \this -> do
         ]
       ]
   othCard :: Props -> ReactElement
-  othCard p = card "Other Metrics"
+  othCard p = let fuptime = map duration p.uptime in card "Other Metrics"
     [ th' [ text "Name" ]
     , th [ cn "text-right" ] [ text "Value" ]
     , th' [ text "Unit" ]
@@ -110,8 +110,8 @@ reactClass = component "Node" \this -> do
     [ tr'
       [ td' [ text "Uptime" ]
       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-        [ text $ fromMaybe "--" $ map duration p.uptime ]
-      , td' [ text "HH:MM:SS" ]
+        [ text $ fromMaybe "--" $ map _.value fuptime ]
+      , td' [ text $ fromMaybe "--" $ map _.unit fuptime ]
       ]
     , tr'
       [ td' [ text "CPU Load" ]

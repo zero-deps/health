@@ -29,10 +29,8 @@ datePart num =
 
 foreign import formatNum :: Number -> String
 
-duration :: String -> String
-duration sec = let
-  sec' = readInt 10 sec
-  h = datePart $ (floor sec') / 3600
-  m = datePart $ ((floor sec') `mod` 3600) / 60
-  s = datePart $ (floor sec') `mod` 60
-  in h<>":"<>m<>":"<>s
+duration :: String -> { value :: String, unit :: String }
+duration sec = let sec' = floor $ readInt 10 sec in
+  if sec' >= 3600 then { value: show $ sec' / 3600, unit: "hour" }
+  else if sec' >= 60 then { value: show $ sec' / 60, unit: "min" }
+  else { value: show sec', unit: "sec" }

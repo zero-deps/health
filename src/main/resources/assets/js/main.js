@@ -3825,20 +3825,34 @@ var PS = {};
   var Data_String_CodePoints = PS["Data.String.CodePoints"];
   var Global = PS["Global"];
   var Prelude = PS["Prelude"];                 
+  var duration = function (sec) {
+      var sec$prime = Data_Int.floor(Global.readInt(10)(sec));
+      var $0 = sec$prime >= 3600;
+      if ($0) {
+          return {
+              value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(3600)),
+              unit: "hour"
+          };
+      };
+      var $1 = sec$prime >= 60;
+      if ($1) {
+          return {
+              value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(60)),
+              unit: "min"
+          };
+      };
+      return {
+          value: Data_Show.show(Data_Show.showInt)(sec$prime),
+          unit: "sec"
+      };
+  };
   var datePart = function (num) {
       var str = Data_Show.show(Data_Show.showInt)(num);
-      var $0 = Data_String_CodePoints.length(str) < 2;
-      if ($0) {
+      var $2 = Data_String_CodePoints.length(str) < 2;
+      if ($2) {
           return "0" + str;
       };
       return str;
-  };
-  var duration = function (sec) {
-      var sec$prime = Global.readInt(10)(sec);
-      var s = datePart(Data_EuclideanRing.mod(Data_EuclideanRing.euclideanRingInt)(Data_Int.floor(sec$prime))(60));
-      var m = datePart(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(Data_EuclideanRing.mod(Data_EuclideanRing.euclideanRingInt)(Data_Int.floor(sec$prime))(3600))(60));
-      var h = datePart(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(Data_Int.floor(sec$prime))(3600));
-      return h + (":" + (m + (":" + s)));
   };
   var localDateTime = function (x) {
       var ms = Global.readInt(10)(x);
@@ -4265,9 +4279,14 @@ var PS = {};
           }) ])([ React_DOM.text(FormatOps.formatNum(x.total)) ]) ]) ]);
       };
       var othCard = function (p) {
+          var fuptime = Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.duration)(p.uptime);
           return card("Other Metrics")([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.duration)(p.uptime))) ]), React_DOM["td'"]([ React_DOM.text("HH:MM:SS") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("CPU Load") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+          }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
+              return v.value;
+          })(fuptime))) ]), React_DOM["td'"]([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
+              return v.unit;
+          })(fuptime))) ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("CPU Load") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
               fontFamily: "Fira Code"
           }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(p.cpuLast)) ]), React_DOM["td'"]([ React_DOM.text("%") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Memory: Used") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
               fontFamily: "Fira Code"
