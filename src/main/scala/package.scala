@@ -5,6 +5,8 @@ import akka.stream.stage.GraphStageLogic.StageActor
 import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler, StageLogging}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import scala.collection.immutable.Queue
+import scalaz.Scalaz._
+import scala.util.{Try, Success, Failure}
 
 package object stats {
   sealed trait Stat
@@ -17,6 +19,47 @@ package object stats {
   final case class Msg(stat: Stat, meta: StatMeta)
 
   def now_ms(): String = System.currentTimeMillis.toString
+
+  final case class MetricEn
+    ( fid: String
+    , id: String
+    , prev: String
+    , name: String
+    , value: String
+    , time: String
+    , addr: String) extends kvs.en.En
+
+  implicit object FdHandler extends kvs.en.FdHandler {
+    def pickle(e: kvs.en.Fd): kvs.Res[Array[Byte]] = s"${e.id}^${e.top}^${e.count}".getBytes("utf8").right
+    def unpickle(a: Array[Byte]): kvs.Res[kvs.en.Fd] = {
+      val s = new String(a, "utf8")
+      s.split('^') match {
+        case Array(id, top, count) =>
+          Try(count.toInt) match {
+            case Success(count) => kvs.en.Fd(id, top, count).right
+            case Failure(_) => kvs.UnpickleFail(s"count=${count} is not a number").left
+          }
+        case _ => kvs.UnpickleFail(s"bad format=${s}").left
+      }
+    }
+  }
+
+  implicit object MetricEnHandler extends kvs.en.EnHandler[MetricEn] {
+    val fh: kvs.en.FdHandler = FdHandler
+
+    def pickle(e: MetricEn): kvs.Res[Array[Byte]] = s"${e.fid}^${e.id}^${e.prev}^${e.name}^${e.value}^${e.time}^${e.addr}".getBytes("utf8").right
+    def unpickle(a: Array[Byte]): kvs.Res[MetricEn] = {
+      val s = new String(a, "utf8")
+      s.split('^') match {
+        case Array(fid, id, prev, name, value, time, addr) =>
+          MetricEn(fid, id, prev, name, value, time, addr).right
+        case _ => kvs.UnpickleFail(s"bad format=${s}").left
+      }
+    }
+
+    protected def update(en: MetricEn, prev: String): MetricEn = en.copy(prev=prev)
+    protected def update(en: MetricEn, id: String, prev: String): MetricEn = en.copy(id=id, prev=prev)
+  }
 
   class MsgSource(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Msg]] {
     val out: Outlet[Msg] = Outlet("MessageSource")

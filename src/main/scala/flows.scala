@@ -18,7 +18,7 @@ object Flows {
       val kvspub = Source.fromGraph(new MsgSource(system.actorOf(KvsPub.props(kvs))))
       val wspub = Source.fromGraph(new MsgSource(system.actorOf(WsPub.props)))
       val pub = b.add(Merge[Msg](2))
-      val toMsg = b.add(Flow[Msg].map{ 
+      val toMsg = b.add(Flow[Msg].map{
         case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
           s"metric::${name}::${value}::${time}::${addr}"
         case Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr)) =>
@@ -42,7 +42,11 @@ object Flows {
       val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
       val logIn = Flow[Msg].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save = Flow[Msg].map{ msg =>
-        //todo: save to kvs
+        msg match {
+          case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
+            kvs.put(MetricEn(fid="metrics", id=s"${msg.meta.addr}${name}", prev=.kvs.empty, name, value, time, addr))
+          case _ =>
+        }
         msg
       }
       val pub = Sink.foreach[Msg]{ msg =>

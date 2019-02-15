@@ -15,7 +15,6 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 )
 ThisBuild / publishTo := Some(" Releases" at "http://nexus.mobile..com/nexus3/repository/releases")
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
-ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.mobile..com", "", "")
 ThisBuild / publishArtifact := true
 ThisBuild / publishMavenStyle := true
 ThisBuild / isSnapshot := true

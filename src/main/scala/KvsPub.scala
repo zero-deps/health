@@ -2,6 +2,7 @@ package .stats
 
 import akka.actor.{ActorLogging, Actor, ActorRef, Props, Stash}
 import .kvs.Kvs
+import scalaz._
 
 object KvsPub {
   def props(kvs: Kvs): Props = Props(new KvsPub(kvs))
@@ -9,9 +10,14 @@ object KvsPub {
 
 class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   override def preStart(): Unit = {
-    // get data from kvs
-    val xs: List[Msg] = Nil
-    xs foreach (self ! _)
+    kvs.stream_safe[MetricEn](fid="metrics").fold(
+      l => log.error(l.toString),
+      r => r.foreach{
+        case -\/(l) => log.error(l.toString)
+        case \/-(MetricEn(_,_,_,name,value,time,addr)) =>
+          self ! Msg(MetricStat(name, value), StatMeta(time, addr))
+      }
+    )
   }
 
   def receive: Receive = {
