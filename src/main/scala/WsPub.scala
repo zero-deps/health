@@ -21,8 +21,6 @@ class WsPub extends Actor with Stash with ActorLogging {
   }
 
   def ready(stageActor: ActorRef): Receive = {
-    case msg: Msg =>
-      log.debug("sourceFeeder received message, forwarding to stage: {} ", msg)
-      stageActor ! msg
+    case msg: Msg => stageActor ! msg
   }
 }

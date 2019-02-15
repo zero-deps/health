@@ -20,12 +20,11 @@ package object stats {
 
   def now_ms(): String = System.currentTimeMillis.toString
 
-  final case class MetricEn
+  final case class StatEn
     ( fid: String
     , id: String
     , prev: String
-    , name: String
-    , value: String
+    , data: String
     , time: String
     , addr: String) extends kvs.en.En
 
@@ -44,21 +43,21 @@ package object stats {
     }
   }
 
-  implicit object MetricEnHandler extends kvs.en.EnHandler[MetricEn] {
+  implicit object StatEnHandler extends kvs.en.EnHandler[StatEn] {
     val fh: kvs.en.FdHandler = FdHandler
 
-    def pickle(e: MetricEn): kvs.Res[Array[Byte]] = s"${e.fid}^${e.id}^${e.prev}^${e.name}^${e.value}^${e.time}^${e.addr}".getBytes("utf8").right
-    def unpickle(a: Array[Byte]): kvs.Res[MetricEn] = {
+    def pickle(e: StatEn): kvs.Res[Array[Byte]] = s"${e.fid}^${e.id}^${e.prev}^${e.data}^${e.time}^${e.addr}".getBytes("utf8").right
+    def unpickle(a: Array[Byte]): kvs.Res[StatEn] = {
       val s = new String(a, "utf8")
       s.split('^') match {
-        case Array(fid, id, prev, name, value, time, addr) =>
-          MetricEn(fid, id, prev, name, value, time, addr).right
+        case Array(fid, id, prev, data, time, addr) =>
+          StatEn(fid, id, prev, data, time, addr).right
         case _ => kvs.UnpickleFail(s"bad format=${s}").left
       }
     }
 
-    protected def update(en: MetricEn, prev: String): MetricEn = en.copy(prev=prev)
-    protected def update(en: MetricEn, id: String, prev: String): MetricEn = en.copy(id=id, prev=prev)
+    protected def update(en: StatEn, prev: String): StatEn = en.copy(prev=prev)
+    protected def update(en: StatEn, id: String, prev: String): StatEn = en.copy(id=id, prev=prev)
   }
 
   class MsgSource(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Msg]] {

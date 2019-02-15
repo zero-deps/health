@@ -10,12 +10,30 @@ object KvsPub {
 
 class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   override def preStart(): Unit = {
-    kvs.stream_safe[MetricEn](fid="metrics").fold(
-      l => log.error(l.toString),
-      r => r.foreach{
-        case -\/(l) => log.error(l.toString)
-        case \/-(MetricEn(_,_,_,name,value,time,addr)) =>
-          self ! Msg(MetricStat(name, value), StatMeta(time, addr))
+    kvs.stream_safe[StatEn]("cpu_mem.live").map(
+      _.take(20).collect{ case \/-(r) => r }.sortBy(_.time).foreach{
+        case StatEn(_,_,_,stat,time,addr) =>
+          stat.split('|') match {
+            case Array(name, value) =>
+              self ! Msg(MetricStat(name, value), StatMeta(time, addr))
+            case _ =>
+          }
+      }
+    )
+    kvs.stream_safe[StatEn]("action.live").map(
+      _.take(20).collect{ case \/-(r) => r }.sortBy(_.time).foreach{
+        case StatEn(_,_,_,action,time,addr) =>
+          self ! Msg(ActionStat(action), StatMeta(time, addr))
+      }
+    )
+    kvs.stream_safe[StatEn]("metrics").map(
+      _.take(1000).collect{ case \/-(r) => r }.foreach{
+        case StatEn(_,_,_,stat,time,addr) =>
+          stat.split('|') match {
+            case Array(name, value) =>
+              self ! Msg(MetricStat(name, value), StatMeta(time, addr))
+            case _ =>
+          }
       }
     )
   }
@@ -29,8 +47,6 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   }
 
   def ready(stageActor: ActorRef): Receive = {
-    case msg: Msg =>
-      log.debug("sourceFeeder received message, forwarding to stage: {} ", msg)
-      stageActor ! msg
+    case msg: Msg => stageActor ! msg
   }
 }
