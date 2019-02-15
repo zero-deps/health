@@ -1,0 +1,5 @@
+# TODO
+
+* save errors to kvs
+* save chart for hour and day
+* use protobuf
