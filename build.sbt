@@ -20,6 +20,11 @@ ThisBuild / publishMavenStyle := true
 ThisBuild / isSnapshot := true
 ThisBuild / resolvers += " Releases" at "http://nexus.mobile..com/nexus3/repository/releases"
 
+ThisBuild / resolvers += Resolver.bintrayRepo("zero-deps", "maven")
+ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % "latest.integration")
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "latest.integration"
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "latest.integration"
+
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
@@ -65,14 +70,9 @@ lazy val stats = project.in(file(".")).settings(
       }
     }
   ),
-).aggregate(client, macros).dependsOn(client).enablePlugins(JavaAppPackaging, DeploySSH)
+).aggregate(client).dependsOn(client).enablePlugins(JavaAppPackaging, DeploySSH)
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats",
   libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.19",
-).dependsOn(macros).aggregate(macros)
-
-lazy val macros = project.in(file("macros")).settings(
-  organization := organization.value + ".stats",
-  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % Compile, 
 )

@@ -4,10 +4,10 @@ import akka.actor.{ActorRef, ActorSystem, ExtendedActorSystem, Extension, Extens
 import java.lang.management.ManagementFactory
 import java.nio.file.{FileSystems, Files}
 import javax.management.{NotificationBroadcaster, NotificationListener, Notification}
-import .stats.macros.Literals
 import scala.collection.JavaConverters._
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
+import zd.gs.meta.Literals
 
 object StatsExtenstion extends ExtensionId[Stats] with ExtensionIdProvider {
   override def createExtension(system: ExtendedActorSystem): Stats = new Stats()(system)
