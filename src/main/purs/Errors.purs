@@ -14,6 +14,7 @@ import Schema
 type State = {}
 type Props =
   { errors :: Array ErrorInfo
+  , showAddr :: Boolean
   }
 
 reactClass :: ReactClass Props
@@ -38,14 +39,14 @@ reactClass = component "Errors" \this -> do
               [ div [ cn "table-responsive" ]
                 [ table [ cn "table tablesorter" ]
                   [ thead [ cn "text-primary" ]
-                    [ tr'
-                      [ th' [ text "Address" ]
-                      , th' [ text "Time" ]
+                    [ tr' $ ( if props.showAddr then 
+                      [ th' [ text "Address" ] ] else [] ) <>
+                      [ th' [ text "Time" ]
                       , th' [ text "Exception" ]
                       , th' [ text "Stacktrace" ]
                       ]
                     ]
-                  , tbody' $ map (createLeafElement errorReactClass) props.errors
+                  , tbody' $ map (\x -> createLeafElement errorReactClass { err: x, showAddr: props.showAddr }) props.errors
                   ]
                 ]
               ]
@@ -56,7 +57,10 @@ reactClass = component "Errors" \this -> do
 type ErrorState =
   { expandStack :: Boolean
   }
-type ErrorProps = ErrorInfo
+type ErrorProps =
+  { err :: ErrorInfo
+  , showAddr :: Boolean
+  }
 
 errorReactClass :: ReactClass ErrorProps
 errorReactClass = component "Error" \this -> do
@@ -72,18 +76,18 @@ errorReactClass = component "Error" \this -> do
       s <- getState this
       props <- getProps this
       pure $
-        tr'
-        [ td [ cn "align-top" ] [ text props.addr ]
-        , td [ cn "align-top" ] [ text $ localDateTime props.time ]
-        , td [ cn "align-top" ] $ map (\y -> div' [ text y ]) props.exception
+        tr' $ ( if props.showAddr then
+        [ td [ cn "align-top" ] [ text props.err.addr ] ] else [] ) <>
+        [ td [ cn "align-top" ] [ text $ localDateTime props.err.time ]
+        , td [ cn "align-top" ] $ map (\y -> div' [ text y ]) props.err.exception
         , case s.expandStack of
             false -> 
               td [ cn "align-top", onClick \_ -> fullStack, style { cursor: "zoom-in", fontFamily: "Fira Code", wordBreak: "break-all" } ]
-              [ text props.toptrace ]
+              [ text props.err.toptrace ]
             true -> 
               td [ cn "align-top", onClick \_ -> shortStack, style { cursor: "zoom-out" } ]
               [ div [ style { fontFamily: "Fira Code", wordBreak: "break-all" } ] $ map (\y -> 
-                  div' [ text y ]) props.stacktrace
+                  div' [ text y ]) props.err.stacktrace
               ]
         ]
       where

@@ -1621,6 +1621,9 @@ var PS = {};
   var Partial_Unsafe = PS["Partial.Unsafe"];
   var Prelude = PS["Prelude"];
   var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var singleton = function (a) {
+      return [ a ];
+  };
   var index = $foreign.indexImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
   var last = function (xs) {
       return index(xs)($foreign.length(xs) - 1 | 0);
@@ -1637,6 +1640,7 @@ var PS = {};
       };
   };
   exports["fromFoldable"] = fromFoldable;
+  exports["singleton"] = singleton;
   exports["head"] = head;
   exports["last"] = last;
   exports["index"] = index;
@@ -3956,6 +3960,7 @@ var PS = {};
   var Control_Bind = PS["Control.Bind"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
+  var Data_Semigroup = PS["Data.Semigroup"];
   var DomOps = PS["DomOps"];
   var Effect = PS["Effect"];
   var FormatOps = PS["FormatOps"];
@@ -3979,9 +3984,14 @@ var PS = {};
           return function __do() {
               var v = React.getState($$this)();
               var v1 = React.getProps($$this)();
-              return React_DOM["tr'"]([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.addr) ]), React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(FormatOps.localDateTime(v1.time)) ]), React_DOM.td([ DomOps.cn("align-top") ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+              return React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
+                  if (v1.showAddr) {
+                      return [ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.err.addr) ]) ];
+                  };
+                  return [  ];
+              })())([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(FormatOps.localDateTime(v1.err.time)) ]), React_DOM.td([ DomOps.cn("align-top") ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
                   return React_DOM["div'"]([ React_DOM.text(y) ]);
-              })(v1.exception)), (function () {
+              })(v1.err.exception)), (function () {
                   if (!v.expandStack) {
                       return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
                           return fullStack;
@@ -3989,7 +3999,7 @@ var PS = {};
                           cursor: "zoom-in",
                           fontFamily: "Fira Code",
                           wordBreak: "break-all"
-                      }) ])([ React_DOM.text(v1.toptrace) ]);
+                      }) ])([ React_DOM.text(v1.err.toptrace) ]);
                   };
                   if (v.expandStack) {
                       return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
@@ -4001,10 +4011,10 @@ var PS = {};
                           wordBreak: "break-all"
                       }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
                           return React_DOM["div'"]([ React_DOM.text(y) ]);
-                      })(v1.stacktrace)) ]);
+                      })(v1.err.stacktrace)) ]);
                   };
-                  throw new Error("Failed pattern match at Errors (line 79, column 11 - line 87, column 16): " + [ v.expandStack.constructor.name ]);
-              })() ]);
+                  throw new Error("Failed pattern match at Errors (line 83, column 11 - line 91, column 16): " + [ v.expandStack.constructor.name ]);
+              })() ]));
           };
       };
       return React.component(React.reactComponentSpec()())("Error")(function ($$this) {
@@ -4020,7 +4030,17 @@ var PS = {};
       var render = function ($$this) {
           return function __do() {
               var v = React.getProps($$this)();
-              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("Errors") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Address") ]), React_DOM["th'"]([ React_DOM.text("Time") ]), React_DOM["th'"]([ React_DOM.text("Exception") ]), React_DOM["th'"]([ React_DOM.text("Stacktrace") ]) ]) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(React.createLeafElement(React.reactPropFields()())(errorReactClass))(v.errors)) ]) ]) ]) ]) ]) ]);
+              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("Errors") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
+                  if (v.showAddr) {
+                      return [ React_DOM["th'"]([ React_DOM.text("Address") ]) ];
+                  };
+                  return [  ];
+              })())([ React_DOM["th'"]([ React_DOM.text("Time") ]), React_DOM["th'"]([ React_DOM.text("Exception") ]), React_DOM["th'"]([ React_DOM.text("Stacktrace") ]) ])) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(function (x) {
+                  return React.createLeafElement(React.reactPropFields()())(errorReactClass)({
+                      err: x,
+                      showAddr: v.showAddr
+                  });
+              })(v.errors)) ]) ]) ]) ]) ]) ]);
           };
       };
       return React.component(React.reactComponentSpec()())("Errors")(function ($$this) {
@@ -4248,6 +4268,7 @@ var PS = {};
   var Data_Semigroup = PS["Data.Semigroup"];
   var DomOps = PS["DomOps"];
   var Effect = PS["Effect"];
+  var Errors = PS["Errors"];
   var FormatOps = PS["FormatOps"];
   var Prelude = PS["Prelude"];
   var React = PS["React"];
@@ -4312,7 +4333,10 @@ var PS = {};
       var render = function ($$this) {
           return function __do() {
               var v = React.getProps($$this)();
-              return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(v.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fsCard)(v.fs)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fdCard)(v.fd)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(thrCard)(v.thr)), othCard(v) ]) ]);
+              return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(v.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fsCard)(v.fs)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fdCard)(v.fd)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(thrCard)(v.thr)), othCard(v) ]), React.createLeafElement(React.reactPropFields()())(Errors.reactClass)({
+                  errors: v.errs,
+                  showAddr: false
+              }) ]);
           };
       };
       return React.component(React.reactComponentSpec()())("Node")(function ($$this) {
@@ -4686,7 +4710,8 @@ var PS = {};
               };
               if (v.menu instanceof Errors) {
                   return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement(React.reactPropFields()())(Errors_1.reactClass)({
-                      errors: v.errors
+                      errors: v.errors,
+                      showAddr: true
                   }));
               };
               throw new Error("Failed pattern match at Main (line 156, column 7 - line 156, column 50): " + [ v.constructor.name ]);
@@ -4909,6 +4934,7 @@ var PS = {};
                               label: b
                           } ];
                       })(a.action));
+                      var errs = Data_Maybe.maybe([  ])(Data_Array.singleton)(a.err);
                       var v4 = React.getState($$this)();
                       var node$prime = (function () {
                           var v5 = Data_Map_Internal.lookup(Data_Ord.ordString)(a.addr)(v4.nodes);
@@ -4932,6 +4958,7 @@ var PS = {};
                               var actionPoints$prime$prime = Data_Array.filter(function (x) {
                                   return x.t > minTime;
                               })(actionPoints$prime);
+                              var errs$prime = Data_Array.slice(0)(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(errs)(v5.value0.errs));
                               return {
                                   lastUpdate: a.time,
                                   cpuPoints: cpuPoints$prime$prime,
@@ -4945,6 +4972,7 @@ var PS = {};
                                   fs: Control_Alt.alt(Data_Maybe.altMaybe)(v1)(v5.value0.fs),
                                   fd: Control_Alt.alt(Data_Maybe.altMaybe)(v2)(v5.value0.fd),
                                   thr: Control_Alt.alt(Data_Maybe.altMaybe)(v3)(v5.value0.thr),
+                                  errs: errs$prime,
                                   addr: v5.value0.addr
                               };
                           };
@@ -4962,10 +4990,11 @@ var PS = {};
                                   memTotal: memTotal,
                                   fs: Data_Maybe.Nothing.value,
                                   fd: Data_Maybe.Nothing.value,
-                                  thr: Data_Maybe.Nothing.value
+                                  thr: Data_Maybe.Nothing.value,
+                                  errs: errs
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 280, column 21 - line 320, column 18): " + [ v5.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 282, column 21 - line 325, column 18): " + [ v5.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -4996,7 +5025,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 322, column 9 - line 324, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 327, column 9 - line 329, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);

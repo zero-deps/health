@@ -3,11 +3,11 @@ module Main
   ) where
 
 import Control.Alt ((<|>))
-import Data.Array (dropEnd, filter, fromFoldable, index, last, slice, head, (:))
+import Data.Array (dropEnd, filter, fromFoldable, index, last, slice, head, singleton, (:))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
-import Data.Maybe (Maybe(Just, Nothing), fromMaybe)
+import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import DomOps (cn)
@@ -164,7 +164,7 @@ reactClass = component "Main" \this -> do
       menuContent { menu: Nodes, nodes: nodes } =
         pure $ createLeafElement NodesCom.reactClass { nodes: fromFoldable nodes, openNode: \addr -> modifyState this _{ node = Just addr } }
       menuContent { menu: Errors, errors: errors } =
-        pure $ createLeafElement ErrorsCom.reactClass { errors: errors }
+        pure $ createLeafElement ErrorsCom.reactClass { errors: errors, showAddr: true }
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
@@ -275,6 +275,8 @@ reactClass = component "Main" \this -> do
           Nothing -> pure Nothing
 
         let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
+
+        let errs = maybe [] singleton a.err
         
         s <- getState this
         let node' = case lookup a.addr s.nodes of
@@ -289,6 +291,7 @@ reactClass = component "Main" \this -> do
                 let cpuPoints'' = filter (\x -> x.t > minTime) cpuPoints'
                 let memPoints'' = filter (\x -> x.t > minTime) memPoints'
                 let actionPoints'' = filter (\x -> x.t > minTime) actionPoints'
+                let errs' = slice 0 100 $ errs <> node.errs
                 node
                   { lastUpdate = a.time
                   , cpuPoints = cpuPoints''
@@ -302,6 +305,7 @@ reactClass = component "Main" \this -> do
                   , fs = fs <|> node.fs
                   , fd = fd <|> node.fd
                   , thr = thr <|> node.thr
+                  , errs = errs'
                   }
               Nothing ->
                 { addr: a.addr
@@ -317,6 +321,7 @@ reactClass = component "Main" \this -> do
                 , fs: Nothing
                 , fd: Nothing
                 , thr: Nothing
+                , errs: errs
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
         case a.err of

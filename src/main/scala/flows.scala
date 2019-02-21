@@ -93,7 +93,7 @@ object Flows {
                 r => r.right
               )
               _ <- kvs.put(StatEn(fid="errors", id=s"${addr}${i}", prev=.kvs.empty, s"${exception}|${stacktrace}|${toptrace}", time, addr))
-              i1 <- Try(i.toInt).toEither.disjunction.bimap(x => .kvs.Fail(x.toString), x => (x + 1) % 20).map(_.toString)
+              i1 <- Try(i.toInt).toEither.disjunction.bimap(x => .kvs.Fail(x.toString), x => (x + 1) % 100).map(_.toString)
               _ <- kvs.el.put("errors.idx", i1)
             } yield ()
           case _ =>

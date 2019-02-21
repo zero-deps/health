@@ -43,6 +43,7 @@ type NodeInfo =
   , fs :: Maybe FsInfo
   , fd :: Maybe FdInfo
   , thr :: Maybe ThrInfo
+  , errs :: Array ErrorInfo
   }
 
 type FsInfo =
