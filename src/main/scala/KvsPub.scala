@@ -27,11 +27,21 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
       }
     )
     kvs.stream_safe[StatEn]("metrics").map(
-      _.take(1000).collect{ case \/-(r) => r }.foreach{
+      _.take(500).collect{ case \/-(r) => r }.foreach{
         case StatEn(_,_,_,stat,time,addr) =>
           stat.split('|') match {
             case Array(name, value) =>
               self ! Msg(MetricStat(name, value), StatMeta(time, addr))
+            case _ =>
+          }
+      }
+    )
+    kvs.stream_safe[StatEn]("errors").map(
+      _.take(20).collect{ case \/-(r) => r }.foreach{
+        case StatEn(_,_,_,stat,time,addr) =>
+          stat.split('|') match {
+            case Array(exception, stacktrace, toptrace) =>
+              self ! Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr))
             case _ =>
           }
       }

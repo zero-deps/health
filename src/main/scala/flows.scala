@@ -6,6 +6,7 @@ import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Sink, Source, Merge, GraphDSL, RunnableGraph}
 import akka.stream.{ClosedShape, FlowShape}
 import .kvs.Kvs
+import scala.util.Try
 import scalaz._
 import scalaz.Scalaz._
 
@@ -63,6 +64,9 @@ object Flows {
               c1 <- c.parseInt.disjunction.bimap(x => .kvs.Fail(x.toString), x => (x + 1) % 20).map(_.toString)
               _ <- kvs.el.put("cpu_mem.live.idx", c1)
             } yield ()
+          case _ =>
+        }
+        msg match {
           case Msg(ActionStat(action), StatMeta(time, addr)) =>
             for {
               c <- kvs.el.get[String]("action.live.idx").fold(
@@ -75,6 +79,22 @@ object Flows {
               _ <- kvs.put(StatEn(fid="action.live", id=s"${addr}${c}", prev=.kvs.empty, action, time, addr))
               c1 <- c.parseInt.disjunction.bimap(x => .kvs.Fail(x.toString), x => (x + 1) % 20).map(_.toString)
               _ <- kvs.el.put("action.live.idx", c1)
+            } yield ()
+          case _ =>
+        }
+        msg match {
+          case Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr)) =>
+            for {
+              i <- kvs.el.get[String]("errors.idx").fold(
+                l => l match {
+                  case .kvs.NotFound(_) => "0".right
+                  case l => l.left
+                },
+                r => r.right
+              )
+              _ <- kvs.put(StatEn(fid="errors", id=s"${addr}${i}", prev=.kvs.empty, s"${exception}|${stacktrace}|${toptrace}", time, addr))
+              i1 <- Try(i.toInt).toEither.disjunction.bimap(x => .kvs.Fail(x.toString), x => (x + 1) % 20).map(_.toString)
+              _ <- kvs.el.put("errors.idx", i1)
             } yield ()
           case _ =>
         }
