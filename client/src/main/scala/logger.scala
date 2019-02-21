@@ -5,7 +5,7 @@ import akka.event.Logging
 import akka.event.Logging.{Error, InitializeLogger}
 
 class Logger extends Actor {
-  lazy val stats = StatsExtenstion(context.system)
+  lazy val stats = StatsExtension(context.system)
 
   def receive: Receive = {
     case msg: InitializeLogger =>

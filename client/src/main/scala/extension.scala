@@ -9,9 +9,9 @@ import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 import zd.gs.meta.Literals
 
-object StatsExtenstion extends ExtensionId[Stats] with ExtensionIdProvider {
+object StatsExtension extends ExtensionId[Stats] with ExtensionIdProvider {
   override def createExtension(system: ExtendedActorSystem): Stats = new Stats()(system)
-  override def lookup: ExtensionId[Stats] = StatsExtenstion
+  override def lookup: ExtensionId[Stats] = StatsExtension
 }
 
 class Stats(implicit system: ActorSystem) extends Extension {
