@@ -21,9 +21,9 @@ ThisBuild / isSnapshot := true
 ThisBuild / resolvers += " Releases" at "http://nexus.mobile..com/nexus3/repository/releases"
 
 ThisBuild / resolvers += Resolver.bintrayRepo("zero-deps", "maven")
-ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % "latest.integration")
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "latest.integration"
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "latest.integration"
+ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % "0-10-g6f2f17b")
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "0-10-g6f2f17b"
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "0-10-g6f2f17b"
 
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
