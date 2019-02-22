@@ -17,6 +17,7 @@ type UpdateData =
   { addr :: String
   , time :: String
   , metrics :: Maybe MetricsUpdate
+  , measure :: Maybe MeasureUpdate
   , action :: Maybe String
   , err :: Maybe ErrorInfo
   }
@@ -29,12 +30,23 @@ type MetricsUpdate =
   , thr :: Maybe (Array String)
   }
 
+type MeasureUpdate =
+  { searchTs :: Maybe String
+  , searchTs_thirdQ :: Maybe String
+  , searchWc :: Maybe String
+  , searchWc_thirdQ :: Maybe String
+  , staticCreate :: Maybe String
+  , staticCreate_thirdQ :: Maybe String
+  , staticGen :: Maybe String
+  , staticGen_thirdQ :: Maybe String
+  }
+
 type NodeInfo =
   { addr :: String
   , lastUpdate :: String
-  , cpuPoints :: Array CpuPoint
-  , memPoints :: Array MemPoint
-  , actionPoints :: Array ActionPoint
+  , cpuPoints :: Array NumPoint
+  , memPoints :: Array NumPoint
+  , actionPoints :: Array StrPoint
   , uptime :: Maybe String
   , cpuLast :: Maybe String
   , memLast :: Maybe Number
@@ -44,6 +56,14 @@ type NodeInfo =
   , fd :: Maybe FdInfo
   , thr :: Maybe ThrInfo
   , errs :: Array ErrorInfo
+  , searchTs_points :: Array NumPoint
+  , searchTs_thirdQ :: Maybe String
+  , searchWc_points :: Array NumPoint
+  , searchWc_thirdQ :: Maybe String
+  , staticCreate_points :: Array NumPoint
+  , staticCreate_thirdQ :: Maybe String
+  , staticGen_points :: Array NumPoint
+  , staticGen_thirdQ :: Maybe String
   }
 
 type FsInfo =
@@ -65,17 +85,12 @@ type ThrInfo =
   , total :: Number
   }
 
-type CpuPoint =
+type NumPoint =
   { t :: Number
   , y :: Number
   }
 
-type MemPoint =
-  { t :: Number
-  , y :: Number
-  }
-
-type ActionPoint =
+type StrPoint =
   { t :: Number
   , label :: String
   }

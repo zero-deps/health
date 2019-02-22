@@ -30,6 +30,8 @@ class UdpPub extends Actor with Stash with ActorLogging {
       data.decodeString("UTF-8").split("::").toList match {
         case "metric" :: name :: value :: port :: Nil =>
           self ! Msg(MetricStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))
+        case "measure" :: name :: value :: port :: Nil =>
+          self ! Msg(MeasureStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))
         case "error" :: exception :: stacktrace :: toptrace :: port :: Nil =>
           self ! Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(now_ms(), addr=s"${host}:${port}"))
         case "action" :: action :: port :: Nil =>

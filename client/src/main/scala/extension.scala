@@ -44,7 +44,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
   }
 
   def measure(name: String, time: Long): Unit = {
-    send(MetricStat(name, time.toString))
+    send(MeasureStat(name, time))
   }
 
   def action(action: String): Unit = {

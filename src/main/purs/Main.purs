@@ -3,7 +3,7 @@ module Main
   ) where
 
 import Control.Alt ((<|>))
-import Data.Array (dropEnd, filter, fromFoldable, index, last, slice, head, singleton, (:))
+import Data.Array (dropEnd, filter, fromFoldable, index, last, head, singleton, take, takeEnd, (:))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
@@ -195,6 +195,28 @@ reactClass = component "Main" \this -> do
                 { addr: addr
                 , time: time
                 , metrics: Just { cpu_mem, uptime, fs, fd, thr }
+                , measure: Nothing
+                , err: Nothing
+                , action: Nothing
+                }
+            _ -> error "bad format"
+        Just "measure" ->
+          case xs of
+            [ _, name, value, time, addr ] -> do
+              let value' = readInt 10 value
+              let searchTs = if name == "search.ts" then Just value else Nothing
+              let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
+              let searchWc = if name == "search.wc" then Just value else Nothing
+              let searchWc_thirdQ = if name == "search.wc.thirdQ" then Just value else Nothing
+              let staticCreate = if name == "static.create" then Just value else Nothing
+              let staticCreate_thirdQ = if name == "static.create.thirdQ" then Just value else Nothing
+              let staticGen = if name == "static.gen" then Just value else Nothing
+              let staticGen_thirdQ = if name == "static.gen.thirdQ" then Just value else Nothing
+              updateWith
+                { addr: addr
+                , time: time
+                , metrics: Nothing
+                , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticCreate, staticCreate_thirdQ, staticGen, staticGen_thirdQ }
                 , err: Nothing
                 , action: Nothing
                 }
@@ -210,6 +232,7 @@ reactClass = component "Main" \this -> do
                 { addr: addr
                 , time: time
                 , metrics: Nothing
+                , measure: Nothing
                 , err: Just err
                 , action: Nothing
                 }
@@ -220,6 +243,7 @@ reactClass = component "Main" \this -> do
               { addr: addr
               , time: time
               , metrics: Nothing
+              , measure: Nothing
               , err: Nothing
               , action: Just action
               }
@@ -228,13 +252,14 @@ reactClass = component "Main" \this -> do
       where
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
+        let time' = readInt 10 a.time
         let uptime = a.metrics >>= _.uptime
         let cpu_mem = a.metrics >>= _.cpu_mem
         let cpu = cpu_mem >>= head
-        let cpuPoints = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: readInt 10 b }]) cpu
+        let cpuPoints = fromMaybe [] $ map (\b -> [{ t: time', y: readInt 10 b }]) cpu
         
-        mem <- case map (slice 1 3) cpu_mem of
-          Just ([ free', total' ]) -> do
+        mem <- case cpu_mem of
+          Just ([ _, free', total' ]) -> do
             let free = readInt 10 free'
             let total = readInt 10 total'
             let used = total - free
@@ -244,7 +269,7 @@ reactClass = component "Main" \this -> do
         let memUsed = map _.used mem
         let memFree = map _.free mem
         let memTotal = map _.total mem
-        let memPoints = fromMaybe [] $ map (\b -> [{ t: readInt 10 a.time, y: b.used / 1000.0 }]) mem
+        let memPoints = fromMaybe [] $ map (\b -> [{ t: time', y: b.used / 1000.0 }]) mem
         
         fs <- case a.metrics >>= _.fs of
           Just ([ usable', total' ]) -> do
@@ -274,7 +299,16 @@ reactClass = component "Main" \this -> do
           Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
           Nothing -> pure Nothing
 
-        let action = fromMaybe [] $ map (\b -> [{t: readInt 10 a.time, label: b }]) a.action
+        let action = fromMaybe [] $ map (\b -> [{t: time', label: b }]) a.action
+
+        let searchTs_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchTs
+        let searchTs_thirdQ = a.measure >>= _.searchTs_thirdQ
+        let searchWc_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchWc
+        let searchWc_thirdQ = a.measure >>= _.searchWc_thirdQ
+        let staticCreate_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticCreate
+        let staticCreate_thirdQ = a.measure >>= _.staticCreate_thirdQ
+        let staticGen_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticGen
+        let staticGen_thirdQ = a.measure >>= _.staticGen_thirdQ
 
         let errs = maybe [] singleton a.err
         
@@ -291,7 +325,14 @@ reactClass = component "Main" \this -> do
                 let cpuPoints'' = filter (\x -> x.t > minTime) cpuPoints'
                 let memPoints'' = filter (\x -> x.t > minTime) memPoints'
                 let actionPoints'' = filter (\x -> x.t > minTime) actionPoints'
-                let errs' = slice 0 100 $ errs <> node.errs
+
+                let searchTs_points' = takeEnd 5 $ node.searchTs_points <> searchTs_points
+                let searchWc_points' = takeEnd 5 $ node.searchWc_points <> searchWc_points
+                let staticCreate_points' = takeEnd 5 $ node.staticCreate_points <> staticCreate_points
+                let staticGen_points' = takeEnd 5 $ node.staticGen_points <> staticGen_points
+                
+                let errs' = take 100 $ errs <> node.errs
+
                 node
                   { lastUpdate = a.time
                   , cpuPoints = cpuPoints''
@@ -306,6 +347,14 @@ reactClass = component "Main" \this -> do
                   , fd = fd <|> node.fd
                   , thr = thr <|> node.thr
                   , errs = errs'
+                  , searchTs_points = searchTs_points'
+                  , searchTs_thirdQ = searchTs_thirdQ <|> node.searchTs_thirdQ
+                  , searchWc_points = searchWc_points'
+                  , searchWc_thirdQ = searchWc_thirdQ <|> node.searchWc_thirdQ
+                  , staticCreate_points = staticCreate_points'
+                  , staticCreate_thirdQ = staticCreate_thirdQ <|> node.staticCreate_thirdQ
+                  , staticGen_points = staticGen_points'
+                  , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
                   }
               Nothing ->
                 { addr: a.addr
@@ -322,10 +371,18 @@ reactClass = component "Main" \this -> do
                 , fd: Nothing
                 , thr: Nothing
                 , errs: errs
+                , searchTs_points: searchTs_points
+                , searchTs_thirdQ: searchTs_thirdQ
+                , searchWc_points: searchWc_points
+                , searchWc_thirdQ: searchWc_thirdQ
+                , staticCreate_points: staticCreate_points
+                , staticCreate_thirdQ: staticCreate_thirdQ
+                , staticGen_points: staticGen_points
+                , staticGen_thirdQ: staticGen_thirdQ
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
         case a.err of
-          Just err -> modifyState this \s' -> s' { errors = err : (slice 0 99 s'.errors) }
+          Just err -> modifyState this \s' -> s' { errors = err : (take 99 s'.errors) }
           Nothing -> pure unit
 
     errHandler :: List String -> Effect Unit

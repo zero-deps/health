@@ -8,10 +8,11 @@ import Effect (Effect)
 import FormatOps (formatNum, duration)
 import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps, createLeafElement)
-import React.DOM (canvas, div, div', h2, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
-import React.DOM.Props (_id, style)
+import React.DOM (div, div', h2, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
+import React.DOM.Props (style)
 import Schema
 import Errors as Errors
+import BigChart as BigChart
 
 type State = {}
 type Props = NodeInfo
@@ -22,9 +23,6 @@ reactClass = component "Node" \this -> do
   pure
     { state: {}
     , render: render this
-    , componentDidMount: createChart p.cpuPoints p.memPoints p.actionPoints
-    , componentDidUpdate: \p' _ _ -> updateChart p'.cpuPoints p'.memPoints p'.actionPoints
-    , componentWillUnmount: destroyChart
     }
   where
   render :: ReactThis Props State -> Effect ReactElement
@@ -71,7 +69,8 @@ reactClass = component "Node" \this -> do
               ]
             , div [ cn "card-body" ]
               [ div [ cn "chart-area" ]
-                [ canvas [ _id "chartBig1" ] [] ]
+                [ createLeafElement BigChart.reactClass { cpuPoints: p.cpuPoints, memPoints: p.memPoints, actionPoints: p.actionPoints }
+                ]
               ]
             ]
           ]
@@ -79,7 +78,9 @@ reactClass = component "Node" \this -> do
       , div [ cn "row" ]
         [ fromMaybe (div' []) (map fsCard p.fs)
         , fromMaybe (div' []) (map fdCard p.fd)
-        , fromMaybe (div' []) (map thrCard p.thr)
+        ]
+      , div [ cn "row" ]
+        [ fromMaybe (div' []) (map thrCard p.thr)
         , othCard p
         ]
       , createLeafElement Errors.reactClass { errors: p.errs, showAddr: false }
@@ -208,16 +209,3 @@ reactClass = component "Node" \this -> do
         [ text $ formatNum x.total ]
       ]
     ]
-
-foreign import createChart
-  :: Array CpuPoint
-  -> Array MemPoint
-  -> Array ActionPoint
-  -> Effect Unit
-foreign import updateChart
-  :: Array CpuPoint
-  -> Array MemPoint
-  -> Array ActionPoint
-  -> Effect Unit
-foreign import destroyChart
-  :: Effect Unit

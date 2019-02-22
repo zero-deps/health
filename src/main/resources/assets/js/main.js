@@ -3,17 +3,207 @@ var PS = {};
 (function(exports) {
     "use strict";
 
-  exports.arrayMap = function (f) {
-    return function (arr) {
-      var l = arr.length;
-      var result = new Array(l);
-      for (var i = 0; i < l; i++) {
-        result[i] = f(arr[i]);
+  var chart = null
+  var actionsMap = new Map()
+
+  exports.destroyChart = function() {
+    if (chart === null) {
+      console.error("chart is not created")
+      return
+    }
+    chart.destroy()
+    chart = null
+  }
+
+  exports.updateChart = function(cpuLoad) {
+    return function(memLoad) {
+      return function(actions) {
+        return function() {
+          if (chart === null) {
+            console.error("chart is not created")
+            return
+          }
+          var data = chart.config.data
+          data.datasets[0].data = cpuLoad
+          data.datasets[1].data = actionsDataset(actions)
+          data.datasets[2].data = memLoad
+          chart.update()
+        }
       }
-      return result;
-    };
-  };
-})(PS["Data.Functor"] = PS["Data.Functor"] || {});
+    }
+  }
+
+  function actionsDataset(actions) {
+    actionsMap = new Map()
+    return actions.map(function(x) {
+      actionsMap.set(x.t, x.label)
+      return { t: x.t, y: 0 }
+    })
+  }
+
+  exports.createChart = function(cpuLoad) {
+    return function(memLoad) {
+      return function(actions) {
+        return function() {
+          if (chart !== null) {
+            console.error("chart already exists")
+            return
+          }
+          const ctx = document.getElementById("chartBig1").getContext('2d')
+          const purpleBg = ctx.createLinearGradient(0, 230, 0, 50)
+          purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
+          purpleBg.addColorStop(0.4, 'rgba(72,72,176,0.0)')
+          purpleBg.addColorStop(0, 'rgba(119,52,169,0)')
+          return chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+              datasets: [{
+                backgroundColor: purpleBg,
+                borderColor: '#d346b1',
+                borderDash: [],
+                borderDashOffset: 0.0,
+                borderWidth: 2,
+                cubicInterpolationMode: 'monotone',
+                data: cpuLoad,
+                fill: true,
+                label: "CPU Load",
+                pointBackgroundColor: '#d346b1',
+                pointBorderColor: 'rgba(255,255,255,0)',
+                pointBorderWidth: 20,
+                pointHoverBackgroundColor: '#d346b1',
+                pointHoverBorderWidth: 15,
+                pointHoverRadius: 4,
+                pointRadius: 4,
+                yAxisID: 'left-y-axis'
+              }, {
+                borderColor: '#1f8ef1',
+                borderDash: [],
+                borderDashOffset: 0.0,
+                borderWidth: 2,
+                data: actionsDataset(actions),
+                fill: false,
+                label: "Events",
+                pointBackgroundColor: '#1f8ef1',
+                pointBorderColor: 'rgba(255,255,255,0)',
+                pointBorderWidth: 20,
+                pointHoverBackgroundColor: '#1f8ef1',
+                pointHoverBorderWidth: 15,
+                pointHoverRadius: 4,
+                pointRadius: 4,
+                showLine: false,
+                yAxisID: 'left-y-axis'
+              }, {
+                borderColor: '#00d6b4',
+                borderDash: [],
+                borderDashOffset: 0.0,
+                borderWidth: 2,
+                data: memLoad,
+                fill: false,
+                label: "Memory Usage",
+                lineTension: 0,
+                pointBackgroundColor: '#00d6b4',
+                pointBorderColor: 'rgba(255,255,255,0)',
+                pointBorderWidth: 20,
+                pointHoverBackgroundColor: '#00d6b4',
+                pointHoverBorderWidth: 15,
+                pointHoverRadius: 4,
+                pointRadius: 4,
+                yAxisID: 'right-y-axis'
+              }]
+            },
+            options: {
+              maintainAspectRatio: false,
+              legend: {
+                display: false
+              },
+              tooltips: {
+                backgroundColor: '#f5f5f5',
+                titleFontColor: '#333',
+                bodyFontColor: '#666',
+                bodySpacing: 4,
+                xPadding: 12,
+                mode: "nearest",
+                position: "nearest",
+                callbacks: {
+                  label: function(item, data) {
+                    var datasetIndex = item.datasetIndex
+                    var dataset = data.datasets[item.datasetIndex]
+                    var datasetLabel = dataset.label + ": "
+                    switch (datasetIndex) {
+                      case 0:
+                        return datasetLabel + item.yLabel + "%"
+                      case 1:
+                        return datasetLabel + actionsMap.get(dataset.data[item.index].t)
+                      case 2:
+                        return datasetLabel + item.yLabel + " GB"
+                    }
+                  },
+                },
+              },
+              responsive: true,
+              scales: {
+                yAxes: [{
+                  id: 'left-y-axis',
+                  type: 'logarithmic',
+                  position: 'left',
+                  barPercentage: 1.6,
+                  gridLines: {
+                    drawBorder: false,
+                    color: 'rgba(29,140,248,0.0)',
+                    zeroLineColor: "transparent",
+                  },
+                  ticks: {
+                    suggestedMin: 0,
+                    suggestedMax: 5,
+                    padding: 20,
+                    fontColor: "#9a9a9a",
+                    callback: function(value, index, values) {
+                      return value + "%";
+                    },
+                  }
+                }, {
+                  id: 'right-y-axis',
+                  type: 'linear',
+                  position: 'right',
+                  barPercentage: 1.6,
+                  gridLines: {
+                    drawBorder: false,
+                    color: 'rgba(29,140,248,0.0)',
+                    zeroLineColor: "transparent",
+                  },
+                  ticks: {
+                    padding: 20,
+                    fontColor: "#9a9a9a",
+                    stepSize: 0.5,
+                    callback: function(value, index, values) {
+                      return value + " GB";
+                    },
+                  },
+                  gridLines: {
+                    drawOnChartArea: false,
+                  },
+                }],
+                xAxes: [{
+                  type: 'time',
+                  barPercentage: 1.6,
+                  gridLines: {
+                    drawBorder: false,
+                    color: 'rgba(225,78,202,0.1)',
+                    zeroLineColor: "transparent",
+                  },
+                  ticks: {
+                    padding: 20,
+                    fontColor: "#9a9a9a"
+                  }
+                }]
+              }
+            }
+          })
+        }
+      }
+    }
+  }
+})(PS["BigChart"] = PS["BigChart"] || {});
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
@@ -430,6 +620,20 @@ var PS = {};
   exports["const"] = $$const;
 })(PS["Data.Function"] = PS["Data.Function"] || {});
 (function(exports) {
+    "use strict";
+
+  exports.arrayMap = function (f) {
+    return function (arr) {
+      var l = arr.length;
+      var result = new Array(l);
+      for (var i = 0; i < l; i++) {
+        result[i] = f(arr[i]);
+      }
+      return result;
+    };
+  };
+})(PS["Data.Functor"] = PS["Data.Functor"] || {});
+(function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
   var $foreign = PS["Data.Functor"];
@@ -451,21 +655,6 @@ var PS = {};
   exports["void"] = $$void;
   exports["functorArray"] = functorArray;
 })(PS["Data.Functor"] = PS["Data.Functor"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Semigroup = PS["Data.Semigroup"];                 
-  var Alt = function (Functor0, alt) {
-      this.Functor0 = Functor0;
-      this.alt = alt;
-  };                                                       
-  var alt = function (dict) {
-      return dict.alt;
-  };
-  exports["Alt"] = Alt;
-  exports["alt"] = alt;
-})(PS["Control.Alt"] = PS["Control.Alt"] || {});
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
@@ -540,6 +729,21 @@ var PS = {};
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Semigroup = PS["Data.Semigroup"];                 
+  var Alt = function (Functor0, alt) {
+      this.Functor0 = Functor0;
+      this.alt = alt;
+  };                                                       
+  var alt = function (dict) {
+      return dict.alt;
+  };
+  exports["Alt"] = Alt;
+  exports["alt"] = alt;
+})(PS["Control.Alt"] = PS["Control.Alt"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
   var Control_Applicative = PS["Control.Applicative"];
   var Control_Apply = PS["Control.Apply"];
   var Control_Bind = PS["Control.Bind"];
@@ -566,22 +770,18 @@ var PS = {};
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
-  var Control_Category = PS["Control.Category"];                 
-  var Bifunctor = function (bimap) {
-      this.bimap = bimap;
+  var Control_Alt = PS["Control.Alt"];
+  var Data_Functor = PS["Data.Functor"];                 
+  var Plus = function (Alt0, empty) {
+      this.Alt0 = Alt0;
+      this.empty = empty;
+  };       
+  var empty = function (dict) {
+      return dict.empty;
   };
-  var bimap = function (dict) {
-      return dict.bimap;
-  };
-  var lmap = function (dictBifunctor) {
-      return function (f) {
-          return bimap(dictBifunctor)(f)(Control_Category.identity(Control_Category.categoryFn));
-      };
-  };
-  exports["bimap"] = bimap;
-  exports["Bifunctor"] = Bifunctor;
-  exports["lmap"] = lmap;
-})(PS["Data.Bifunctor"] = PS["Data.Bifunctor"] || {});
+  exports["Plus"] = Plus;
+  exports["empty"] = empty;
+})(PS["Control.Plus"] = PS["Control.Plus"] || {});
 (function(exports) {
     "use strict";
 
@@ -621,21 +821,6 @@ var PS = {};
   exports["boundedInt"] = boundedInt;
   exports["boundedChar"] = boundedChar;
 })(PS["Data.Bounded"] = PS["Data.Bounded"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var Control_Alt = PS["Control.Alt"];
-  var Data_Functor = PS["Data.Functor"];                 
-  var Plus = function (Alt0, empty) {
-      this.Alt0 = Alt0;
-      this.empty = empty;
-  };       
-  var empty = function (dict) {
-      return dict.empty;
-  };
-  exports["Plus"] = Plus;
-  exports["empty"] = empty;
-})(PS["Control.Plus"] = PS["Control.Plus"] || {});
 (function(exports) {
     "use strict";
 
@@ -849,6 +1034,111 @@ var PS = {};
   exports["altMaybe"] = altMaybe;
   exports["bindMaybe"] = bindMaybe;
 })(PS["Data.Maybe"] = PS["Data.Maybe"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.split = function (sep) {
+    return function (s) {
+      return s.split(sep);
+    };
+  };
+})(PS["Data.String.Common"] = PS["Data.String.Common"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.String.Common"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Ordering = PS["Data.Ordering"];
+  var Data_String_Pattern = PS["Data.String.Pattern"];
+  var Prelude = PS["Prelude"];                 
+  var $$null = function (s) {
+      return s === "";
+  };
+  exports["null"] = $$null;
+  exports["split"] = $foreign.split;
+})(PS["Data.String.Common"] = PS["Data.String.Common"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.pureE = function (a) {
+    return function () {
+      return a;
+    };
+  };
+
+  exports.bindE = function (a) {
+    return function (f) {
+      return function () {
+        return f(a())();
+      };
+    };
+  };
+})(PS["Effect"] = PS["Effect"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Effect"];
+  var Control_Applicative = PS["Control.Applicative"];
+  var Control_Apply = PS["Control.Apply"];
+  var Control_Bind = PS["Control.Bind"];
+  var Control_Monad = PS["Control.Monad"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Monoid = PS["Data.Monoid"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Prelude = PS["Prelude"];                 
+  var monadEffect = new Control_Monad.Monad(function () {
+      return applicativeEffect;
+  }, function () {
+      return bindEffect;
+  });
+  var bindEffect = new Control_Bind.Bind(function () {
+      return applyEffect;
+  }, $foreign.bindE);
+  var applyEffect = new Control_Apply.Apply(function () {
+      return functorEffect;
+  }, Control_Monad.ap(monadEffect));
+  var applicativeEffect = new Control_Applicative.Applicative(function () {
+      return applyEffect;
+  }, $foreign.pureE);
+  var functorEffect = new Data_Functor.Functor(Control_Applicative.liftA1(applicativeEffect));
+  exports["functorEffect"] = functorEffect;
+  exports["applyEffect"] = applyEffect;
+  exports["applicativeEffect"] = applicativeEffect;
+  exports["bindEffect"] = bindEffect;
+  exports["monadEffect"] = monadEffect;
+})(PS["Effect"] = PS["Effect"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.error = function (msg) {
+    return new Error(msg);
+  };
+
+  exports.throwException = function (e) {
+    return function () {
+      throw e;
+    };
+  };
+})(PS["Effect.Exception"] = PS["Effect.Exception"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var Control_Category = PS["Control.Category"];                 
+  var Bifunctor = function (bimap) {
+      this.bimap = bimap;
+  };
+  var bimap = function (dict) {
+      return dict.bimap;
+  };
+  var lmap = function (dictBifunctor) {
+      return function (f) {
+          return bimap(dictBifunctor)(f)(Control_Category.identity(Control_Category.categoryFn));
+      };
+  };
+  exports["bimap"] = bimap;
+  exports["Bifunctor"] = Bifunctor;
+  exports["lmap"] = lmap;
+})(PS["Data.Bifunctor"] = PS["Data.Bifunctor"] || {});
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
@@ -1086,25 +1376,802 @@ var PS = {};
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
+  var $foreign = PS["Effect.Exception"];
   var Control_Applicative = PS["Control.Applicative"];
-  var Control_Bind = PS["Control.Bind"];
   var Control_Semigroupoid = PS["Control.Semigroupoid"];
   var Data_Either = PS["Data.Either"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Show = PS["Data.Show"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var $$throw = function ($1) {
+      return $foreign.throwException($foreign.error($1));
+  };
+  exports["throw"] = $$throw;
+})(PS["Effect.Exception"] = PS["Effect.Exception"] || {});
+(function(exports) {
+  /* global exports */
+  "use strict";
+  var React =require("react"); 
+
+  function unsafeMkProps(key) {
+    return function(value){
+      var result = {};
+      result[key] = value;
+      return result;
+    };
+  }
+  exports.unsafeMkProps = unsafeMkProps;
+
+  function unsafeUnfoldProps(key) {
+    return function(value){
+      var result = {};
+      var props = {};
+      props[key] = result;
+
+      for (var subprop in value) {
+        if (value.hasOwnProperty(subprop)) {
+          result[subprop] = value[subprop];
+        }
+      }
+
+      return props;
+    };
+  }
+  exports.unsafeUnfoldProps = unsafeUnfoldProps;
+
+  function unsafePrefixProps(prefix) {
+    return function(value){
+      var result = {};
+
+      for (var prop in value) {
+        if (value.hasOwnProperty(prop)) {
+          result[prefix + prop] = value[prop];
+        }
+      }
+
+      return result;
+    };
+  }                                             
+
+  function unsafeFromPropsArray(props) {
+    var result = {};
+
+    for (var i = 0, len = props.length; i < len; i++) {
+      var prop = props[i];
+
+      for (var key in prop) {
+        if (prop.hasOwnProperty(key)) {
+          result[key] = prop[key];
+        }
+      }
+    }
+
+    return result;
+  };
+  exports.unsafeFromPropsArray = unsafeFromPropsArray;
+})(PS["React.DOM.Props"] = PS["React.DOM.Props"] || {});
+(function(exports) {
+    "use strict";        
+
+  exports.nullable = function (a, r, f) {
+    return a == null ? r : f(a);
+  };
+})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.Nullable"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Show = PS["Data.Show"];
+  var Prelude = PS["Prelude"];                                          
+  var toMaybe = function (n) {
+      return $foreign.nullable(n, Data_Maybe.Nothing.value, Data_Maybe.Just.create);
+  };
+  exports["toMaybe"] = toMaybe;
+})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.mkEffectFn1 = function mkEffectFn1(fn) {
+    return function(x) {
+      return fn(x)();
+    };
+  };
+
+  exports.runEffectFn4 = function runEffectFn4(fn) {
+    return function(a) {
+      return function(b) {
+        return function(c) {
+          return function(d) {
+            return function() {
+              return fn(a, b, c, d);
+            };
+          };
+        };
+      };
+    };
+  };
+})(PS["Effect.Uncurried"] = PS["Effect.Uncurried"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Effect.Uncurried"];
+  var Effect = PS["Effect"];
+  exports["mkEffectFn1"] = $foreign.mkEffectFn1;
+  exports["runEffectFn4"] = $foreign.runEffectFn4;
+})(PS["Effect.Uncurried"] = PS["Effect.Uncurried"] || {});
+(function(exports) {
+  /* global exports */
+  "use strict";
+  var React =require("react"); 
+
+  function createClass(baseClass) {
+    function bindProperty(instance, prop, value) {
+      switch (prop) {
+        case 'state':
+        case 'render':
+        case 'componentDidMount':
+        case 'componentWillUnmount':
+          instance[prop] = value;
+          break;
+
+        case 'componentDidCatch':
+        case 'componentWillUpdate':
+        case 'shouldComponentUpdate':
+        case 'getSnapshotBeforeUpdate':
+          instance[prop] = function (a, b) { return value(a)(b)(); };
+          break;
+
+        case 'componentDidUpdate':
+          instance[prop] = function (a, b, c) { return value(a)(b)(c)(); };
+          break;
+
+        case 'unsafeComponentWillMount':
+          instance['UNSAFE_componentWillMount'] = value;
+          break;
+
+        case 'unsafeComponentWillReceiveProps':
+          instance['UNSAFE_componentWillReceiveProps'] = function (a) { return value(a)(); };
+          break;
+
+        case 'unsafeComponentWillUpdate':
+          instance['UNSAFE_componentWillUpdate'] = function (a, b) { return value(a)(b)(); };
+          break;
+
+        default:
+          throw new Error('[purescript-react] Not a component property: ' + prop);
+      }
+    }
+
+    return function (displayName) {
+      return function (ctrFn) {
+        var Constructor = function (props) {
+          baseClass.call(this, props);
+          var spec = ctrFn(this)();
+          for (var k in spec) {
+            bindProperty(this, k, spec[k]);
+          }
+        };
+
+        Constructor.displayName = displayName;
+        Constructor.prototype = Object.create(baseClass.prototype);
+        Constructor.prototype.constructor = Constructor;
+
+        return Constructor;
+      };
+    };
+  }
+
+  function createClassWithDerivedState(classCtr) {
+    return function(displayName) {
+      return function(getDerivedStateFromProps) {
+        return function(ctrFn) {
+          var Constructor = componentImpl(displayName)(ctrFn);
+          Constructor.getDerivedStateFromProps = function(a, b) { return getDerivedStateFromProps(a)(b) };
+          return Constructor;
+        };
+      };
+    };
+  }
+
+  var componentImpl = createClass(React.Component);
+  exports.componentImpl = componentImpl;
+
+  function getProps(this_) {
+    return function(){
+      return this_.props;
+    };
+  }
+  exports.getProps = getProps;                 
+
+  function setStateImpl(this_) {
+    return function(state){
+      return function(){
+        this_.setState(state);
+      };
+    };
+  }
+  exports.setStateImpl = setStateImpl;
+
+  function setStateWithCallbackImpl(this_) {
+    return function(state){
+      return function(cb){
+        return function() {
+          this_.setState(state, cb);
+        };
+      };
+    };
+  }                                                           
+
+  function getState(this_) {
+    return function(){
+      if (!this_.state) {
+        throw new Error('[purescript-react] Cannot get state within constructor');
+      }
+      return this_.state;
+    };
+  }
+  exports.getState = getState;
+
+  function forceUpdateWithCallback(this_) {
+    return function(cb) {
+      return function() {
+        this_.forceUpdate(cb);
+      };
+    };
+  }                                                         
+
+  function createElement(class_) {
+    return function(props){
+      return function(children){
+        return React.createElement.apply(React, [class_, props].concat(children));
+      };
+    };
+  }                                         
+  exports.createElementTagName = createElement;
+
+  function createLeafElement(class_) {
+    return function(props) {
+      return React.createElement(class_, props);
+    };
+  }
+  exports.createLeafElementImpl = createLeafElement;
+
+  function createElementDynamic(class_) {
+    return function(props) {
+      return function(children){
+        return React.createElement(class_, props, children);
+      };
+    };
+  };                                                      
+  exports.createElementTagNameDynamic = createElementDynamic;
+
+  function createContext(defaultValue) {
+    var context = React.createContext(defaultValue);
+    return {
+      consumer: context.Consumer,
+      provider: context.Provider
+    };
+  }
+})(PS["React"] = PS["React"] || {});
+(function(exports) {
+    "use strict";
+
+  // module Unsafe.Coerce
+
+  exports.unsafeCoerce = function (x) {
+    return x;
+  };
+})(PS["Unsafe.Coerce"] = PS["Unsafe.Coerce"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Unsafe.Coerce"];
+  exports["unsafeCoerce"] = $foreign.unsafeCoerce;
+})(PS["Unsafe.Coerce"] = PS["Unsafe.Coerce"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["React"];
+  var Control_Applicative = PS["Control.Applicative"];
+  var Control_Category = PS["Control.Category"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Monoid = PS["Data.Monoid"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_Unit = PS["Data.Unit"];
+  var Effect = PS["Effect"];
+  var Effect_Exception = PS["Effect.Exception"];
+  var Effect_Uncurried = PS["Effect.Uncurried"];
+  var Prelude = PS["Prelude"];
+  var Type_Row = PS["Type.Row"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];                 
+  var ReactComponentSpec = {};    
+  var ReactPropFields = {};
+  var reactPropFields = function (dictUnion) {
+      return function (dictUnion1) {
+          return ReactPropFields;
+      };
+  };
+  var reactComponentSpec = function (dictUnion) {
+      return function (dictNub) {
+          return ReactComponentSpec;
+      };
+  };                                                              
+  var modifyState = $foreign.setStateImpl;
+  var createLeafElement = function (dictReactPropFields) {
+      return $foreign.createLeafElementImpl;
+  };
+  var component = function (dictReactComponentSpec) {
+      return $foreign.componentImpl;
+  };
+  exports["ReactComponentSpec"] = ReactComponentSpec;
+  exports["component"] = component;
+  exports["modifyState"] = modifyState;
+  exports["ReactPropFields"] = ReactPropFields;
+  exports["createLeafElement"] = createLeafElement;
+  exports["reactComponentSpec"] = reactComponentSpec;
+  exports["reactPropFields"] = reactPropFields;
+  exports["getProps"] = $foreign.getProps;
+  exports["getState"] = $foreign.getState;
+  exports["createElementTagName"] = $foreign.createElementTagName;
+  exports["createElementTagNameDynamic"] = $foreign.createElementTagNameDynamic;
+})(PS["React"] = PS["React"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["React.DOM.Props"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Effect = PS["Effect"];
+  var Effect_Uncurried = PS["Effect.Uncurried"];
+  var Prelude = PS["Prelude"];
+  var React = PS["React"];
+  var React_SyntheticEvent = PS["React.SyntheticEvent"];
+  var target = $foreign.unsafeMkProps("target");  
+  var style = $foreign.unsafeUnfoldProps("style");
+  var onClick = function (f) {
+      return $foreign.unsafeMkProps("onClick")(Effect_Uncurried.mkEffectFn1(f));
+  };                                                
+  var href = $foreign.unsafeMkProps("href");      
+  var className = $foreign.unsafeMkProps("className");
+  var _id = $foreign.unsafeMkProps("id");
+  exports["style"] = style;
+  exports["className"] = className;
+  exports["href"] = href;
+  exports["_id"] = _id;
+  exports["target"] = target;
+  exports["onClick"] = onClick;
+  exports["unsafeFromPropsArray"] = $foreign.unsafeFromPropsArray;
+})(PS["React.DOM.Props"] = PS["React.DOM.Props"] || {});
+(function(exports) {
+    "use strict";
+
+  exports._getElementById = function (id) {
+    return function (node) {
+      return function () {
+        return node.getElementById(id);
+      };
+    };
+  };
+})(PS["Web.DOM.NonElementParentNode"] = PS["Web.DOM.NonElementParentNode"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Web.DOM.NonElementParentNode"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Web_DOM_Element = PS["Web.DOM.Element"];                 
+  var getElementById = function (eid) {
+      return function ($0) {
+          return Data_Functor.map(Effect.functorEffect)(Data_Nullable.toMaybe)($foreign["_getElementById"](eid)($0));
+      };
+  };
+  exports["getElementById"] = getElementById;
+})(PS["Web.DOM.NonElementParentNode"] = PS["Web.DOM.NonElementParentNode"] || {});
+(function(exports) {
+  /* global window */
+  "use strict";
+
+  exports.window = function () {
+    return window;
+  };
+})(PS["Web.HTML"] = PS["Web.HTML"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.eventListener = function (fn) {
+    return function () {
+      return function (event) {
+        return fn(event)();
+      };
+    };
+  };
+
+  exports.addEventListener = function (type) {
+    return function (listener) {
+      return function (useCapture) {
+        return function (target) {
+          return function () {
+            return target.addEventListener(type, listener, useCapture);
+          };
+        };
+      };
+    };
+  };
+})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Web.Event.EventTarget"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Web_Event_Event = PS["Web.Event.Event"];
+  var Web_Event_Internal_Types = PS["Web.Event.Internal.Types"];
+  exports["eventListener"] = $foreign.eventListener;
+  exports["addEventListener"] = $foreign.addEventListener;
+})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
+(function(exports) {
+    "use strict";
+
+  exports._unsafeReadProtoTagged = function (nothing, just, name, value) {
+    var ty = window[name];
+    if (ty != null && value instanceof ty) {
+      return just(value);
+    }
+    return nothing;
+  };
+})(PS["Web.Internal.FFI"] = PS["Web.Internal.FFI"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Web.Internal.FFI"];
+  var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
+  var Data_Maybe = PS["Data.Maybe"];                 
+  var unsafeReadProtoTagged = function (name) {
+      return function (value) {
+          return $foreign["_unsafeReadProtoTagged"](Data_Maybe.Nothing.value, Data_Maybe.Just.create, name, value);
+      };
+  };
+  exports["unsafeReadProtoTagged"] = unsafeReadProtoTagged;
+})(PS["Web.Internal.FFI"] = PS["Web.Internal.FFI"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Web.HTML.HTMLDocument"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var Web_DOM_Document = PS["Web.DOM.Document"];
+  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
+  var Web_DOM_NonElementParentNode = PS["Web.DOM.NonElementParentNode"];
+  var Web_DOM_ParentNode = PS["Web.DOM.ParentNode"];
+  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
+  var Web_HTML_HTMLDocument_ReadyState = PS["Web.HTML.HTMLDocument.ReadyState"];
+  var Web_HTML_HTMLElement = PS["Web.HTML.HTMLElement"];
+  var Web_HTML_HTMLScriptElement = PS["Web.HTML.HTMLScriptElement"];
+  var Web_Internal_FFI = PS["Web.Internal.FFI"];
+  var toNonElementParentNode = Unsafe_Coerce.unsafeCoerce;
+  exports["toNonElementParentNode"] = toNonElementParentNode;
+})(PS["Web.HTML.HTMLDocument"] = PS["Web.HTML.HTMLDocument"] || {});
+(function(exports) {
+    "use strict";
+
+  // ----------------------------------------------------------------------------
+
+  exports.host = function (location) {
+    return function () {
+      return location.host;
+    };
+  };
+})(PS["Web.HTML.Location"] = PS["Web.HTML.Location"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Web.HTML.Location"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  exports["host"] = $foreign.host;
+})(PS["Web.HTML.Location"] = PS["Web.HTML.Location"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.document = function (window) {
+    return function () {
+      return window.document;
+    };
+  };
+
+  exports.location = function (window) {
+    return function () {
+      return window.location;
+    };
+  };
+})(PS["Web.HTML.Window"] = PS["Web.HTML.Window"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Web.HTML.Window"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Newtype = PS["Data.Newtype"];
+  var Data_Nullable = PS["Data.Nullable"];
+  var Data_Ord = PS["Data.Ord"];
+  var Effect = PS["Effect"];
+  var Prelude = PS["Prelude"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
+  var Web_HTML_HTMLDocument = PS["Web.HTML.HTMLDocument"];
+  var Web_HTML_History = PS["Web.HTML.History"];
+  var Web_HTML_Location = PS["Web.HTML.Location"];
+  var Web_HTML_Navigator = PS["Web.HTML.Navigator"];
+  var Web_Storage_Storage = PS["Web.Storage.Storage"];
+  exports["document"] = $foreign.document;
+  exports["location"] = $foreign.location;
+})(PS["Web.HTML.Window"] = PS["Web.HTML.Window"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Web.HTML"];
+  var Effect = PS["Effect"];
+  var Web_HTML_HTMLAnchorElement = PS["Web.HTML.HTMLAnchorElement"];
+  var Web_HTML_HTMLAreaElement = PS["Web.HTML.HTMLAreaElement"];
+  var Web_HTML_HTMLAudioElement = PS["Web.HTML.HTMLAudioElement"];
+  var Web_HTML_HTMLBRElement = PS["Web.HTML.HTMLBRElement"];
+  var Web_HTML_HTMLBaseElement = PS["Web.HTML.HTMLBaseElement"];
+  var Web_HTML_HTMLBodyElement = PS["Web.HTML.HTMLBodyElement"];
+  var Web_HTML_HTMLButtonElement = PS["Web.HTML.HTMLButtonElement"];
+  var Web_HTML_HTMLCanvasElement = PS["Web.HTML.HTMLCanvasElement"];
+  var Web_HTML_HTMLDListElement = PS["Web.HTML.HTMLDListElement"];
+  var Web_HTML_HTMLDataElement = PS["Web.HTML.HTMLDataElement"];
+  var Web_HTML_HTMLDataListElement = PS["Web.HTML.HTMLDataListElement"];
+  var Web_HTML_HTMLDivElement = PS["Web.HTML.HTMLDivElement"];
+  var Web_HTML_HTMLDocument = PS["Web.HTML.HTMLDocument"];
+  var Web_HTML_HTMLElement = PS["Web.HTML.HTMLElement"];
+  var Web_HTML_HTMLEmbedElement = PS["Web.HTML.HTMLEmbedElement"];
+  var Web_HTML_HTMLFieldSetElement = PS["Web.HTML.HTMLFieldSetElement"];
+  var Web_HTML_HTMLFormElement = PS["Web.HTML.HTMLFormElement"];
+  var Web_HTML_HTMLHRElement = PS["Web.HTML.HTMLHRElement"];
+  var Web_HTML_HTMLHeadElement = PS["Web.HTML.HTMLHeadElement"];
+  var Web_HTML_HTMLHeadingElement = PS["Web.HTML.HTMLHeadingElement"];
+  var Web_HTML_HTMLIFrameElement = PS["Web.HTML.HTMLIFrameElement"];
+  var Web_HTML_HTMLImageElement = PS["Web.HTML.HTMLImageElement"];
+  var Web_HTML_HTMLInputElement = PS["Web.HTML.HTMLInputElement"];
+  var Web_HTML_HTMLKeygenElement = PS["Web.HTML.HTMLKeygenElement"];
+  var Web_HTML_HTMLLIElement = PS["Web.HTML.HTMLLIElement"];
+  var Web_HTML_HTMLLabelElement = PS["Web.HTML.HTMLLabelElement"];
+  var Web_HTML_HTMLLegendElement = PS["Web.HTML.HTMLLegendElement"];
+  var Web_HTML_HTMLLinkElement = PS["Web.HTML.HTMLLinkElement"];
+  var Web_HTML_HTMLMapElement = PS["Web.HTML.HTMLMapElement"];
+  var Web_HTML_HTMLMediaElement = PS["Web.HTML.HTMLMediaElement"];
+  var Web_HTML_HTMLMetaElement = PS["Web.HTML.HTMLMetaElement"];
+  var Web_HTML_HTMLMeterElement = PS["Web.HTML.HTMLMeterElement"];
+  var Web_HTML_HTMLModElement = PS["Web.HTML.HTMLModElement"];
+  var Web_HTML_HTMLOListElement = PS["Web.HTML.HTMLOListElement"];
+  var Web_HTML_HTMLObjectElement = PS["Web.HTML.HTMLObjectElement"];
+  var Web_HTML_HTMLOptGroupElement = PS["Web.HTML.HTMLOptGroupElement"];
+  var Web_HTML_HTMLOptionElement = PS["Web.HTML.HTMLOptionElement"];
+  var Web_HTML_HTMLOutputElement = PS["Web.HTML.HTMLOutputElement"];
+  var Web_HTML_HTMLParagraphElement = PS["Web.HTML.HTMLParagraphElement"];
+  var Web_HTML_HTMLParamElement = PS["Web.HTML.HTMLParamElement"];
+  var Web_HTML_HTMLPreElement = PS["Web.HTML.HTMLPreElement"];
+  var Web_HTML_HTMLProgressElement = PS["Web.HTML.HTMLProgressElement"];
+  var Web_HTML_HTMLQuoteElement = PS["Web.HTML.HTMLQuoteElement"];
+  var Web_HTML_HTMLScriptElement = PS["Web.HTML.HTMLScriptElement"];
+  var Web_HTML_HTMLSelectElement = PS["Web.HTML.HTMLSelectElement"];
+  var Web_HTML_HTMLSourceElement = PS["Web.HTML.HTMLSourceElement"];
+  var Web_HTML_HTMLSpanElement = PS["Web.HTML.HTMLSpanElement"];
+  var Web_HTML_HTMLStyleElement = PS["Web.HTML.HTMLStyleElement"];
+  var Web_HTML_HTMLTableCaptionElement = PS["Web.HTML.HTMLTableCaptionElement"];
+  var Web_HTML_HTMLTableCellElement = PS["Web.HTML.HTMLTableCellElement"];
+  var Web_HTML_HTMLTableColElement = PS["Web.HTML.HTMLTableColElement"];
+  var Web_HTML_HTMLTableDataCellElement = PS["Web.HTML.HTMLTableDataCellElement"];
+  var Web_HTML_HTMLTableElement = PS["Web.HTML.HTMLTableElement"];
+  var Web_HTML_HTMLTableHeaderCellElement = PS["Web.HTML.HTMLTableHeaderCellElement"];
+  var Web_HTML_HTMLTableRowElement = PS["Web.HTML.HTMLTableRowElement"];
+  var Web_HTML_HTMLTableSectionElement = PS["Web.HTML.HTMLTableSectionElement"];
+  var Web_HTML_HTMLTemplateElement = PS["Web.HTML.HTMLTemplateElement"];
+  var Web_HTML_HTMLTextAreaElement = PS["Web.HTML.HTMLTextAreaElement"];
+  var Web_HTML_HTMLTimeElement = PS["Web.HTML.HTMLTimeElement"];
+  var Web_HTML_HTMLTitleElement = PS["Web.HTML.HTMLTitleElement"];
+  var Web_HTML_HTMLTrackElement = PS["Web.HTML.HTMLTrackElement"];
+  var Web_HTML_HTMLUListElement = PS["Web.HTML.HTMLUListElement"];
+  var Web_HTML_HTMLVideoElement = PS["Web.HTML.HTMLVideoElement"];
+  var Web_HTML_History = PS["Web.HTML.History"];
+  var Web_HTML_Location = PS["Web.HTML.Location"];
+  var Web_HTML_Navigator = PS["Web.HTML.Navigator"];
+  var Web_HTML_Window = PS["Web.HTML.Window"];
+  exports["window"] = $foreign.window;
+})(PS["Web.HTML"] = PS["Web.HTML"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var Control_Applicative = PS["Control.Applicative"];
+  var Control_Bind = PS["Control.Bind"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
   var Data_Maybe = PS["Data.Maybe"];
-  var Data_Unit = PS["Data.Unit"];
-  var Prelude = PS["Prelude"];                 
-  var MonadThrow = function (Monad0, throwError) {
-      this.Monad0 = Monad0;
-      this.throwError = throwError;
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_String = PS["Data.String"];
+  var Data_String_Common = PS["Data.String.Common"];
+  var Effect = PS["Effect"];
+  var Effect_Exception = PS["Effect.Exception"];
+  var Prelude = PS["Prelude"];
+  var React_DOM_Props = PS["React.DOM.Props"];
+  var Web_DOM_Element = PS["Web.DOM.Element"];
+  var Web_DOM_NonElementParentNode = PS["Web.DOM.NonElementParentNode"];
+  var Web_HTML = PS["Web.HTML"];
+  var Web_HTML_HTMLDocument = PS["Web.HTML.HTMLDocument"];
+  var Web_HTML_Location = PS["Web.HTML.Location"];
+  var Web_HTML_Window = PS["Web.HTML.Window"];
+  var host = function __do() {
+      var v = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.location)();
+      var v1 = Web_HTML_Location.host(v)();
+      var $6 = Data_String_Common["null"](v1);
+      if ($6) {
+          return Data_Maybe.Nothing.value;
+      };
+      return new Data_Maybe.Just(v1);
   };
-  var throwError = function (dict) {
-      return dict.throwError;
+  var doc = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.document);
+  var cn = React_DOM_Props.className;
+  var byId = function (id) {
+      return function __do() {
+          var v = Data_Functor.map(Effect.functorEffect)(Web_HTML_HTMLDocument.toNonElementParentNode)(doc)();
+          var v1 = Web_DOM_NonElementParentNode.getElementById(id)(v)();
+          if (v1 instanceof Data_Maybe.Just) {
+              return v1.value0;
+          };
+          if (v1 instanceof Data_Maybe.Nothing) {
+              return Effect_Exception["throw"]("not found=" + id)();
+          };
+          throw new Error("Failed pattern match at DomOps (line 25, column 3 - line 27, column 40): " + [ v1.constructor.name ]);
+      };
   };
-  exports["throwError"] = throwError;
-  exports["MonadThrow"] = MonadThrow;
-})(PS["Control.Monad.Error.Class"] = PS["Control.Monad.Error.Class"] || {});
+  exports["byId"] = byId;
+  exports["host"] = host;
+  exports["cn"] = cn;
+})(PS["DomOps"] = PS["DomOps"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.formatNum = function(num) {
+    return num.toLocaleString("en-GB")
+  }
+})(PS["FormatOps"] = PS["FormatOps"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.fromNumberImpl = function (just) {
+    return function (nothing) {
+      return function (n) {
+        /* jshint bitwise: false */
+        return (n | 0) === n ? just(n) : nothing;
+      };
+    };
+  };
+
+  exports.toNumber = function (n) {
+    return n;
+  };
+})(PS["Data.Int"] = PS["Data.Int"] || {});
+(function(exports) {
+  /* globals exports */
+  "use strict";         
+
+  exports.infinity = Infinity;
+
+  exports.readInt = function (radix) {
+    return function (n) {
+      return parseInt(n, radix);
+    };
+  };
+})(PS["Global"] = PS["Global"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Global"];
+  exports["infinity"] = $foreign.infinity;
+  exports["readInt"] = $foreign.readInt;
+})(PS["Global"] = PS["Global"] || {});
+(function(exports) {
+    "use strict";        
+
+  exports.floor = Math.floor;
+})(PS["Math"] = PS["Math"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Math"];
+  exports["floor"] = $foreign.floor;
+})(PS["Math"] = PS["Math"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.Int"];
+  var Control_Category = PS["Control.Category"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Boolean = PS["Data.Boolean"];
+  var Data_Bounded = PS["Data.Bounded"];
+  var Data_CommutativeRing = PS["Data.CommutativeRing"];
+  var Data_DivisionRing = PS["Data.DivisionRing"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_EuclideanRing = PS["Data.EuclideanRing"];
+  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
+  var Data_Int_Bits = PS["Data.Int.Bits"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Ordering = PS["Data.Ordering"];
+  var Data_Ring = PS["Data.Ring"];
+  var Data_Semiring = PS["Data.Semiring"];
+  var Data_Show = PS["Data.Show"];
+  var Global = PS["Global"];
+  var $$Math = PS["Math"];
+  var Prelude = PS["Prelude"];      
+  var fromNumber = $foreign.fromNumberImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
+  var unsafeClamp = function (x) {
+      if (x === Global.infinity) {
+          return 0;
+      };
+      if (x === -Global.infinity) {
+          return 0;
+      };
+      if (x >= $foreign.toNumber(Data_Bounded.top(Data_Bounded.boundedInt))) {
+          return Data_Bounded.top(Data_Bounded.boundedInt);
+      };
+      if (x <= $foreign.toNumber(Data_Bounded.bottom(Data_Bounded.boundedInt))) {
+          return Data_Bounded.bottom(Data_Bounded.boundedInt);
+      };
+      if (Data_Boolean.otherwise) {
+          return Data_Maybe.fromMaybe(0)(fromNumber(x));
+      };
+      throw new Error("Failed pattern match at Data.Int (line 66, column 1 - line 66, column 29): " + [ x.constructor.name ]);
+  };
+  var floor = function ($24) {
+      return unsafeClamp($$Math.floor($24));
+  };
+  exports["fromNumber"] = fromNumber;
+  exports["floor"] = floor;
+})(PS["Data.Int"] = PS["Data.Int"] || {});
+(function(exports) {
+  /* global exports */
+  "use strict";
+
+  exports.dateMethod = function (method, date) {
+    return date[method]();
+  };
+
+  exports.fromTime = function (time) {
+    return new Date(time);
+  };
+})(PS["Data.JSDate"] = PS["Data.JSDate"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.toCharCode = function (c) {
+    return c.charCodeAt(0);
+  };
+
+  exports.fromCharCode = function (c) {
+    return String.fromCharCode(c);
+  };
+})(PS["Data.Enum"] = PS["Data.Enum"] || {});
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
@@ -1172,6 +2239,261 @@ var PS = {};
   exports["fst"] = fst;
   exports["snd"] = snd;
 })(PS["Data.Tuple"] = PS["Data.Tuple"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.unfoldrArrayImpl = function (isNothing) {
+    return function (fromJust) {
+      return function (fst) {
+        return function (snd) {
+          return function (f) {
+            return function (b) {
+              var result = [];
+              var value = b;
+              while (true) { // eslint-disable-line no-constant-condition
+                var maybe = f(value);
+                if (isNothing(maybe)) return result;
+                var tuple = fromJust(maybe);
+                result.push(fst(tuple));
+                value = snd(tuple);
+              }
+            };
+          };
+        };
+      };
+    };
+  };
+})(PS["Data.Unfoldable"] = PS["Data.Unfoldable"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.unfoldr1ArrayImpl = function (isNothing) {
+    return function (fromJust) {
+      return function (fst) {
+        return function (snd) {
+          return function (f) {
+            return function (b) {
+              var result = [];
+              var value = b;
+              while (true) { // eslint-disable-line no-constant-condition
+                var tuple = f(value);
+                result.push(fst(tuple));
+                var maybe = snd(tuple);
+                if (isNothing(maybe)) return result;
+                value = fromJust(maybe);
+              }
+            };
+          };
+        };
+      };
+    };
+  };
+})(PS["Data.Unfoldable1"] = PS["Data.Unfoldable1"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.Unfoldable1"];
+  var Data_Boolean = PS["Data.Boolean"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Ring = PS["Data.Ring"];
+  var Data_Semigroup_Traversable = PS["Data.Semigroup.Traversable"];
+  var Data_Semiring = PS["Data.Semiring"];
+  var Data_Tuple = PS["Data.Tuple"];
+  var Partial_Unsafe = PS["Partial.Unsafe"];
+  var Prelude = PS["Prelude"];                 
+  var Unfoldable1 = function (unfoldr1) {
+      this.unfoldr1 = unfoldr1;
+  };
+  var unfoldr1 = function (dict) {
+      return dict.unfoldr1;
+  };
+  var unfoldable1Array = new Unfoldable1($foreign.unfoldr1ArrayImpl(Data_Maybe.isNothing)(Data_Maybe.fromJust())(Data_Tuple.fst)(Data_Tuple.snd));
+  exports["Unfoldable1"] = Unfoldable1;
+  exports["unfoldr1"] = unfoldr1;
+  exports["unfoldable1Array"] = unfoldable1Array;
+})(PS["Data.Unfoldable1"] = PS["Data.Unfoldable1"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.Unfoldable"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Ring = PS["Data.Ring"];
+  var Data_Traversable = PS["Data.Traversable"];
+  var Data_Tuple = PS["Data.Tuple"];
+  var Data_Unfoldable1 = PS["Data.Unfoldable1"];
+  var Data_Unit = PS["Data.Unit"];
+  var Partial_Unsafe = PS["Partial.Unsafe"];
+  var Prelude = PS["Prelude"];                 
+  var Unfoldable = function (Unfoldable10, unfoldr) {
+      this.Unfoldable10 = Unfoldable10;
+      this.unfoldr = unfoldr;
+  };
+  var unfoldr = function (dict) {
+      return dict.unfoldr;
+  };
+  var unfoldableArray = new Unfoldable(function () {
+      return Data_Unfoldable1.unfoldable1Array;
+  }, $foreign.unfoldrArrayImpl(Data_Maybe.isNothing)(Data_Maybe.fromJust())(Data_Tuple.fst)(Data_Tuple.snd));
+  exports["Unfoldable"] = Unfoldable;
+  exports["unfoldr"] = unfoldr;
+  exports["unfoldableArray"] = unfoldableArray;
+})(PS["Data.Unfoldable"] = PS["Data.Unfoldable"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.Enum"];
+  var Control_Apply = PS["Control.Apply"];
+  var Control_Bind = PS["Control.Bind"];
+  var Control_MonadPlus = PS["Control.MonadPlus"];
+  var Control_MonadZero = PS["Control.MonadZero"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Boolean = PS["Data.Boolean"];
+  var Data_Bounded = PS["Data.Bounded"];
+  var Data_Either = PS["Data.Either"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Newtype = PS["Data.Newtype"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Ordering = PS["Data.Ordering"];
+  var Data_Ring = PS["Data.Ring"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_Semiring = PS["Data.Semiring"];
+  var Data_Show = PS["Data.Show"];
+  var Data_Tuple = PS["Data.Tuple"];
+  var Data_Unfoldable = PS["Data.Unfoldable"];
+  var Data_Unfoldable1 = PS["Data.Unfoldable1"];
+  var Data_Unit = PS["Data.Unit"];
+  var Partial_Unsafe = PS["Partial.Unsafe"];
+  var Prelude = PS["Prelude"];
+  var Enum = function (Ord0, pred, succ) {
+      this.Ord0 = Ord0;
+      this.pred = pred;
+      this.succ = succ;
+  };
+  var BoundedEnum = function (Bounded0, Enum1, cardinality, fromEnum, toEnum) {
+      this.Bounded0 = Bounded0;
+      this.Enum1 = Enum1;
+      this.cardinality = cardinality;
+      this.fromEnum = fromEnum;
+      this.toEnum = toEnum;
+  };
+  var toEnum = function (dict) {
+      return dict.toEnum;
+  };
+  var succ = function (dict) {
+      return dict.succ;
+  }; 
+  var pred = function (dict) {
+      return dict.pred;
+  };              
+  var fromEnum = function (dict) {
+      return dict.fromEnum;
+  };
+  var toEnumWithDefaults = function (dictBoundedEnum) {
+      return function (low) {
+          return function (high) {
+              return function (x) {
+                  var v = toEnum(dictBoundedEnum)(x);
+                  if (v instanceof Data_Maybe.Just) {
+                      return v.value0;
+                  };
+                  if (v instanceof Data_Maybe.Nothing) {
+                      var $51 = x < fromEnum(dictBoundedEnum)(Data_Bounded.bottom(dictBoundedEnum.Bounded0()));
+                      if ($51) {
+                          return low;
+                      };
+                      return high;
+                  };
+                  throw new Error("Failed pattern match at Data.Enum (line 158, column 33 - line 160, column 62): " + [ v.constructor.name ]);
+              };
+          };
+      };
+  };
+  var defaultSucc = function (toEnum$prime) {
+      return function (fromEnum$prime) {
+          return function (a) {
+              return toEnum$prime(fromEnum$prime(a) + 1 | 0);
+          };
+      };
+  };
+  var defaultPred = function (toEnum$prime) {
+      return function (fromEnum$prime) {
+          return function (a) {
+              return toEnum$prime(fromEnum$prime(a) - 1 | 0);
+          };
+      };
+  };
+  var charToEnum = function (v) {
+      if (v >= Data_Bounded.bottom(Data_Bounded.boundedInt) && v <= Data_Bounded.top(Data_Bounded.boundedInt)) {
+          return new Data_Maybe.Just($foreign.fromCharCode(v));
+      };
+      return Data_Maybe.Nothing.value;
+  };
+  var enumChar = new Enum(function () {
+      return Data_Ord.ordChar;
+  }, defaultPred(charToEnum)($foreign.toCharCode), defaultSucc(charToEnum)($foreign.toCharCode));
+  var cardinality = function (dict) {
+      return dict.cardinality;
+  }; 
+  var boundedEnumChar = new BoundedEnum(function () {
+      return Data_Bounded.boundedChar;
+  }, function () {
+      return enumChar;
+  }, $foreign.toCharCode(Data_Bounded.top(Data_Bounded.boundedChar)) - $foreign.toCharCode(Data_Bounded.bottom(Data_Bounded.boundedChar)) | 0, $foreign.toCharCode, charToEnum);
+  exports["Enum"] = Enum;
+  exports["succ"] = succ;
+  exports["pred"] = pred;
+  exports["BoundedEnum"] = BoundedEnum;
+  exports["cardinality"] = cardinality;
+  exports["toEnum"] = toEnum;
+  exports["fromEnum"] = fromEnum;
+  exports["toEnumWithDefaults"] = toEnumWithDefaults;
+  exports["defaultSucc"] = defaultSucc;
+  exports["defaultPred"] = defaultPred;
+  exports["enumChar"] = enumChar;
+  exports["boundedEnumChar"] = boundedEnumChar;
+})(PS["Data.Enum"] = PS["Data.Enum"] || {});
+(function(exports) {
+    "use strict";
+
+  exports.unsafeFromForeign = function (value) {
+    return value;
+  };
+
+  exports.tagOf = function (value) {
+    return Object.prototype.toString.call(value).slice(8, -1);
+  };
+})(PS["Foreign"] = PS["Foreign"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var Control_Applicative = PS["Control.Applicative"];
+  var Control_Bind = PS["Control.Bind"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Either = PS["Data.Either"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Unit = PS["Data.Unit"];
+  var Prelude = PS["Prelude"];                 
+  var MonadThrow = function (Monad0, throwError) {
+      this.Monad0 = Monad0;
+      this.throwError = throwError;
+  };
+  var throwError = function (dict) {
+      return dict.throwError;
+  };
+  exports["throwError"] = throwError;
+  exports["MonadThrow"] = MonadThrow;
+})(PS["Control.Monad.Error.Class"] = PS["Control.Monad.Error.Class"] || {});
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
@@ -1359,593 +2681,6 @@ var PS = {};
   };
   exports["runExcept"] = runExcept;
 })(PS["Control.Monad.Except"] = PS["Control.Monad.Except"] || {});
-(function(exports) {
-    "use strict";                                                                                    
-
-  exports.fromFoldableImpl = (function () {
-    function Cons(head, tail) {
-      this.head = head;
-      this.tail = tail;
-    }
-    var emptyList = {};
-
-    function curryCons(head) {
-      return function (tail) {
-        return new Cons(head, tail);
-      };
-    }
-
-    function listToArray(list) {
-      var result = [];
-      var count = 0;
-      var xs = list;
-      while (xs !== emptyList) {
-        result[count++] = xs.head;
-        xs = xs.tail;
-      }
-      return result;
-    }
-
-    return function (foldr) {
-      return function (xs) {
-        return listToArray(foldr(curryCons)(emptyList)(xs));
-      };
-    };
-  })();
-
-  //------------------------------------------------------------------------------
-  // Array size ------------------------------------------------------------------
-  //------------------------------------------------------------------------------
-
-  exports.length = function (xs) {
-    return xs.length;
-  };
-
-  //------------------------------------------------------------------------------
-  // Extending arrays ------------------------------------------------------------
-  //------------------------------------------------------------------------------
-
-  exports.cons = function (e) {
-    return function (l) {
-      return [e].concat(l);
-    };
-  };
-
-  //------------------------------------------------------------------------------
-  // Indexed operations ----------------------------------------------------------
-  //------------------------------------------------------------------------------
-
-  exports.indexImpl = function (just) {
-    return function (nothing) {
-      return function (xs) {
-        return function (i) {
-          return i < 0 || i >= xs.length ? nothing :  just(xs[i]);
-        };
-      };
-    };
-  };
-
-  exports.concat = function (xss) {
-    if (xss.length <= 10000) {
-      // This method is faster, but it crashes on big arrays.
-      // So we use it when can and fallback to simple variant otherwise.
-      return Array.prototype.concat.apply([], xss);
-    }
-
-    var result = [];
-    for (var i = 0, l = xss.length; i < l; i++) {
-      var xs = xss[i];
-      for (var j = 0, m = xs.length; j < m; j++) {
-        result.push(xs[j]);
-      }
-    }
-    return result;
-  };
-
-  exports.filter = function (f) {
-    return function (xs) {
-      return xs.filter(f);
-    };
-  };
-
-  //------------------------------------------------------------------------------
-  // Subarrays -------------------------------------------------------------------
-  //------------------------------------------------------------------------------
-
-  exports.slice = function (s) {
-    return function (e) {
-      return function (l) {
-        return l.slice(s, e);
-      };
-    };
-  };
-
-  exports.take = function (n) {
-    return function (l) {
-      return n < 1 ? [] : l.slice(0, n);
-    };
-  };
-})(PS["Data.Array"] = PS["Data.Array"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.unfoldrArrayImpl = function (isNothing) {
-    return function (fromJust) {
-      return function (fst) {
-        return function (snd) {
-          return function (f) {
-            return function (b) {
-              var result = [];
-              var value = b;
-              while (true) { // eslint-disable-line no-constant-condition
-                var maybe = f(value);
-                if (isNothing(maybe)) return result;
-                var tuple = fromJust(maybe);
-                result.push(fst(tuple));
-                value = snd(tuple);
-              }
-            };
-          };
-        };
-      };
-    };
-  };
-})(PS["Data.Unfoldable"] = PS["Data.Unfoldable"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.unfoldr1ArrayImpl = function (isNothing) {
-    return function (fromJust) {
-      return function (fst) {
-        return function (snd) {
-          return function (f) {
-            return function (b) {
-              var result = [];
-              var value = b;
-              while (true) { // eslint-disable-line no-constant-condition
-                var tuple = f(value);
-                result.push(fst(tuple));
-                var maybe = snd(tuple);
-                if (isNothing(maybe)) return result;
-                value = fromJust(maybe);
-              }
-            };
-          };
-        };
-      };
-    };
-  };
-})(PS["Data.Unfoldable1"] = PS["Data.Unfoldable1"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.Unfoldable1"];
-  var Data_Boolean = PS["Data.Boolean"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Ring = PS["Data.Ring"];
-  var Data_Semigroup_Traversable = PS["Data.Semigroup.Traversable"];
-  var Data_Semiring = PS["Data.Semiring"];
-  var Data_Tuple = PS["Data.Tuple"];
-  var Partial_Unsafe = PS["Partial.Unsafe"];
-  var Prelude = PS["Prelude"];                 
-  var Unfoldable1 = function (unfoldr1) {
-      this.unfoldr1 = unfoldr1;
-  };
-  var unfoldr1 = function (dict) {
-      return dict.unfoldr1;
-  };
-  var unfoldable1Array = new Unfoldable1($foreign.unfoldr1ArrayImpl(Data_Maybe.isNothing)(Data_Maybe.fromJust())(Data_Tuple.fst)(Data_Tuple.snd));
-  exports["Unfoldable1"] = Unfoldable1;
-  exports["unfoldr1"] = unfoldr1;
-  exports["unfoldable1Array"] = unfoldable1Array;
-})(PS["Data.Unfoldable1"] = PS["Data.Unfoldable1"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.Unfoldable"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Ring = PS["Data.Ring"];
-  var Data_Traversable = PS["Data.Traversable"];
-  var Data_Tuple = PS["Data.Tuple"];
-  var Data_Unfoldable1 = PS["Data.Unfoldable1"];
-  var Data_Unit = PS["Data.Unit"];
-  var Partial_Unsafe = PS["Partial.Unsafe"];
-  var Prelude = PS["Prelude"];                 
-  var Unfoldable = function (Unfoldable10, unfoldr) {
-      this.Unfoldable10 = Unfoldable10;
-      this.unfoldr = unfoldr;
-  };
-  var unfoldr = function (dict) {
-      return dict.unfoldr;
-  };
-  var unfoldableArray = new Unfoldable(function () {
-      return Data_Unfoldable1.unfoldable1Array;
-  }, $foreign.unfoldrArrayImpl(Data_Maybe.isNothing)(Data_Maybe.fromJust())(Data_Tuple.fst)(Data_Tuple.snd));
-  exports["Unfoldable"] = Unfoldable;
-  exports["unfoldr"] = unfoldr;
-  exports["unfoldableArray"] = unfoldableArray;
-})(PS["Data.Unfoldable"] = PS["Data.Unfoldable"] || {});
-(function(exports) {
-    "use strict";
-
-  // module Unsafe.Coerce
-
-  exports.unsafeCoerce = function (x) {
-    return x;
-  };
-})(PS["Unsafe.Coerce"] = PS["Unsafe.Coerce"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Unsafe.Coerce"];
-  exports["unsafeCoerce"] = $foreign.unsafeCoerce;
-})(PS["Unsafe.Coerce"] = PS["Unsafe.Coerce"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.Array"];
-  var Control_Alt = PS["Control.Alt"];
-  var Control_Alternative = PS["Control.Alternative"];
-  var Control_Applicative = PS["Control.Applicative"];
-  var Control_Apply = PS["Control.Apply"];
-  var Control_Bind = PS["Control.Bind"];
-  var Control_Category = PS["Control.Category"];
-  var Control_Lazy = PS["Control.Lazy"];
-  var Control_Monad_Rec_Class = PS["Control.Monad.Rec.Class"];
-  var Control_Monad_ST = PS["Control.Monad.ST"];
-  var Control_Monad_ST_Internal = PS["Control.Monad.ST.Internal"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Array_NonEmpty_Internal = PS["Data.Array.NonEmpty.Internal"];
-  var Data_Array_ST = PS["Data.Array.ST"];
-  var Data_Array_ST_Iterator = PS["Data.Array.ST.Iterator"];
-  var Data_Boolean = PS["Data.Boolean"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Foldable = PS["Data.Foldable"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Ordering = PS["Data.Ordering"];
-  var Data_Ring = PS["Data.Ring"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var Data_Semiring = PS["Data.Semiring"];
-  var Data_Traversable = PS["Data.Traversable"];
-  var Data_Tuple = PS["Data.Tuple"];
-  var Data_Unfoldable = PS["Data.Unfoldable"];
-  var Partial_Unsafe = PS["Partial.Unsafe"];
-  var Prelude = PS["Prelude"];
-  var Unsafe_Coerce = PS["Unsafe.Coerce"];
-  var singleton = function (a) {
-      return [ a ];
-  };
-  var index = $foreign.indexImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
-  var last = function (xs) {
-      return index(xs)($foreign.length(xs) - 1 | 0);
-  };
-  var head = function (xs) {
-      return index(xs)(0);
-  };
-  var fromFoldable = function (dictFoldable) {
-      return $foreign.fromFoldableImpl(Data_Foldable.foldr(dictFoldable));
-  };
-  var dropEnd = function (n) {
-      return function (xs) {
-          return $foreign.take($foreign.length(xs) - n | 0)(xs);
-      };
-  };
-  exports["fromFoldable"] = fromFoldable;
-  exports["singleton"] = singleton;
-  exports["head"] = head;
-  exports["last"] = last;
-  exports["index"] = index;
-  exports["dropEnd"] = dropEnd;
-  exports["length"] = $foreign.length;
-  exports["cons"] = $foreign.cons;
-  exports["filter"] = $foreign.filter;
-  exports["slice"] = $foreign.slice;
-})(PS["Data.Array"] = PS["Data.Array"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.toCharCode = function (c) {
-    return c.charCodeAt(0);
-  };
-
-  exports.fromCharCode = function (c) {
-    return String.fromCharCode(c);
-  };
-})(PS["Data.Enum"] = PS["Data.Enum"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.Enum"];
-  var Control_Apply = PS["Control.Apply"];
-  var Control_Bind = PS["Control.Bind"];
-  var Control_MonadPlus = PS["Control.MonadPlus"];
-  var Control_MonadZero = PS["Control.MonadZero"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Boolean = PS["Data.Boolean"];
-  var Data_Bounded = PS["Data.Bounded"];
-  var Data_Either = PS["Data.Either"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Newtype = PS["Data.Newtype"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Ordering = PS["Data.Ordering"];
-  var Data_Ring = PS["Data.Ring"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var Data_Semiring = PS["Data.Semiring"];
-  var Data_Show = PS["Data.Show"];
-  var Data_Tuple = PS["Data.Tuple"];
-  var Data_Unfoldable = PS["Data.Unfoldable"];
-  var Data_Unfoldable1 = PS["Data.Unfoldable1"];
-  var Data_Unit = PS["Data.Unit"];
-  var Partial_Unsafe = PS["Partial.Unsafe"];
-  var Prelude = PS["Prelude"];
-  var Enum = function (Ord0, pred, succ) {
-      this.Ord0 = Ord0;
-      this.pred = pred;
-      this.succ = succ;
-  };
-  var BoundedEnum = function (Bounded0, Enum1, cardinality, fromEnum, toEnum) {
-      this.Bounded0 = Bounded0;
-      this.Enum1 = Enum1;
-      this.cardinality = cardinality;
-      this.fromEnum = fromEnum;
-      this.toEnum = toEnum;
-  };
-  var toEnum = function (dict) {
-      return dict.toEnum;
-  };
-  var succ = function (dict) {
-      return dict.succ;
-  }; 
-  var pred = function (dict) {
-      return dict.pred;
-  };              
-  var fromEnum = function (dict) {
-      return dict.fromEnum;
-  };
-  var toEnumWithDefaults = function (dictBoundedEnum) {
-      return function (low) {
-          return function (high) {
-              return function (x) {
-                  var v = toEnum(dictBoundedEnum)(x);
-                  if (v instanceof Data_Maybe.Just) {
-                      return v.value0;
-                  };
-                  if (v instanceof Data_Maybe.Nothing) {
-                      var $51 = x < fromEnum(dictBoundedEnum)(Data_Bounded.bottom(dictBoundedEnum.Bounded0()));
-                      if ($51) {
-                          return low;
-                      };
-                      return high;
-                  };
-                  throw new Error("Failed pattern match at Data.Enum (line 158, column 33 - line 160, column 62): " + [ v.constructor.name ]);
-              };
-          };
-      };
-  };
-  var defaultSucc = function (toEnum$prime) {
-      return function (fromEnum$prime) {
-          return function (a) {
-              return toEnum$prime(fromEnum$prime(a) + 1 | 0);
-          };
-      };
-  };
-  var defaultPred = function (toEnum$prime) {
-      return function (fromEnum$prime) {
-          return function (a) {
-              return toEnum$prime(fromEnum$prime(a) - 1 | 0);
-          };
-      };
-  };
-  var charToEnum = function (v) {
-      if (v >= Data_Bounded.bottom(Data_Bounded.boundedInt) && v <= Data_Bounded.top(Data_Bounded.boundedInt)) {
-          return new Data_Maybe.Just($foreign.fromCharCode(v));
-      };
-      return Data_Maybe.Nothing.value;
-  };
-  var enumChar = new Enum(function () {
-      return Data_Ord.ordChar;
-  }, defaultPred(charToEnum)($foreign.toCharCode), defaultSucc(charToEnum)($foreign.toCharCode));
-  var cardinality = function (dict) {
-      return dict.cardinality;
-  }; 
-  var boundedEnumChar = new BoundedEnum(function () {
-      return Data_Bounded.boundedChar;
-  }, function () {
-      return enumChar;
-  }, $foreign.toCharCode(Data_Bounded.top(Data_Bounded.boundedChar)) - $foreign.toCharCode(Data_Bounded.bottom(Data_Bounded.boundedChar)) | 0, $foreign.toCharCode, charToEnum);
-  exports["Enum"] = Enum;
-  exports["succ"] = succ;
-  exports["pred"] = pred;
-  exports["BoundedEnum"] = BoundedEnum;
-  exports["cardinality"] = cardinality;
-  exports["toEnum"] = toEnum;
-  exports["fromEnum"] = fromEnum;
-  exports["toEnumWithDefaults"] = toEnumWithDefaults;
-  exports["defaultSucc"] = defaultSucc;
-  exports["defaultPred"] = defaultPred;
-  exports["enumChar"] = enumChar;
-  exports["boundedEnumChar"] = boundedEnumChar;
-})(PS["Data.Enum"] = PS["Data.Enum"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.fromNumberImpl = function (just) {
-    return function (nothing) {
-      return function (n) {
-        /* jshint bitwise: false */
-        return (n | 0) === n ? just(n) : nothing;
-      };
-    };
-  };
-
-  exports.toNumber = function (n) {
-    return n;
-  };
-})(PS["Data.Int"] = PS["Data.Int"] || {});
-(function(exports) {
-  /* globals exports */
-  "use strict";         
-
-  exports.infinity = Infinity;
-
-  exports.readInt = function (radix) {
-    return function (n) {
-      return parseInt(n, radix);
-    };
-  };
-})(PS["Global"] = PS["Global"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Global"];
-  exports["infinity"] = $foreign.infinity;
-  exports["readInt"] = $foreign.readInt;
-})(PS["Global"] = PS["Global"] || {});
-(function(exports) {
-    "use strict";        
-
-  exports.floor = Math.floor;
-})(PS["Math"] = PS["Math"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Math"];
-  exports["floor"] = $foreign.floor;
-})(PS["Math"] = PS["Math"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.Int"];
-  var Control_Category = PS["Control.Category"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Boolean = PS["Data.Boolean"];
-  var Data_Bounded = PS["Data.Bounded"];
-  var Data_CommutativeRing = PS["Data.CommutativeRing"];
-  var Data_DivisionRing = PS["Data.DivisionRing"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_EuclideanRing = PS["Data.EuclideanRing"];
-  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
-  var Data_Int_Bits = PS["Data.Int.Bits"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Ordering = PS["Data.Ordering"];
-  var Data_Ring = PS["Data.Ring"];
-  var Data_Semiring = PS["Data.Semiring"];
-  var Data_Show = PS["Data.Show"];
-  var Global = PS["Global"];
-  var $$Math = PS["Math"];
-  var Prelude = PS["Prelude"];      
-  var fromNumber = $foreign.fromNumberImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
-  var unsafeClamp = function (x) {
-      if (x === Global.infinity) {
-          return 0;
-      };
-      if (x === -Global.infinity) {
-          return 0;
-      };
-      if (x >= $foreign.toNumber(Data_Bounded.top(Data_Bounded.boundedInt))) {
-          return Data_Bounded.top(Data_Bounded.boundedInt);
-      };
-      if (x <= $foreign.toNumber(Data_Bounded.bottom(Data_Bounded.boundedInt))) {
-          return Data_Bounded.bottom(Data_Bounded.boundedInt);
-      };
-      if (Data_Boolean.otherwise) {
-          return Data_Maybe.fromMaybe(0)(fromNumber(x));
-      };
-      throw new Error("Failed pattern match at Data.Int (line 66, column 1 - line 66, column 29): " + [ x.constructor.name ]);
-  };
-  var floor = function ($24) {
-      return unsafeClamp($$Math.floor($24));
-  };
-  exports["fromNumber"] = fromNumber;
-  exports["floor"] = floor;
-})(PS["Data.Int"] = PS["Data.Int"] || {});
-(function(exports) {
-  /* global exports */
-  "use strict";
-
-  exports.dateMethod = function (method, date) {
-    return date[method]();
-  };
-
-  exports.fromTime = function (time) {
-    return new Date(time);
-  };
-})(PS["Data.JSDate"] = PS["Data.JSDate"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.pureE = function (a) {
-    return function () {
-      return a;
-    };
-  };
-
-  exports.bindE = function (a) {
-    return function (f) {
-      return function () {
-        return f(a())();
-      };
-    };
-  };
-})(PS["Effect"] = PS["Effect"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Effect"];
-  var Control_Applicative = PS["Control.Applicative"];
-  var Control_Apply = PS["Control.Apply"];
-  var Control_Bind = PS["Control.Bind"];
-  var Control_Monad = PS["Control.Monad"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Monoid = PS["Data.Monoid"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var Prelude = PS["Prelude"];                 
-  var monadEffect = new Control_Monad.Monad(function () {
-      return applicativeEffect;
-  }, function () {
-      return bindEffect;
-  });
-  var bindEffect = new Control_Bind.Bind(function () {
-      return applyEffect;
-  }, $foreign.bindE);
-  var applyEffect = new Control_Apply.Apply(function () {
-      return functorEffect;
-  }, Control_Monad.ap(monadEffect));
-  var applicativeEffect = new Control_Applicative.Applicative(function () {
-      return applyEffect;
-  }, $foreign.pureE);
-  var functorEffect = new Data_Functor.Functor(Control_Applicative.liftA1(applicativeEffect));
-  exports["functorEffect"] = functorEffect;
-  exports["applyEffect"] = applyEffect;
-  exports["applicativeEffect"] = applicativeEffect;
-  exports["bindEffect"] = bindEffect;
-  exports["monadEffect"] = monadEffect;
-})(PS["Effect"] = PS["Effect"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.unsafeFromForeign = function (value) {
-    return value;
-  };
-
-  exports.tagOf = function (value) {
-    return Object.prototype.toString.call(value).slice(8, -1);
-  };
-})(PS["Foreign"] = PS["Foreign"] || {});
 (function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
@@ -2454,6 +3189,648 @@ var PS = {};
   exports["fromTime"] = $foreign.fromTime;
 })(PS["Data.JSDate"] = PS["Data.JSDate"] || {});
 (function(exports) {
+    "use strict";
+  /* global Symbol */
+
+  var hasArrayFrom = typeof Array.from === "function";
+  var hasStringIterator =
+    typeof Symbol !== "undefined" &&
+    Symbol != null &&
+    typeof Symbol.iterator !== "undefined" &&
+    typeof String.prototype[Symbol.iterator] === "function";
+  var hasFromCodePoint = typeof String.prototype.fromCodePoint === "function";
+  var hasCodePointAt = typeof String.prototype.codePointAt === "function";
+
+  exports._unsafeCodePointAt0 = function (fallback) {
+    return hasCodePointAt
+      ? function (str) { return str.codePointAt(0); }
+      : fallback;
+  };
+
+  exports._singleton = function (fallback) {
+    return hasFromCodePoint ? String.fromCodePoint : fallback;
+  };
+
+  exports._take = function (fallback) {
+    return function (n) {
+      if (hasStringIterator) {
+        return function (str) {
+          var accum = "";
+          var iter = str[Symbol.iterator]();
+          for (var i = 0; i < n; ++i) {
+            var o = iter.next();
+            if (o.done) return accum;
+            accum += o.value;
+          }
+          return accum;
+        };
+      }
+      return fallback(n);
+    };
+  };
+
+  exports._toCodePointArray = function (fallback) {
+    return function (unsafeCodePointAt0) {
+      if (hasArrayFrom) {
+        return function (str) {
+          return Array.from(str, unsafeCodePointAt0);
+        };
+      }
+      return fallback;
+    };
+  };
+})(PS["Data.String.CodePoints"] = PS["Data.String.CodePoints"] || {});
+(function(exports) {
+    "use strict";                                                                                    
+
+  exports.fromFoldableImpl = (function () {
+    function Cons(head, tail) {
+      this.head = head;
+      this.tail = tail;
+    }
+    var emptyList = {};
+
+    function curryCons(head) {
+      return function (tail) {
+        return new Cons(head, tail);
+      };
+    }
+
+    function listToArray(list) {
+      var result = [];
+      var count = 0;
+      var xs = list;
+      while (xs !== emptyList) {
+        result[count++] = xs.head;
+        xs = xs.tail;
+      }
+      return result;
+    }
+
+    return function (foldr) {
+      return function (xs) {
+        return listToArray(foldr(curryCons)(emptyList)(xs));
+      };
+    };
+  })();
+
+  //------------------------------------------------------------------------------
+  // Array size ------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+
+  exports.length = function (xs) {
+    return xs.length;
+  };
+
+  //------------------------------------------------------------------------------
+  // Extending arrays ------------------------------------------------------------
+  //------------------------------------------------------------------------------
+
+  exports.cons = function (e) {
+    return function (l) {
+      return [e].concat(l);
+    };
+  };
+
+  //------------------------------------------------------------------------------
+  // Indexed operations ----------------------------------------------------------
+  //------------------------------------------------------------------------------
+
+  exports.indexImpl = function (just) {
+    return function (nothing) {
+      return function (xs) {
+        return function (i) {
+          return i < 0 || i >= xs.length ? nothing :  just(xs[i]);
+        };
+      };
+    };
+  };
+
+  exports.concat = function (xss) {
+    if (xss.length <= 10000) {
+      // This method is faster, but it crashes on big arrays.
+      // So we use it when can and fallback to simple variant otherwise.
+      return Array.prototype.concat.apply([], xss);
+    }
+
+    var result = [];
+    for (var i = 0, l = xss.length; i < l; i++) {
+      var xs = xss[i];
+      for (var j = 0, m = xs.length; j < m; j++) {
+        result.push(xs[j]);
+      }
+    }
+    return result;
+  };
+
+  exports.filter = function (f) {
+    return function (xs) {
+      return xs.filter(f);
+    };
+  };
+
+  //------------------------------------------------------------------------------
+  // Subarrays -------------------------------------------------------------------
+  //------------------------------------------------------------------------------
+
+  exports.slice = function (s) {
+    return function (e) {
+      return function (l) {
+        return l.slice(s, e);
+      };
+    };
+  };
+
+  exports.take = function (n) {
+    return function (l) {
+      return n < 1 ? [] : l.slice(0, n);
+    };
+  };
+
+  exports.drop = function (n) {
+    return function (l) {
+      return n < 1 ? l : l.slice(n);
+    };
+  };
+})(PS["Data.Array"] = PS["Data.Array"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.Array"];
+  var Control_Alt = PS["Control.Alt"];
+  var Control_Alternative = PS["Control.Alternative"];
+  var Control_Applicative = PS["Control.Applicative"];
+  var Control_Apply = PS["Control.Apply"];
+  var Control_Bind = PS["Control.Bind"];
+  var Control_Category = PS["Control.Category"];
+  var Control_Lazy = PS["Control.Lazy"];
+  var Control_Monad_Rec_Class = PS["Control.Monad.Rec.Class"];
+  var Control_Monad_ST = PS["Control.Monad.ST"];
+  var Control_Monad_ST_Internal = PS["Control.Monad.ST.Internal"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Array_NonEmpty_Internal = PS["Data.Array.NonEmpty.Internal"];
+  var Data_Array_ST = PS["Data.Array.ST"];
+  var Data_Array_ST_Iterator = PS["Data.Array.ST.Iterator"];
+  var Data_Boolean = PS["Data.Boolean"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_Foldable = PS["Data.Foldable"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Ordering = PS["Data.Ordering"];
+  var Data_Ring = PS["Data.Ring"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_Semiring = PS["Data.Semiring"];
+  var Data_Traversable = PS["Data.Traversable"];
+  var Data_Tuple = PS["Data.Tuple"];
+  var Data_Unfoldable = PS["Data.Unfoldable"];
+  var Partial_Unsafe = PS["Partial.Unsafe"];
+  var Prelude = PS["Prelude"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var takeEnd = function (n) {
+      return function (xs) {
+          return $foreign.drop($foreign.length(xs) - n | 0)(xs);
+      };
+  };
+  var singleton = function (a) {
+      return [ a ];
+  };
+  var index = $foreign.indexImpl(Data_Maybe.Just.create)(Data_Maybe.Nothing.value);
+  var last = function (xs) {
+      return index(xs)($foreign.length(xs) - 1 | 0);
+  };
+  var head = function (xs) {
+      return index(xs)(0);
+  };
+  var fromFoldable = function (dictFoldable) {
+      return $foreign.fromFoldableImpl(Data_Foldable.foldr(dictFoldable));
+  };
+  var dropEnd = function (n) {
+      return function (xs) {
+          return $foreign.take($foreign.length(xs) - n | 0)(xs);
+      };
+  };
+  exports["fromFoldable"] = fromFoldable;
+  exports["singleton"] = singleton;
+  exports["head"] = head;
+  exports["last"] = last;
+  exports["index"] = index;
+  exports["takeEnd"] = takeEnd;
+  exports["dropEnd"] = dropEnd;
+  exports["length"] = $foreign.length;
+  exports["cons"] = $foreign.cons;
+  exports["filter"] = $foreign.filter;
+  exports["take"] = $foreign.take;
+})(PS["Data.Array"] = PS["Data.Array"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["Data.String.CodePoints"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
+  var Data_Array = PS["Data.Array"];
+  var Data_Boolean = PS["Data.Boolean"];
+  var Data_Bounded = PS["Data.Bounded"];
+  var Data_Enum = PS["Data.Enum"];
+  var Data_Eq = PS["Data.Eq"];
+  var Data_EuclideanRing = PS["Data.EuclideanRing"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
+  var Data_Int = PS["Data.Int"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Ring = PS["Data.Ring"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_Semiring = PS["Data.Semiring"];
+  var Data_Show = PS["Data.Show"];
+  var Data_String_CodeUnits = PS["Data.String.CodeUnits"];
+  var Data_String_Common = PS["Data.String.Common"];
+  var Data_String_Pattern = PS["Data.String.Pattern"];
+  var Data_String_Unsafe = PS["Data.String.Unsafe"];
+  var Data_Tuple = PS["Data.Tuple"];
+  var Data_Unfoldable = PS["Data.Unfoldable"];
+  var Prelude = PS["Prelude"];
+  var unsurrogate = function (lead) {
+      return function (trail) {
+          return (((lead - 55296 | 0) * 1024 | 0) + (trail - 56320 | 0) | 0) + 65536 | 0;
+      };
+  }; 
+  var isTrail = function (cu) {
+      return 56320 <= cu && cu <= 57343;
+  };
+  var isLead = function (cu) {
+      return 55296 <= cu && cu <= 56319;
+  };
+  var uncons = function (s) {
+      var v = Data_String_CodeUnits.length(s);
+      if (v === 0) {
+          return Data_Maybe.Nothing.value;
+      };
+      if (v === 1) {
+          return new Data_Maybe.Just({
+              head: Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(0)(s)),
+              tail: ""
+          });
+      };
+      var cu1 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(1)(s));
+      var cu0 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(0)(s));
+      var $21 = isLead(cu0) && isTrail(cu1);
+      if ($21) {
+          return new Data_Maybe.Just({
+              head: unsurrogate(cu0)(cu1),
+              tail: Data_String_CodeUnits.drop(2)(s)
+          });
+      };
+      return new Data_Maybe.Just({
+          head: cu0,
+          tail: Data_String_CodeUnits.drop(1)(s)
+      });
+  };
+  var unconsButWithTuple = function (s) {
+      return Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
+          return new Data_Tuple.Tuple(v.head, v.tail);
+      })(uncons(s));
+  };
+  var toCodePointArrayFallback = function (s) {
+      return Data_Unfoldable.unfoldr(Data_Unfoldable.unfoldableArray)(unconsButWithTuple)(s);
+  };
+  var unsafeCodePointAt0Fallback = function (s) {
+      var cu0 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(0)(s));
+      var $25 = isLead(cu0) && Data_String_CodeUnits.length(s) > 1;
+      if ($25) {
+          var cu1 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(1)(s));
+          var $26 = isTrail(cu1);
+          if ($26) {
+              return unsurrogate(cu0)(cu1);
+          };
+          return cu0;
+      };
+      return cu0;
+  };
+  var unsafeCodePointAt0 = $foreign["_unsafeCodePointAt0"](unsafeCodePointAt0Fallback);
+  var toCodePointArray = $foreign["_toCodePointArray"](toCodePointArrayFallback)(unsafeCodePointAt0);
+  var length = function ($52) {
+      return Data_Array.length(toCodePointArray($52));
+  };
+  var fromCharCode = function ($53) {
+      return Data_String_CodeUnits.singleton(Data_Enum.toEnumWithDefaults(Data_Enum.boundedEnumChar)(Data_Bounded.bottom(Data_Bounded.boundedChar))(Data_Bounded.top(Data_Bounded.boundedChar))($53));
+  };
+  var singletonFallback = function (v) {
+      if (v <= 65535) {
+          return fromCharCode(v);
+      };
+      var lead = Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(v - 65536 | 0)(1024) + 55296 | 0;
+      var trail = Data_EuclideanRing.mod(Data_EuclideanRing.euclideanRingInt)(v - 65536 | 0)(1024) + 56320 | 0;
+      return fromCharCode(lead) + fromCharCode(trail);
+  };                                                                          
+  var singleton = $foreign["_singleton"](singletonFallback);
+  var takeFallback = function (n) {
+      return function (v) {
+          if (n < 1) {
+              return "";
+          };
+          var v1 = uncons(v);
+          if (v1 instanceof Data_Maybe.Just) {
+              return singleton(v1.value0.head) + takeFallback(n - 1 | 0)(v1.value0.tail);
+          };
+          return v;
+      };
+  };
+  var take = $foreign["_take"](takeFallback);
+  var drop = function (n) {
+      return function (s) {
+          return Data_String_CodeUnits.drop(Data_String_CodeUnits.length(take(n)(s)))(s);
+      };
+  };
+  exports["singleton"] = singleton;
+  exports["toCodePointArray"] = toCodePointArray;
+  exports["uncons"] = uncons;
+  exports["length"] = length;
+  exports["take"] = take;
+  exports["drop"] = drop;
+})(PS["Data.String.CodePoints"] = PS["Data.String.CodePoints"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["FormatOps"];
+  var Data_EuclideanRing = PS["Data.EuclideanRing"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Int = PS["Data.Int"];
+  var Data_JSDate = PS["Data.JSDate"];
+  var Data_Ord = PS["Data.Ord"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var Data_Semiring = PS["Data.Semiring"];
+  var Data_Show = PS["Data.Show"];
+  var Data_String_CodePoints = PS["Data.String.CodePoints"];
+  var Global = PS["Global"];
+  var Prelude = PS["Prelude"];                 
+  var duration = function (sec) {
+      var sec$prime = Data_Int.floor(Global.readInt(10)(sec));
+      var $0 = sec$prime >= 3600;
+      if ($0) {
+          return {
+              value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(3600)),
+              unit: "hour"
+          };
+      };
+      var $1 = sec$prime >= 60;
+      if ($1) {
+          return {
+              value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(60)),
+              unit: "min"
+          };
+      };
+      return {
+          value: Data_Show.show(Data_Show.showInt)(sec$prime),
+          unit: "sec"
+      };
+  };
+  var datePart = function (num) {
+      var str = Data_Show.show(Data_Show.showInt)(num);
+      var $2 = Data_String_CodePoints.length(str) < 2;
+      if ($2) {
+          return "0" + str;
+      };
+      return str;
+  };
+  var localDateTime = function (x) {
+      var ms = Global.readInt(10)(x);
+      var d = Data_JSDate.fromTime(ms);
+      var day = datePart(Data_Int.floor(Data_JSDate.getUTCDate(d)));
+      var hours = datePart(Data_Int.floor(Data_JSDate.getUTCHours(d)));
+      var minutes = datePart(Data_Int.floor(Data_JSDate.getUTCMinutes(d)));
+      var month = datePart(Data_Int.floor(Data_JSDate.getUTCMonth(d) + 1.0));
+      var seconds = datePart(Data_Int.floor(Data_JSDate.getUTCSeconds(d)));
+      var year = datePart(Data_Int.floor(Data_JSDate.getUTCFullYear(d)));
+      return day + ("." + (month + ("." + (year + (" " + (hours + (":" + (minutes + (":" + seconds)))))))));
+  };
+  exports["localDateTime"] = localDateTime;
+  exports["duration"] = duration;
+  exports["formatNum"] = $foreign.formatNum;
+})(PS["FormatOps"] = PS["FormatOps"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var React = PS["React"];
+  var React_DOM_Props = PS["React.DOM.Props"];
+  var Unsafe_Coerce = PS["Unsafe.Coerce"];
+  var text = Unsafe_Coerce.unsafeCoerce;  
+  var mkDOM = function (dynamic) {
+      return function (tag) {
+          return function (props) {
+              var createElement = (function () {
+                  if (!dynamic) {
+                      return React.createElementTagName;
+                  };
+                  if (dynamic) {
+                      return React.createElementTagNameDynamic;
+                  };
+                  throw new Error("Failed pattern match at React.DOM (line 15, column 5 - line 17, column 55): " + [ dynamic.constructor.name ]);
+              })();
+              return createElement(tag)(React_DOM_Props.unsafeFromPropsArray(props));
+          };
+      };
+  };
+  var nav = mkDOM(false)("nav");  
+  var p = mkDOM(false)("p");
+  var p$prime = p([  ]);          
+  var span = mkDOM(false)("span");
+  var span$prime = span([  ]);
+  var table = mkDOM(false)("table");
+  var tbody = mkDOM(false)("tbody");
+  var tbody$prime = tbody([  ]);
+  var td = mkDOM(false)("td");
+  var td$prime = td([  ]);      
+  var th = mkDOM(false)("th");
+  var th$prime = th([  ]);
+  var thead = mkDOM(false)("thead");
+  var tr = mkDOM(false)("tr");
+  var tr$prime = tr([  ]);
+  var ul = mkDOM(false)("ul");
+  var li = mkDOM(false)("li");    
+  var label = mkDOM(false)("label");
+  var i = mkDOM(false)("i");
+  var h5 = mkDOM(false)("h5");
+  var h4 = mkDOM(false)("h4");
+  var h2 = mkDOM(false)("h2");
+  var div = mkDOM(false)("div");
+  var div$prime = div([  ]);        
+  var canvas = mkDOM(false)("canvas");
+  var button = mkDOM(false)("button");
+  var a = mkDOM(false)("a");
+  exports["mkDOM"] = mkDOM;
+  exports["text"] = text;
+  exports["a"] = a;
+  exports["button"] = button;
+  exports["canvas"] = canvas;
+  exports["div"] = div;
+  exports["div'"] = div$prime;
+  exports["h2"] = h2;
+  exports["h4"] = h4;
+  exports["h5"] = h5;
+  exports["i"] = i;
+  exports["label"] = label;
+  exports["li"] = li;
+  exports["nav"] = nav;
+  exports["p"] = p;
+  exports["p'"] = p$prime;
+  exports["span"] = span;
+  exports["span'"] = span$prime;
+  exports["table"] = table;
+  exports["tbody"] = tbody;
+  exports["tbody'"] = tbody$prime;
+  exports["td"] = td;
+  exports["td'"] = td$prime;
+  exports["th"] = th;
+  exports["th'"] = th$prime;
+  exports["thead"] = thead;
+  exports["tr"] = tr;
+  exports["tr'"] = tr$prime;
+  exports["ul"] = ul;
+})(PS["React.DOM"] = PS["React.DOM"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var Control_Applicative = PS["Control.Applicative"];
+  var Control_Bind = PS["Control.Bind"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Functor = PS["Data.Functor"];
+  var Data_Semigroup = PS["Data.Semigroup"];
+  var DomOps = PS["DomOps"];
+  var Effect = PS["Effect"];
+  var FormatOps = PS["FormatOps"];
+  var Prelude = PS["Prelude"];
+  var React = PS["React"];
+  var React_DOM = PS["React.DOM"];
+  var React_DOM_Props = PS["React.DOM.Props"];
+  var Schema = PS["Schema"];                 
+  var errorReactClass = (function () {
+      var render = function ($$this) {
+          var shortStack = React.modifyState($$this)(function (v) {
+              return {
+                  expandStack: false
+              };
+          });
+          var fullStack = React.modifyState($$this)(function (v) {
+              return {
+                  expandStack: true
+              };
+          });
+          return function __do() {
+              var v = React.getState($$this)();
+              var v1 = React.getProps($$this)();
+              return React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
+                  if (v1.showAddr) {
+                      return [ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.err.addr) ]) ];
+                  };
+                  return [  ];
+              })())([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(FormatOps.localDateTime(v1.err.time)) ]), React_DOM.td([ DomOps.cn("align-top") ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+                  return React_DOM["div'"]([ React_DOM.text(y) ]);
+              })(v1.err.exception)), (function () {
+                  if (!v.expandStack) {
+                      return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
+                          return fullStack;
+                      }), React_DOM_Props.style({
+                          cursor: "zoom-in",
+                          fontFamily: "Fira Code",
+                          wordBreak: "break-all"
+                      }) ])([ React_DOM.text(v1.err.toptrace) ]);
+                  };
+                  if (v.expandStack) {
+                      return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
+                          return shortStack;
+                      }), React_DOM_Props.style({
+                          cursor: "zoom-out"
+                      }) ])([ React_DOM.div([ React_DOM_Props.style({
+                          fontFamily: "Fira Code",
+                          wordBreak: "break-all"
+                      }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+                          return React_DOM["div'"]([ React_DOM.text(y) ]);
+                      })(v1.err.stacktrace)) ]);
+                  };
+                  throw new Error("Failed pattern match at Errors (line 83, column 11 - line 91, column 16): " + [ v.expandStack.constructor.name ]);
+              })() ]));
+          };
+      };
+      return React.component(React.reactComponentSpec()())("Error")(function ($$this) {
+          return Control_Applicative.pure(Effect.applicativeEffect)({
+              state: {
+                  expandStack: false
+              },
+              render: render($$this)
+          });
+      });
+  })();
+  var reactClass = (function () {
+      var render = function ($$this) {
+          return function __do() {
+              var v = React.getProps($$this)();
+              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("Errors") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
+                  if (v.showAddr) {
+                      return [ React_DOM["th'"]([ React_DOM.text("Address") ]) ];
+                  };
+                  return [  ];
+              })())([ React_DOM["th'"]([ React_DOM.text("Time") ]), React_DOM["th'"]([ React_DOM.text("Exception") ]), React_DOM["th'"]([ React_DOM.text("Stacktrace") ]) ])) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(function (x) {
+                  return React.createLeafElement(React.reactPropFields()())(errorReactClass)({
+                      err: x,
+                      showAddr: v.showAddr
+                  });
+              })(v.errors)) ]) ]) ]) ]) ]) ]);
+          };
+      };
+      return React.component(React.reactComponentSpec()())("Errors")(function ($$this) {
+          return Control_Applicative.pure(Effect.applicativeEffect)({
+              state: {},
+              render: render($$this)
+          });
+      });
+  })();
+  exports["reactClass"] = reactClass;
+})(PS["Errors"] = PS["Errors"] || {});
+(function(exports) {
+  // Generated by purs version 0.12.2
+  "use strict";
+  var $foreign = PS["BigChart"];
+  var Control_Applicative = PS["Control.Applicative"];
+  var Control_Bind = PS["Control.Bind"];
+  var Data_Function = PS["Data.Function"];
+  var Data_Maybe = PS["Data.Maybe"];
+  var DomOps = PS["DomOps"];
+  var Effect = PS["Effect"];
+  var Errors = PS["Errors"];
+  var FormatOps = PS["FormatOps"];
+  var Prelude = PS["Prelude"];
+  var React = PS["React"];
+  var React_DOM = PS["React.DOM"];
+  var React_DOM_Props = PS["React.DOM.Props"];
+  var Schema = PS["Schema"];                 
+  var reactClass = (function () {
+      var render = function (v) {
+          return Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]));
+      };
+      return React.component(React.reactComponentSpec()())("BigChart")(function ($$this) {
+          return function __do() {
+              var v = React.getProps($$this)();
+              return {
+                  state: {},
+                  render: render($$this),
+                  componentDidMount: $foreign.createChart(v.cpuPoints)(v.memPoints)(v.actionPoints),
+                  componentDidUpdate: function (p$prime) {
+                      return function (v1) {
+                          return function (v2) {
+                              return $foreign.updateChart(p$prime.cpuPoints)(p$prime.memPoints)(p$prime.actionPoints);
+                          };
+                      };
+                  },
+                  componentWillUnmount: $foreign.destroyChart
+              };
+          };
+      });
+  })();
+  exports["reactClass"] = reactClass;
+})(PS["BigChart"] = PS["BigChart"] || {});
+(function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
   var Control_Applicative = PS["Control.Applicative"];
@@ -2915,880 +4292,6 @@ var PS = {};
   exports["foldableMap"] = foldableMap;
 })(PS["Data.Map.Internal"] = PS["Data.Map.Internal"] || {});
 (function(exports) {
-    "use strict";        
-
-  exports.nullable = function (a, r, f) {
-    return a == null ? r : f(a);
-  };
-})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.Nullable"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Show = PS["Data.Show"];
-  var Prelude = PS["Prelude"];                                          
-  var toMaybe = function (n) {
-      return $foreign.nullable(n, Data_Maybe.Nothing.value, Data_Maybe.Just.create);
-  };
-  exports["toMaybe"] = toMaybe;
-})(PS["Data.Nullable"] = PS["Data.Nullable"] || {});
-(function(exports) {
-    "use strict";
-  /* global Symbol */
-
-  var hasArrayFrom = typeof Array.from === "function";
-  var hasStringIterator =
-    typeof Symbol !== "undefined" &&
-    Symbol != null &&
-    typeof Symbol.iterator !== "undefined" &&
-    typeof String.prototype[Symbol.iterator] === "function";
-  var hasFromCodePoint = typeof String.prototype.fromCodePoint === "function";
-  var hasCodePointAt = typeof String.prototype.codePointAt === "function";
-
-  exports._unsafeCodePointAt0 = function (fallback) {
-    return hasCodePointAt
-      ? function (str) { return str.codePointAt(0); }
-      : fallback;
-  };
-
-  exports._singleton = function (fallback) {
-    return hasFromCodePoint ? String.fromCodePoint : fallback;
-  };
-
-  exports._take = function (fallback) {
-    return function (n) {
-      if (hasStringIterator) {
-        return function (str) {
-          var accum = "";
-          var iter = str[Symbol.iterator]();
-          for (var i = 0; i < n; ++i) {
-            var o = iter.next();
-            if (o.done) return accum;
-            accum += o.value;
-          }
-          return accum;
-        };
-      }
-      return fallback(n);
-    };
-  };
-
-  exports._toCodePointArray = function (fallback) {
-    return function (unsafeCodePointAt0) {
-      if (hasArrayFrom) {
-        return function (str) {
-          return Array.from(str, unsafeCodePointAt0);
-        };
-      }
-      return fallback;
-    };
-  };
-})(PS["Data.String.CodePoints"] = PS["Data.String.CodePoints"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.split = function (sep) {
-    return function (s) {
-      return s.split(sep);
-    };
-  };
-})(PS["Data.String.Common"] = PS["Data.String.Common"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.String.Common"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Ordering = PS["Data.Ordering"];
-  var Data_String_Pattern = PS["Data.String.Pattern"];
-  var Prelude = PS["Prelude"];                 
-  var $$null = function (s) {
-      return s === "";
-  };
-  exports["null"] = $$null;
-  exports["split"] = $foreign.split;
-})(PS["Data.String.Common"] = PS["Data.String.Common"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Data.String.CodePoints"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Array = PS["Data.Array"];
-  var Data_Boolean = PS["Data.Boolean"];
-  var Data_Bounded = PS["Data.Bounded"];
-  var Data_Enum = PS["Data.Enum"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_EuclideanRing = PS["Data.EuclideanRing"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_HeytingAlgebra = PS["Data.HeytingAlgebra"];
-  var Data_Int = PS["Data.Int"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Ring = PS["Data.Ring"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var Data_Semiring = PS["Data.Semiring"];
-  var Data_Show = PS["Data.Show"];
-  var Data_String_CodeUnits = PS["Data.String.CodeUnits"];
-  var Data_String_Common = PS["Data.String.Common"];
-  var Data_String_Pattern = PS["Data.String.Pattern"];
-  var Data_String_Unsafe = PS["Data.String.Unsafe"];
-  var Data_Tuple = PS["Data.Tuple"];
-  var Data_Unfoldable = PS["Data.Unfoldable"];
-  var Prelude = PS["Prelude"];
-  var unsurrogate = function (lead) {
-      return function (trail) {
-          return (((lead - 55296 | 0) * 1024 | 0) + (trail - 56320 | 0) | 0) + 65536 | 0;
-      };
-  }; 
-  var isTrail = function (cu) {
-      return 56320 <= cu && cu <= 57343;
-  };
-  var isLead = function (cu) {
-      return 55296 <= cu && cu <= 56319;
-  };
-  var uncons = function (s) {
-      var v = Data_String_CodeUnits.length(s);
-      if (v === 0) {
-          return Data_Maybe.Nothing.value;
-      };
-      if (v === 1) {
-          return new Data_Maybe.Just({
-              head: Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(0)(s)),
-              tail: ""
-          });
-      };
-      var cu1 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(1)(s));
-      var cu0 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(0)(s));
-      var $21 = isLead(cu0) && isTrail(cu1);
-      if ($21) {
-          return new Data_Maybe.Just({
-              head: unsurrogate(cu0)(cu1),
-              tail: Data_String_CodeUnits.drop(2)(s)
-          });
-      };
-      return new Data_Maybe.Just({
-          head: cu0,
-          tail: Data_String_CodeUnits.drop(1)(s)
-      });
-  };
-  var unconsButWithTuple = function (s) {
-      return Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
-          return new Data_Tuple.Tuple(v.head, v.tail);
-      })(uncons(s));
-  };
-  var toCodePointArrayFallback = function (s) {
-      return Data_Unfoldable.unfoldr(Data_Unfoldable.unfoldableArray)(unconsButWithTuple)(s);
-  };
-  var unsafeCodePointAt0Fallback = function (s) {
-      var cu0 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(0)(s));
-      var $25 = isLead(cu0) && Data_String_CodeUnits.length(s) > 1;
-      if ($25) {
-          var cu1 = Data_Enum.fromEnum(Data_Enum.boundedEnumChar)(Data_String_Unsafe.charAt(1)(s));
-          var $26 = isTrail(cu1);
-          if ($26) {
-              return unsurrogate(cu0)(cu1);
-          };
-          return cu0;
-      };
-      return cu0;
-  };
-  var unsafeCodePointAt0 = $foreign["_unsafeCodePointAt0"](unsafeCodePointAt0Fallback);
-  var toCodePointArray = $foreign["_toCodePointArray"](toCodePointArrayFallback)(unsafeCodePointAt0);
-  var length = function ($52) {
-      return Data_Array.length(toCodePointArray($52));
-  };
-  var fromCharCode = function ($53) {
-      return Data_String_CodeUnits.singleton(Data_Enum.toEnumWithDefaults(Data_Enum.boundedEnumChar)(Data_Bounded.bottom(Data_Bounded.boundedChar))(Data_Bounded.top(Data_Bounded.boundedChar))($53));
-  };
-  var singletonFallback = function (v) {
-      if (v <= 65535) {
-          return fromCharCode(v);
-      };
-      var lead = Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(v - 65536 | 0)(1024) + 55296 | 0;
-      var trail = Data_EuclideanRing.mod(Data_EuclideanRing.euclideanRingInt)(v - 65536 | 0)(1024) + 56320 | 0;
-      return fromCharCode(lead) + fromCharCode(trail);
-  };                                                                          
-  var singleton = $foreign["_singleton"](singletonFallback);
-  var takeFallback = function (n) {
-      return function (v) {
-          if (n < 1) {
-              return "";
-          };
-          var v1 = uncons(v);
-          if (v1 instanceof Data_Maybe.Just) {
-              return singleton(v1.value0.head) + takeFallback(n - 1 | 0)(v1.value0.tail);
-          };
-          return v;
-      };
-  };
-  var take = $foreign["_take"](takeFallback);
-  var drop = function (n) {
-      return function (s) {
-          return Data_String_CodeUnits.drop(Data_String_CodeUnits.length(take(n)(s)))(s);
-      };
-  };
-  exports["singleton"] = singleton;
-  exports["toCodePointArray"] = toCodePointArray;
-  exports["uncons"] = uncons;
-  exports["length"] = length;
-  exports["take"] = take;
-  exports["drop"] = drop;
-})(PS["Data.String.CodePoints"] = PS["Data.String.CodePoints"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.error = function (msg) {
-    return new Error(msg);
-  };
-
-  exports.throwException = function (e) {
-    return function () {
-      throw e;
-    };
-  };
-})(PS["Effect.Exception"] = PS["Effect.Exception"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Effect.Exception"];
-  var Control_Applicative = PS["Control.Applicative"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Either = PS["Data.Either"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Show = PS["Data.Show"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var $$throw = function ($1) {
-      return $foreign.throwException($foreign.error($1));
-  };
-  exports["throw"] = $$throw;
-})(PS["Effect.Exception"] = PS["Effect.Exception"] || {});
-(function(exports) {
-  /* global exports */
-  "use strict";
-  var React =require("react"); 
-
-  function unsafeMkProps(key) {
-    return function(value){
-      var result = {};
-      result[key] = value;
-      return result;
-    };
-  }
-  exports.unsafeMkProps = unsafeMkProps;
-
-  function unsafeUnfoldProps(key) {
-    return function(value){
-      var result = {};
-      var props = {};
-      props[key] = result;
-
-      for (var subprop in value) {
-        if (value.hasOwnProperty(subprop)) {
-          result[subprop] = value[subprop];
-        }
-      }
-
-      return props;
-    };
-  }
-  exports.unsafeUnfoldProps = unsafeUnfoldProps;
-
-  function unsafePrefixProps(prefix) {
-    return function(value){
-      var result = {};
-
-      for (var prop in value) {
-        if (value.hasOwnProperty(prop)) {
-          result[prefix + prop] = value[prop];
-        }
-      }
-
-      return result;
-    };
-  }                                             
-
-  function unsafeFromPropsArray(props) {
-    var result = {};
-
-    for (var i = 0, len = props.length; i < len; i++) {
-      var prop = props[i];
-
-      for (var key in prop) {
-        if (prop.hasOwnProperty(key)) {
-          result[key] = prop[key];
-        }
-      }
-    }
-
-    return result;
-  };
-  exports.unsafeFromPropsArray = unsafeFromPropsArray;
-})(PS["React.DOM.Props"] = PS["React.DOM.Props"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.mkEffectFn1 = function mkEffectFn1(fn) {
-    return function(x) {
-      return fn(x)();
-    };
-  };
-
-  exports.runEffectFn4 = function runEffectFn4(fn) {
-    return function(a) {
-      return function(b) {
-        return function(c) {
-          return function(d) {
-            return function() {
-              return fn(a, b, c, d);
-            };
-          };
-        };
-      };
-    };
-  };
-})(PS["Effect.Uncurried"] = PS["Effect.Uncurried"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Effect.Uncurried"];
-  var Effect = PS["Effect"];
-  exports["mkEffectFn1"] = $foreign.mkEffectFn1;
-  exports["runEffectFn4"] = $foreign.runEffectFn4;
-})(PS["Effect.Uncurried"] = PS["Effect.Uncurried"] || {});
-(function(exports) {
-  /* global exports */
-  "use strict";
-  var React =require("react"); 
-
-  function createClass(baseClass) {
-    function bindProperty(instance, prop, value) {
-      switch (prop) {
-        case 'state':
-        case 'render':
-        case 'componentDidMount':
-        case 'componentWillUnmount':
-          instance[prop] = value;
-          break;
-
-        case 'componentDidCatch':
-        case 'componentWillUpdate':
-        case 'shouldComponentUpdate':
-        case 'getSnapshotBeforeUpdate':
-          instance[prop] = function (a, b) { return value(a)(b)(); };
-          break;
-
-        case 'componentDidUpdate':
-          instance[prop] = function (a, b, c) { return value(a)(b)(c)(); };
-          break;
-
-        case 'unsafeComponentWillMount':
-          instance['UNSAFE_componentWillMount'] = value;
-          break;
-
-        case 'unsafeComponentWillReceiveProps':
-          instance['UNSAFE_componentWillReceiveProps'] = function (a) { return value(a)(); };
-          break;
-
-        case 'unsafeComponentWillUpdate':
-          instance['UNSAFE_componentWillUpdate'] = function (a, b) { return value(a)(b)(); };
-          break;
-
-        default:
-          throw new Error('[purescript-react] Not a component property: ' + prop);
-      }
-    }
-
-    return function (displayName) {
-      return function (ctrFn) {
-        var Constructor = function (props) {
-          baseClass.call(this, props);
-          var spec = ctrFn(this)();
-          for (var k in spec) {
-            bindProperty(this, k, spec[k]);
-          }
-        };
-
-        Constructor.displayName = displayName;
-        Constructor.prototype = Object.create(baseClass.prototype);
-        Constructor.prototype.constructor = Constructor;
-
-        return Constructor;
-      };
-    };
-  }
-
-  function createClassWithDerivedState(classCtr) {
-    return function(displayName) {
-      return function(getDerivedStateFromProps) {
-        return function(ctrFn) {
-          var Constructor = componentImpl(displayName)(ctrFn);
-          Constructor.getDerivedStateFromProps = function(a, b) { return getDerivedStateFromProps(a)(b) };
-          return Constructor;
-        };
-      };
-    };
-  }
-
-  var componentImpl = createClass(React.Component);
-  exports.componentImpl = componentImpl;
-
-  function getProps(this_) {
-    return function(){
-      return this_.props;
-    };
-  }
-  exports.getProps = getProps;                 
-
-  function setStateImpl(this_) {
-    return function(state){
-      return function(){
-        this_.setState(state);
-      };
-    };
-  }
-  exports.setStateImpl = setStateImpl;
-
-  function setStateWithCallbackImpl(this_) {
-    return function(state){
-      return function(cb){
-        return function() {
-          this_.setState(state, cb);
-        };
-      };
-    };
-  }                                                           
-
-  function getState(this_) {
-    return function(){
-      if (!this_.state) {
-        throw new Error('[purescript-react] Cannot get state within constructor');
-      }
-      return this_.state;
-    };
-  }
-  exports.getState = getState;
-
-  function forceUpdateWithCallback(this_) {
-    return function(cb) {
-      return function() {
-        this_.forceUpdate(cb);
-      };
-    };
-  }                                                         
-
-  function createElement(class_) {
-    return function(props){
-      return function(children){
-        return React.createElement.apply(React, [class_, props].concat(children));
-      };
-    };
-  }                                         
-  exports.createElementTagName = createElement;
-
-  function createLeafElement(class_) {
-    return function(props) {
-      return React.createElement(class_, props);
-    };
-  }
-  exports.createLeafElementImpl = createLeafElement;
-
-  function createElementDynamic(class_) {
-    return function(props) {
-      return function(children){
-        return React.createElement(class_, props, children);
-      };
-    };
-  };                                                      
-  exports.createElementTagNameDynamic = createElementDynamic;
-
-  function createContext(defaultValue) {
-    var context = React.createContext(defaultValue);
-    return {
-      consumer: context.Consumer,
-      provider: context.Provider
-    };
-  }
-})(PS["React"] = PS["React"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["React"];
-  var Control_Applicative = PS["Control.Applicative"];
-  var Control_Category = PS["Control.Category"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Monoid = PS["Data.Monoid"];
-  var Data_Nullable = PS["Data.Nullable"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var Data_Unit = PS["Data.Unit"];
-  var Effect = PS["Effect"];
-  var Effect_Exception = PS["Effect.Exception"];
-  var Effect_Uncurried = PS["Effect.Uncurried"];
-  var Prelude = PS["Prelude"];
-  var Type_Row = PS["Type.Row"];
-  var Unsafe_Coerce = PS["Unsafe.Coerce"];                 
-  var ReactComponentSpec = {};    
-  var ReactPropFields = {};
-  var reactPropFields = function (dictUnion) {
-      return function (dictUnion1) {
-          return ReactPropFields;
-      };
-  };
-  var reactComponentSpec = function (dictUnion) {
-      return function (dictNub) {
-          return ReactComponentSpec;
-      };
-  };                                                              
-  var modifyState = $foreign.setStateImpl;
-  var createLeafElement = function (dictReactPropFields) {
-      return $foreign.createLeafElementImpl;
-  };
-  var component = function (dictReactComponentSpec) {
-      return $foreign.componentImpl;
-  };
-  exports["ReactComponentSpec"] = ReactComponentSpec;
-  exports["component"] = component;
-  exports["modifyState"] = modifyState;
-  exports["ReactPropFields"] = ReactPropFields;
-  exports["createLeafElement"] = createLeafElement;
-  exports["reactComponentSpec"] = reactComponentSpec;
-  exports["reactPropFields"] = reactPropFields;
-  exports["getProps"] = $foreign.getProps;
-  exports["getState"] = $foreign.getState;
-  exports["createElementTagName"] = $foreign.createElementTagName;
-  exports["createElementTagNameDynamic"] = $foreign.createElementTagNameDynamic;
-})(PS["React"] = PS["React"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["React.DOM.Props"];
-  var Data_Nullable = PS["Data.Nullable"];
-  var Effect = PS["Effect"];
-  var Effect_Uncurried = PS["Effect.Uncurried"];
-  var Prelude = PS["Prelude"];
-  var React = PS["React"];
-  var React_SyntheticEvent = PS["React.SyntheticEvent"];
-  var target = $foreign.unsafeMkProps("target");  
-  var style = $foreign.unsafeUnfoldProps("style");
-  var onClick = function (f) {
-      return $foreign.unsafeMkProps("onClick")(Effect_Uncurried.mkEffectFn1(f));
-  };                                                
-  var href = $foreign.unsafeMkProps("href");      
-  var className = $foreign.unsafeMkProps("className");
-  var _id = $foreign.unsafeMkProps("id");
-  exports["style"] = style;
-  exports["className"] = className;
-  exports["href"] = href;
-  exports["_id"] = _id;
-  exports["target"] = target;
-  exports["onClick"] = onClick;
-  exports["unsafeFromPropsArray"] = $foreign.unsafeFromPropsArray;
-})(PS["React.DOM.Props"] = PS["React.DOM.Props"] || {});
-(function(exports) {
-    "use strict";
-
-  exports._getElementById = function (id) {
-    return function (node) {
-      return function () {
-        return node.getElementById(id);
-      };
-    };
-  };
-})(PS["Web.DOM.NonElementParentNode"] = PS["Web.DOM.NonElementParentNode"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Web.DOM.NonElementParentNode"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Nullable = PS["Data.Nullable"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var Web_DOM_Element = PS["Web.DOM.Element"];                 
-  var getElementById = function (eid) {
-      return function ($0) {
-          return Data_Functor.map(Effect.functorEffect)(Data_Nullable.toMaybe)($foreign["_getElementById"](eid)($0));
-      };
-  };
-  exports["getElementById"] = getElementById;
-})(PS["Web.DOM.NonElementParentNode"] = PS["Web.DOM.NonElementParentNode"] || {});
-(function(exports) {
-  /* global window */
-  "use strict";
-
-  exports.window = function () {
-    return window;
-  };
-})(PS["Web.HTML"] = PS["Web.HTML"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.eventListener = function (fn) {
-    return function () {
-      return function (event) {
-        return fn(event)();
-      };
-    };
-  };
-
-  exports.addEventListener = function (type) {
-    return function (listener) {
-      return function (useCapture) {
-        return function (target) {
-          return function () {
-            return target.addEventListener(type, listener, useCapture);
-          };
-        };
-      };
-    };
-  };
-})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Web.Event.EventTarget"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var Web_Event_Event = PS["Web.Event.Event"];
-  var Web_Event_Internal_Types = PS["Web.Event.Internal.Types"];
-  exports["eventListener"] = $foreign.eventListener;
-  exports["addEventListener"] = $foreign.addEventListener;
-})(PS["Web.Event.EventTarget"] = PS["Web.Event.EventTarget"] || {});
-(function(exports) {
-    "use strict";
-
-  exports._unsafeReadProtoTagged = function (nothing, just, name, value) {
-    var ty = window[name];
-    if (ty != null && value instanceof ty) {
-      return just(value);
-    }
-    return nothing;
-  };
-})(PS["Web.Internal.FFI"] = PS["Web.Internal.FFI"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Web.Internal.FFI"];
-  var Data_Function_Uncurried = PS["Data.Function.Uncurried"];
-  var Data_Maybe = PS["Data.Maybe"];                 
-  var unsafeReadProtoTagged = function (name) {
-      return function (value) {
-          return $foreign["_unsafeReadProtoTagged"](Data_Maybe.Nothing.value, Data_Maybe.Just.create, name, value);
-      };
-  };
-  exports["unsafeReadProtoTagged"] = unsafeReadProtoTagged;
-})(PS["Web.Internal.FFI"] = PS["Web.Internal.FFI"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Web.HTML.HTMLDocument"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Nullable = PS["Data.Nullable"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var Unsafe_Coerce = PS["Unsafe.Coerce"];
-  var Web_DOM_Document = PS["Web.DOM.Document"];
-  var Web_DOM_Internal_Types = PS["Web.DOM.Internal.Types"];
-  var Web_DOM_NonElementParentNode = PS["Web.DOM.NonElementParentNode"];
-  var Web_DOM_ParentNode = PS["Web.DOM.ParentNode"];
-  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
-  var Web_HTML_HTMLDocument_ReadyState = PS["Web.HTML.HTMLDocument.ReadyState"];
-  var Web_HTML_HTMLElement = PS["Web.HTML.HTMLElement"];
-  var Web_HTML_HTMLScriptElement = PS["Web.HTML.HTMLScriptElement"];
-  var Web_Internal_FFI = PS["Web.Internal.FFI"];
-  var toNonElementParentNode = Unsafe_Coerce.unsafeCoerce;
-  exports["toNonElementParentNode"] = toNonElementParentNode;
-})(PS["Web.HTML.HTMLDocument"] = PS["Web.HTML.HTMLDocument"] || {});
-(function(exports) {
-    "use strict";
-
-  // ----------------------------------------------------------------------------
-
-  exports.host = function (location) {
-    return function () {
-      return location.host;
-    };
-  };
-})(PS["Web.HTML.Location"] = PS["Web.HTML.Location"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Web.HTML.Location"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  exports["host"] = $foreign.host;
-})(PS["Web.HTML.Location"] = PS["Web.HTML.Location"] || {});
-(function(exports) {
-    "use strict";
-
-  exports.document = function (window) {
-    return function () {
-      return window.document;
-    };
-  };
-
-  exports.location = function (window) {
-    return function () {
-      return window.location;
-    };
-  };
-})(PS["Web.HTML.Window"] = PS["Web.HTML.Window"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Web.HTML.Window"];
-  var Control_Semigroupoid = PS["Control.Semigroupoid"];
-  var Data_Eq = PS["Data.Eq"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Newtype = PS["Data.Newtype"];
-  var Data_Nullable = PS["Data.Nullable"];
-  var Data_Ord = PS["Data.Ord"];
-  var Effect = PS["Effect"];
-  var Prelude = PS["Prelude"];
-  var Unsafe_Coerce = PS["Unsafe.Coerce"];
-  var Web_Event_EventTarget = PS["Web.Event.EventTarget"];
-  var Web_HTML_HTMLDocument = PS["Web.HTML.HTMLDocument"];
-  var Web_HTML_History = PS["Web.HTML.History"];
-  var Web_HTML_Location = PS["Web.HTML.Location"];
-  var Web_HTML_Navigator = PS["Web.HTML.Navigator"];
-  var Web_Storage_Storage = PS["Web.Storage.Storage"];
-  exports["document"] = $foreign.document;
-  exports["location"] = $foreign.location;
-})(PS["Web.HTML.Window"] = PS["Web.HTML.Window"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Web.HTML"];
-  var Effect = PS["Effect"];
-  var Web_HTML_HTMLAnchorElement = PS["Web.HTML.HTMLAnchorElement"];
-  var Web_HTML_HTMLAreaElement = PS["Web.HTML.HTMLAreaElement"];
-  var Web_HTML_HTMLAudioElement = PS["Web.HTML.HTMLAudioElement"];
-  var Web_HTML_HTMLBRElement = PS["Web.HTML.HTMLBRElement"];
-  var Web_HTML_HTMLBaseElement = PS["Web.HTML.HTMLBaseElement"];
-  var Web_HTML_HTMLBodyElement = PS["Web.HTML.HTMLBodyElement"];
-  var Web_HTML_HTMLButtonElement = PS["Web.HTML.HTMLButtonElement"];
-  var Web_HTML_HTMLCanvasElement = PS["Web.HTML.HTMLCanvasElement"];
-  var Web_HTML_HTMLDListElement = PS["Web.HTML.HTMLDListElement"];
-  var Web_HTML_HTMLDataElement = PS["Web.HTML.HTMLDataElement"];
-  var Web_HTML_HTMLDataListElement = PS["Web.HTML.HTMLDataListElement"];
-  var Web_HTML_HTMLDivElement = PS["Web.HTML.HTMLDivElement"];
-  var Web_HTML_HTMLDocument = PS["Web.HTML.HTMLDocument"];
-  var Web_HTML_HTMLElement = PS["Web.HTML.HTMLElement"];
-  var Web_HTML_HTMLEmbedElement = PS["Web.HTML.HTMLEmbedElement"];
-  var Web_HTML_HTMLFieldSetElement = PS["Web.HTML.HTMLFieldSetElement"];
-  var Web_HTML_HTMLFormElement = PS["Web.HTML.HTMLFormElement"];
-  var Web_HTML_HTMLHRElement = PS["Web.HTML.HTMLHRElement"];
-  var Web_HTML_HTMLHeadElement = PS["Web.HTML.HTMLHeadElement"];
-  var Web_HTML_HTMLHeadingElement = PS["Web.HTML.HTMLHeadingElement"];
-  var Web_HTML_HTMLIFrameElement = PS["Web.HTML.HTMLIFrameElement"];
-  var Web_HTML_HTMLImageElement = PS["Web.HTML.HTMLImageElement"];
-  var Web_HTML_HTMLInputElement = PS["Web.HTML.HTMLInputElement"];
-  var Web_HTML_HTMLKeygenElement = PS["Web.HTML.HTMLKeygenElement"];
-  var Web_HTML_HTMLLIElement = PS["Web.HTML.HTMLLIElement"];
-  var Web_HTML_HTMLLabelElement = PS["Web.HTML.HTMLLabelElement"];
-  var Web_HTML_HTMLLegendElement = PS["Web.HTML.HTMLLegendElement"];
-  var Web_HTML_HTMLLinkElement = PS["Web.HTML.HTMLLinkElement"];
-  var Web_HTML_HTMLMapElement = PS["Web.HTML.HTMLMapElement"];
-  var Web_HTML_HTMLMediaElement = PS["Web.HTML.HTMLMediaElement"];
-  var Web_HTML_HTMLMetaElement = PS["Web.HTML.HTMLMetaElement"];
-  var Web_HTML_HTMLMeterElement = PS["Web.HTML.HTMLMeterElement"];
-  var Web_HTML_HTMLModElement = PS["Web.HTML.HTMLModElement"];
-  var Web_HTML_HTMLOListElement = PS["Web.HTML.HTMLOListElement"];
-  var Web_HTML_HTMLObjectElement = PS["Web.HTML.HTMLObjectElement"];
-  var Web_HTML_HTMLOptGroupElement = PS["Web.HTML.HTMLOptGroupElement"];
-  var Web_HTML_HTMLOptionElement = PS["Web.HTML.HTMLOptionElement"];
-  var Web_HTML_HTMLOutputElement = PS["Web.HTML.HTMLOutputElement"];
-  var Web_HTML_HTMLParagraphElement = PS["Web.HTML.HTMLParagraphElement"];
-  var Web_HTML_HTMLParamElement = PS["Web.HTML.HTMLParamElement"];
-  var Web_HTML_HTMLPreElement = PS["Web.HTML.HTMLPreElement"];
-  var Web_HTML_HTMLProgressElement = PS["Web.HTML.HTMLProgressElement"];
-  var Web_HTML_HTMLQuoteElement = PS["Web.HTML.HTMLQuoteElement"];
-  var Web_HTML_HTMLScriptElement = PS["Web.HTML.HTMLScriptElement"];
-  var Web_HTML_HTMLSelectElement = PS["Web.HTML.HTMLSelectElement"];
-  var Web_HTML_HTMLSourceElement = PS["Web.HTML.HTMLSourceElement"];
-  var Web_HTML_HTMLSpanElement = PS["Web.HTML.HTMLSpanElement"];
-  var Web_HTML_HTMLStyleElement = PS["Web.HTML.HTMLStyleElement"];
-  var Web_HTML_HTMLTableCaptionElement = PS["Web.HTML.HTMLTableCaptionElement"];
-  var Web_HTML_HTMLTableCellElement = PS["Web.HTML.HTMLTableCellElement"];
-  var Web_HTML_HTMLTableColElement = PS["Web.HTML.HTMLTableColElement"];
-  var Web_HTML_HTMLTableDataCellElement = PS["Web.HTML.HTMLTableDataCellElement"];
-  var Web_HTML_HTMLTableElement = PS["Web.HTML.HTMLTableElement"];
-  var Web_HTML_HTMLTableHeaderCellElement = PS["Web.HTML.HTMLTableHeaderCellElement"];
-  var Web_HTML_HTMLTableRowElement = PS["Web.HTML.HTMLTableRowElement"];
-  var Web_HTML_HTMLTableSectionElement = PS["Web.HTML.HTMLTableSectionElement"];
-  var Web_HTML_HTMLTemplateElement = PS["Web.HTML.HTMLTemplateElement"];
-  var Web_HTML_HTMLTextAreaElement = PS["Web.HTML.HTMLTextAreaElement"];
-  var Web_HTML_HTMLTimeElement = PS["Web.HTML.HTMLTimeElement"];
-  var Web_HTML_HTMLTitleElement = PS["Web.HTML.HTMLTitleElement"];
-  var Web_HTML_HTMLTrackElement = PS["Web.HTML.HTMLTrackElement"];
-  var Web_HTML_HTMLUListElement = PS["Web.HTML.HTMLUListElement"];
-  var Web_HTML_HTMLVideoElement = PS["Web.HTML.HTMLVideoElement"];
-  var Web_HTML_History = PS["Web.HTML.History"];
-  var Web_HTML_Location = PS["Web.HTML.Location"];
-  var Web_HTML_Navigator = PS["Web.HTML.Navigator"];
-  var Web_HTML_Window = PS["Web.HTML.Window"];
-  exports["window"] = $foreign.window;
-})(PS["Web.HTML"] = PS["Web.HTML"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var Control_Applicative = PS["Control.Applicative"];
-  var Control_Bind = PS["Control.Bind"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Maybe = PS["Data.Maybe"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var Data_String = PS["Data.String"];
-  var Data_String_Common = PS["Data.String.Common"];
-  var Effect = PS["Effect"];
-  var Effect_Exception = PS["Effect.Exception"];
-  var Prelude = PS["Prelude"];
-  var React_DOM_Props = PS["React.DOM.Props"];
-  var Web_DOM_Element = PS["Web.DOM.Element"];
-  var Web_DOM_NonElementParentNode = PS["Web.DOM.NonElementParentNode"];
-  var Web_HTML = PS["Web.HTML"];
-  var Web_HTML_HTMLDocument = PS["Web.HTML.HTMLDocument"];
-  var Web_HTML_Location = PS["Web.HTML.Location"];
-  var Web_HTML_Window = PS["Web.HTML.Window"];
-  var host = function __do() {
-      var v = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.location)();
-      var v1 = Web_HTML_Location.host(v)();
-      var $6 = Data_String_Common["null"](v1);
-      if ($6) {
-          return Data_Maybe.Nothing.value;
-      };
-      return new Data_Maybe.Just(v1);
-  };
-  var doc = Control_Bind.bind(Effect.bindEffect)(Web_HTML.window)(Web_HTML_Window.document);
-  var cn = React_DOM_Props.className;
-  var byId = function (id) {
-      return function __do() {
-          var v = Data_Functor.map(Effect.functorEffect)(Web_HTML_HTMLDocument.toNonElementParentNode)(doc)();
-          var v1 = Web_DOM_NonElementParentNode.getElementById(id)(v)();
-          if (v1 instanceof Data_Maybe.Just) {
-              return v1.value0;
-          };
-          if (v1 instanceof Data_Maybe.Nothing) {
-              return Effect_Exception["throw"]("not found=" + id)();
-          };
-          throw new Error("Failed pattern match at DomOps (line 25, column 3 - line 27, column 40): " + [ v1.constructor.name ]);
-      };
-  };
-  exports["byId"] = byId;
-  exports["host"] = host;
-  exports["cn"] = cn;
-})(PS["DomOps"] = PS["DomOps"] || {});
-(function(exports) {
     "use strict";
 
   exports.error = function (s) {
@@ -3808,458 +4311,9 @@ var PS = {};
   exports["error"] = $foreign.error;
 })(PS["Effect.Console"] = PS["Effect.Console"] || {});
 (function(exports) {
-    "use strict";
-
-  exports.formatNum = function(num) {
-    return num.toLocaleString("en-GB")
-  }
-})(PS["FormatOps"] = PS["FormatOps"] || {});
-(function(exports) {
   // Generated by purs version 0.12.2
   "use strict";
-  var $foreign = PS["FormatOps"];
-  var Data_EuclideanRing = PS["Data.EuclideanRing"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Int = PS["Data.Int"];
-  var Data_JSDate = PS["Data.JSDate"];
-  var Data_Ord = PS["Data.Ord"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var Data_Semiring = PS["Data.Semiring"];
-  var Data_Show = PS["Data.Show"];
-  var Data_String_CodePoints = PS["Data.String.CodePoints"];
-  var Global = PS["Global"];
-  var Prelude = PS["Prelude"];                 
-  var duration = function (sec) {
-      var sec$prime = Data_Int.floor(Global.readInt(10)(sec));
-      var $0 = sec$prime >= 3600;
-      if ($0) {
-          return {
-              value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(3600)),
-              unit: "hour"
-          };
-      };
-      var $1 = sec$prime >= 60;
-      if ($1) {
-          return {
-              value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(60)),
-              unit: "min"
-          };
-      };
-      return {
-          value: Data_Show.show(Data_Show.showInt)(sec$prime),
-          unit: "sec"
-      };
-  };
-  var datePart = function (num) {
-      var str = Data_Show.show(Data_Show.showInt)(num);
-      var $2 = Data_String_CodePoints.length(str) < 2;
-      if ($2) {
-          return "0" + str;
-      };
-      return str;
-  };
-  var localDateTime = function (x) {
-      var ms = Global.readInt(10)(x);
-      var d = Data_JSDate.fromTime(ms);
-      var day = datePart(Data_Int.floor(Data_JSDate.getUTCDate(d)));
-      var hours = datePart(Data_Int.floor(Data_JSDate.getUTCHours(d)));
-      var minutes = datePart(Data_Int.floor(Data_JSDate.getUTCMinutes(d)));
-      var month = datePart(Data_Int.floor(Data_JSDate.getUTCMonth(d) + 1.0));
-      var seconds = datePart(Data_Int.floor(Data_JSDate.getUTCSeconds(d)));
-      var year = datePart(Data_Int.floor(Data_JSDate.getUTCFullYear(d)));
-      return day + ("." + (month + ("." + (year + (" " + (hours + (":" + (minutes + (":" + seconds)))))))));
-  };
-  exports["localDateTime"] = localDateTime;
-  exports["duration"] = duration;
-  exports["formatNum"] = $foreign.formatNum;
-})(PS["FormatOps"] = PS["FormatOps"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var React = PS["React"];
-  var React_DOM_Props = PS["React.DOM.Props"];
-  var Unsafe_Coerce = PS["Unsafe.Coerce"];
-  var text = Unsafe_Coerce.unsafeCoerce;  
-  var mkDOM = function (dynamic) {
-      return function (tag) {
-          return function (props) {
-              var createElement = (function () {
-                  if (!dynamic) {
-                      return React.createElementTagName;
-                  };
-                  if (dynamic) {
-                      return React.createElementTagNameDynamic;
-                  };
-                  throw new Error("Failed pattern match at React.DOM (line 15, column 5 - line 17, column 55): " + [ dynamic.constructor.name ]);
-              })();
-              return createElement(tag)(React_DOM_Props.unsafeFromPropsArray(props));
-          };
-      };
-  };
-  var nav = mkDOM(false)("nav");  
-  var p = mkDOM(false)("p");
-  var p$prime = p([  ]);          
-  var span = mkDOM(false)("span");
-  var span$prime = span([  ]);
-  var table = mkDOM(false)("table");
-  var tbody = mkDOM(false)("tbody");
-  var tbody$prime = tbody([  ]);
-  var td = mkDOM(false)("td");
-  var td$prime = td([  ]);      
-  var th = mkDOM(false)("th");
-  var th$prime = th([  ]);
-  var thead = mkDOM(false)("thead");
-  var tr = mkDOM(false)("tr");
-  var tr$prime = tr([  ]);
-  var ul = mkDOM(false)("ul");
-  var li = mkDOM(false)("li");    
-  var label = mkDOM(false)("label");
-  var i = mkDOM(false)("i");
-  var h5 = mkDOM(false)("h5");
-  var h4 = mkDOM(false)("h4");
-  var h2 = mkDOM(false)("h2");
-  var div = mkDOM(false)("div");
-  var div$prime = div([  ]);        
-  var canvas = mkDOM(false)("canvas");
-  var button = mkDOM(false)("button");
-  var a = mkDOM(false)("a");
-  exports["mkDOM"] = mkDOM;
-  exports["text"] = text;
-  exports["a"] = a;
-  exports["button"] = button;
-  exports["canvas"] = canvas;
-  exports["div"] = div;
-  exports["div'"] = div$prime;
-  exports["h2"] = h2;
-  exports["h4"] = h4;
-  exports["h5"] = h5;
-  exports["i"] = i;
-  exports["label"] = label;
-  exports["li"] = li;
-  exports["nav"] = nav;
-  exports["p"] = p;
-  exports["p'"] = p$prime;
-  exports["span"] = span;
-  exports["span'"] = span$prime;
-  exports["table"] = table;
-  exports["tbody"] = tbody;
-  exports["tbody'"] = tbody$prime;
-  exports["td"] = td;
-  exports["td'"] = td$prime;
-  exports["th"] = th;
-  exports["th'"] = th$prime;
-  exports["thead"] = thead;
-  exports["tr"] = tr;
-  exports["tr'"] = tr$prime;
-  exports["ul"] = ul;
-})(PS["React.DOM"] = PS["React.DOM"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var Control_Applicative = PS["Control.Applicative"];
-  var Control_Bind = PS["Control.Bind"];
-  var Data_Function = PS["Data.Function"];
-  var Data_Functor = PS["Data.Functor"];
-  var Data_Semigroup = PS["Data.Semigroup"];
-  var DomOps = PS["DomOps"];
-  var Effect = PS["Effect"];
-  var FormatOps = PS["FormatOps"];
-  var Prelude = PS["Prelude"];
-  var React = PS["React"];
-  var React_DOM = PS["React.DOM"];
-  var React_DOM_Props = PS["React.DOM.Props"];
-  var Schema = PS["Schema"];                 
-  var errorReactClass = (function () {
-      var render = function ($$this) {
-          var shortStack = React.modifyState($$this)(function (v) {
-              return {
-                  expandStack: false
-              };
-          });
-          var fullStack = React.modifyState($$this)(function (v) {
-              return {
-                  expandStack: true
-              };
-          });
-          return function __do() {
-              var v = React.getState($$this)();
-              var v1 = React.getProps($$this)();
-              return React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
-                  if (v1.showAddr) {
-                      return [ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.err.addr) ]) ];
-                  };
-                  return [  ];
-              })())([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(FormatOps.localDateTime(v1.err.time)) ]), React_DOM.td([ DomOps.cn("align-top") ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
-                  return React_DOM["div'"]([ React_DOM.text(y) ]);
-              })(v1.err.exception)), (function () {
-                  if (!v.expandStack) {
-                      return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
-                          return fullStack;
-                      }), React_DOM_Props.style({
-                          cursor: "zoom-in",
-                          fontFamily: "Fira Code",
-                          wordBreak: "break-all"
-                      }) ])([ React_DOM.text(v1.err.toptrace) ]);
-                  };
-                  if (v.expandStack) {
-                      return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
-                          return shortStack;
-                      }), React_DOM_Props.style({
-                          cursor: "zoom-out"
-                      }) ])([ React_DOM.div([ React_DOM_Props.style({
-                          fontFamily: "Fira Code",
-                          wordBreak: "break-all"
-                      }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
-                          return React_DOM["div'"]([ React_DOM.text(y) ]);
-                      })(v1.err.stacktrace)) ]);
-                  };
-                  throw new Error("Failed pattern match at Errors (line 83, column 11 - line 91, column 16): " + [ v.expandStack.constructor.name ]);
-              })() ]));
-          };
-      };
-      return React.component(React.reactComponentSpec()())("Error")(function ($$this) {
-          return Control_Applicative.pure(Effect.applicativeEffect)({
-              state: {
-                  expandStack: false
-              },
-              render: render($$this)
-          });
-      });
-  })();
-  var reactClass = (function () {
-      var render = function ($$this) {
-          return function __do() {
-              var v = React.getProps($$this)();
-              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("Errors") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
-                  if (v.showAddr) {
-                      return [ React_DOM["th'"]([ React_DOM.text("Address") ]) ];
-                  };
-                  return [  ];
-              })())([ React_DOM["th'"]([ React_DOM.text("Time") ]), React_DOM["th'"]([ React_DOM.text("Exception") ]), React_DOM["th'"]([ React_DOM.text("Stacktrace") ]) ])) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(function (x) {
-                  return React.createLeafElement(React.reactPropFields()())(errorReactClass)({
-                      err: x,
-                      showAddr: v.showAddr
-                  });
-              })(v.errors)) ]) ]) ]) ]) ]) ]);
-          };
-      };
-      return React.component(React.reactComponentSpec()())("Errors")(function ($$this) {
-          return Control_Applicative.pure(Effect.applicativeEffect)({
-              state: {},
-              render: render($$this)
-          });
-      });
-  })();
-  exports["reactClass"] = reactClass;
-})(PS["Errors"] = PS["Errors"] || {});
-(function(exports) {
-    "use strict";
-
-  var chart = null
-  var actionsMap = new Map()
-
-  exports.destroyChart = function() {
-    if (chart === null) {
-      console.error("chart is not created")
-      return
-    }
-    chart.destroy()
-    chart = null
-  }
-
-  exports.updateChart = function(cpuLoad) {
-    return function(memLoad) {
-      return function(actions) {
-        return function() {
-          if (chart === null) {
-            console.error("chart is not created")
-            return
-          }
-          var data = chart.config.data
-          data.datasets[0].data = cpuLoad
-          data.datasets[1].data = actionsDataset(actions)
-          data.datasets[2].data = memLoad
-          chart.update()
-        }
-      }
-    }
-  }
-
-  function actionsDataset(actions) {
-    actionsMap = new Map()
-    return actions.map(function(x) {
-      actionsMap.set(x.t, x.label)
-      return { t: x.t, y: 0 }
-    })
-  }
-
-  exports.createChart = function(cpuLoad) {
-    return function(memLoad) {
-      return function(actions) {
-        return function() {
-          if (chart !== null) {
-            console.error("chart already exists")
-            return
-          }
-          const ctx = document.getElementById("chartBig1").getContext('2d')
-          const purpleBg = ctx.createLinearGradient(0, 230, 0, 50)
-          purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
-          purpleBg.addColorStop(0.4, 'rgba(72,72,176,0.0)')
-          purpleBg.addColorStop(0, 'rgba(119,52,169,0)')
-          return chart = new Chart(ctx, {
-            type: 'line',
-            data: {
-              datasets: [{
-                backgroundColor: purpleBg,
-                borderColor: '#d346b1',
-                borderDash: [],
-                borderDashOffset: 0.0,
-                borderWidth: 2,
-                cubicInterpolationMode: 'monotone',
-                data: cpuLoad,
-                fill: true,
-                label: "CPU Load",
-                pointBackgroundColor: '#d346b1',
-                pointBorderColor: 'rgba(255,255,255,0)',
-                pointBorderWidth: 20,
-                pointHoverBackgroundColor: '#d346b1',
-                pointHoverBorderWidth: 15,
-                pointHoverRadius: 4,
-                pointRadius: 4,
-                yAxisID: 'left-y-axis'
-              }, {
-                borderColor: '#1f8ef1',
-                borderDash: [],
-                borderDashOffset: 0.0,
-                borderWidth: 2,
-                data: actionsDataset(actions),
-                fill: false,
-                label: "Events",
-                pointBackgroundColor: '#1f8ef1',
-                pointBorderColor: 'rgba(255,255,255,0)',
-                pointBorderWidth: 20,
-                pointHoverBackgroundColor: '#1f8ef1',
-                pointHoverBorderWidth: 15,
-                pointHoverRadius: 4,
-                pointRadius: 4,
-                showLine: false,
-                yAxisID: 'left-y-axis'
-              }, {
-                borderColor: '#00d6b4',
-                borderDash: [],
-                borderDashOffset: 0.0,
-                borderWidth: 2,
-                data: memLoad,
-                fill: false,
-                label: "Memory Usage",
-                lineTension: 0,
-                pointBackgroundColor: '#00d6b4',
-                pointBorderColor: 'rgba(255,255,255,0)',
-                pointBorderWidth: 20,
-                pointHoverBackgroundColor: '#00d6b4',
-                pointHoverBorderWidth: 15,
-                pointHoverRadius: 4,
-                pointRadius: 4,
-                yAxisID: 'right-y-axis'
-              }]
-            },
-            options: {
-              maintainAspectRatio: false,
-              legend: {
-                display: false
-              },
-              tooltips: {
-                backgroundColor: '#f5f5f5',
-                titleFontColor: '#333',
-                bodyFontColor: '#666',
-                bodySpacing: 4,
-                xPadding: 12,
-                mode: "nearest",
-                position: "nearest",
-                callbacks: {
-                  label: function(item, data) {
-                    var datasetIndex = item.datasetIndex
-                    var dataset = data.datasets[item.datasetIndex]
-                    var datasetLabel = dataset.label + ": "
-                    switch (datasetIndex) {
-                      case 0:
-                        return datasetLabel + item.yLabel + "%"
-                      case 1:
-                        return datasetLabel + actionsMap.get(dataset.data[item.index].t)
-                      case 2:
-                        return datasetLabel + item.yLabel + " GB"
-                    }
-                  },
-                },
-              },
-              responsive: true,
-              scales: {
-                yAxes: [{
-                  id: 'left-y-axis',
-                  type: 'logarithmic',
-                  position: 'left',
-                  barPercentage: 1.6,
-                  gridLines: {
-                    drawBorder: false,
-                    color: 'rgba(29,140,248,0.0)',
-                    zeroLineColor: "transparent",
-                  },
-                  ticks: {
-                    suggestedMin: 0,
-                    suggestedMax: 5,
-                    padding: 20,
-                    fontColor: "#9a9a9a",
-                    callback: function(value, index, values) {
-                      return value + "%";
-                    },
-                  }
-                }, {
-                  id: 'right-y-axis',
-                  type: 'linear',
-                  position: 'right',
-                  barPercentage: 1.6,
-                  gridLines: {
-                    drawBorder: false,
-                    color: 'rgba(29,140,248,0.0)',
-                    zeroLineColor: "transparent",
-                  },
-                  ticks: {
-                    padding: 20,
-                    fontColor: "#9a9a9a",
-                    stepSize: 0.5,
-                    callback: function(value, index, values) {
-                      return value + " GB";
-                    },
-                  },
-                  gridLines: {
-                    drawOnChartArea: false,
-                  },
-                }],
-                xAxes: [{
-                  type: 'time',
-                  barPercentage: 1.6,
-                  gridLines: {
-                    drawBorder: false,
-                    color: 'rgba(225,78,202,0.1)',
-                    zeroLineColor: "transparent",
-                  },
-                  ticks: {
-                    padding: 20,
-                    fontColor: "#9a9a9a"
-                  }
-                }]
-              }
-            }
-          })
-        }
-      }
-    }
-  }
-})(PS["Node"] = PS["Node"] || {});
-(function(exports) {
-  // Generated by purs version 0.12.2
-  "use strict";
-  var $foreign = PS["Node"];
+  var BigChart = PS["BigChart"];
   var Control_Applicative = PS["Control.Applicative"];
   var Control_Bind = PS["Control.Bind"];
   var Data_Function = PS["Data.Function"];
@@ -4333,7 +4387,11 @@ var PS = {};
       var render = function ($$this) {
           return function __do() {
               var v = React.getProps($$this)();
-              return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(v.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React_DOM.canvas([ React_DOM_Props["_id"]("chartBig1") ])([  ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fsCard)(v.fs)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fdCard)(v.fd)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(thrCard)(v.thr)), othCard(v) ]), React.createLeafElement(React.reactPropFields()())(Errors.reactClass)({
+              return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(v.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(v.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple active") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple") ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Week") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("W") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement(React.reactPropFields()())(BigChart.reactClass)({
+                  cpuPoints: v.cpuPoints,
+                  memPoints: v.memPoints,
+                  actionPoints: v.actionPoints
+              }) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fsCard)(v.fs)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fdCard)(v.fd)) ]), React_DOM.div([ DomOps.cn("row") ])([ Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(thrCard)(v.thr)), othCard(v) ]), React.createLeafElement(React.reactPropFields()())(Errors.reactClass)({
                   errors: v.errs,
                   showAddr: false
               }) ]);
@@ -4344,16 +4402,7 @@ var PS = {};
               var v = React.getProps($$this)();
               return {
                   state: {},
-                  render: render($$this),
-                  componentDidMount: $foreign.createChart(v.cpuPoints)(v.memPoints)(v.actionPoints),
-                  componentDidUpdate: function (p$prime) {
-                      return function (v1) {
-                          return function (v2) {
-                              return $foreign.updateChart(p$prime.cpuPoints)(p$prime.memPoints)(p$prime.actionPoints);
-                          };
-                      };
-                  },
-                  componentWillUnmount: $foreign.destroyChart
+                  render: render($$this)
               };
           };
       });
@@ -4758,8 +4807,8 @@ var PS = {};
                   return "";
               })()) ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $74 = Data_Eq.eq(eqMenu)(x)(v.menu);
-                      if ($74) {
+                      var $81 = Data_Eq.eq(eqMenu)(x)(v.menu);
+                      if ($81) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -4803,6 +4852,7 @@ var PS = {};
       var onMsg = function ($$this) {
           return function (payload) {
               var updateWith = function (a) {
+                  var time$prime = Global.readInt(10)(a.time);
                   var uptime = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
                       return v.uptime;
                   });
@@ -4812,16 +4862,15 @@ var PS = {};
                   var cpu = Control_Bind.bind(Data_Maybe.bindMaybe)(cpu_mem)(Data_Array.head);
                   var cpuPoints = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                       return [ {
-                          t: Global.readInt(10)(a.time),
+                          t: time$prime,
                           y: Global.readInt(10)(b)
                       } ];
                   })(cpu));
                   return function __do() {
                       var v = (function () {
-                          var v = Data_Functor.map(Data_Maybe.functorMaybe)(Data_Array.slice(1)(3))(cpu_mem);
-                          if (v instanceof Data_Maybe.Just && v.value0.length === 2) {
-                              var free = Global.readInt(10)(v["value0"][0]);
-                              var total = Global.readInt(10)(v["value0"][1]);
+                          if (cpu_mem instanceof Data_Maybe.Just && cpu_mem.value0.length === 3) {
+                              var free = Global.readInt(10)(cpu_mem["value0"][1]);
+                              var total = Global.readInt(10)(cpu_mem["value0"][2]);
                               var used = total - free;
                               return new Data_Maybe.Just({
                                   used: used,
@@ -4829,15 +4878,15 @@ var PS = {};
                                   total: total
                               });
                           };
-                          if (v instanceof Data_Maybe.Just) {
-                              return Data_Functor.map(Effect.functorEffect)(function (v1) {
+                          if (cpu_mem instanceof Data_Maybe.Just) {
+                              return Data_Functor.map(Effect.functorEffect)(function (v) {
                                   return Data_Maybe.Nothing.value;
-                              })(Effect_Console.error("bad format=" + Data_Show.show(Data_Show.showArray(Data_Show.showString))(v.value0)))();
+                              })(Effect_Console.error("bad format=" + Data_Show.show(Data_Show.showArray(Data_Show.showString))(cpu_mem.value0)))();
                           };
-                          if (v instanceof Data_Maybe.Nothing) {
+                          if (cpu_mem instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 236, column 16 - line 243, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 261, column 16 - line 268, column 34): " + [ cpu_mem.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v1) {
                           return v1.used;
@@ -4850,7 +4899,7 @@ var PS = {};
                       })(v);
                       var memPoints = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
-                              t: Global.readInt(10)(a.time),
+                              t: time$prime,
                               y: b.used / 1000.0
                           } ];
                       })(v));
@@ -4876,7 +4925,7 @@ var PS = {};
                           if (v1 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 249, column 15 - line 256, column 34): " + [ v1.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 274, column 15 - line 281, column 34): " + [ v1.constructor.name ]);
                       })();
                       var v2 = (function () {
                           var v2 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v3) {
@@ -4898,7 +4947,7 @@ var PS = {};
                           if (v2 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 258, column 15 - line 264, column 34): " + [ v2.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 283, column 15 - line 289, column 34): " + [ v2.constructor.name ]);
                       })();
                       var v3 = (function () {
                           var v3 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v4) {
@@ -4926,14 +4975,58 @@ var PS = {};
                           if (v3 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 266, column 16 - line 275, column 34): " + [ v3.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 291, column 16 - line 300, column 34): " + [ v3.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
-                              t: Global.readInt(10)(a.time),
+                              t: time$prime,
                               label: b
                           } ];
                       })(a.action));
+                      var searchTs_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
+                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.searchTs;
+                      })));
+                      var searchTs_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.searchTs_thirdQ;
+                      });
+                      var searchWc_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
+                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.searchWc;
+                      })));
+                      var searchWc_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.searchWc_thirdQ;
+                      });
+                      var staticCreate_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
+                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.staticCreate;
+                      })));
+                      var staticCreate_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.staticCreate_thirdQ;
+                      });
+                      var staticGen_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
+                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.staticGen;
+                      })));
+                      var staticGen_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
+                          return v4.staticGen_thirdQ;
+                      });
                       var errs = Data_Maybe.maybe([  ])(Data_Array.singleton)(a.err);
                       var v4 = React.getState($$this)();
                       var node$prime = (function () {
@@ -4958,7 +5051,11 @@ var PS = {};
                               var actionPoints$prime$prime = Data_Array.filter(function (x) {
                                   return x.t > minTime;
                               })(actionPoints$prime);
-                              var errs$prime = Data_Array.slice(0)(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(errs)(v5.value0.errs));
+                              var searchTs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v5.value0.searchTs_points)(searchTs_points));
+                              var searchWc_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v5.value0.searchWc_points)(searchWc_points));
+                              var staticCreate_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v5.value0.staticCreate_points)(staticCreate_points));
+                              var staticGen_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v5.value0.staticGen_points)(staticGen_points));
+                              var errs$prime = Data_Array.take(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(errs)(v5.value0.errs));
                               return {
                                   lastUpdate: a.time,
                                   cpuPoints: cpuPoints$prime$prime,
@@ -4973,6 +5070,14 @@ var PS = {};
                                   fd: Control_Alt.alt(Data_Maybe.altMaybe)(v2)(v5.value0.fd),
                                   thr: Control_Alt.alt(Data_Maybe.altMaybe)(v3)(v5.value0.thr),
                                   errs: errs$prime,
+                                  searchTs_points: searchTs_points$prime,
+                                  searchTs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchTs_thirdQ)(v5.value0.searchTs_thirdQ),
+                                  searchWc_points: searchWc_points$prime,
+                                  searchWc_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchWc_thirdQ)(v5.value0.searchWc_thirdQ),
+                                  staticCreate_points: staticCreate_points$prime,
+                                  staticCreate_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(staticCreate_thirdQ)(v5.value0.staticCreate_thirdQ),
+                                  staticGen_points: staticGen_points$prime,
+                                  staticGen_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(staticGen_thirdQ)(v5.value0.staticGen_thirdQ),
                                   addr: v5.value0.addr
                               };
                           };
@@ -4991,10 +5096,18 @@ var PS = {};
                                   fs: Data_Maybe.Nothing.value,
                                   fd: Data_Maybe.Nothing.value,
                                   thr: Data_Maybe.Nothing.value,
-                                  errs: errs
+                                  errs: errs,
+                                  searchTs_points: searchTs_points,
+                                  searchTs_thirdQ: searchTs_thirdQ,
+                                  searchWc_points: searchWc_points,
+                                  searchWc_thirdQ: searchWc_thirdQ,
+                                  staticCreate_points: staticCreate_points,
+                                  staticCreate_thirdQ: staticCreate_thirdQ,
+                                  staticGen_points: staticGen_points,
+                                  staticGen_thirdQ: staticGen_thirdQ
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 282, column 21 - line 325, column 18): " + [ v5.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 316, column 21 - line 382, column 18): " + [ v5.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -5014,7 +5127,7 @@ var PS = {};
                                   menu: s$prime.menu,
                                   nodes: s$prime.nodes,
                                   node: s$prime.node,
-                                  errors: Data_Array.cons(a.err.value0)(Data_Array.slice(0)(99)(s$prime.errors)),
+                                  errors: Data_Array.cons(a.err.value0)(Data_Array.take(99)(s$prime.errors)),
                                   ws: s$prime.ws,
                                   leftMenu: s$prime.leftMenu,
                                   notifications: s$prime.notifications,
@@ -5025,7 +5138,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 327, column 9 - line 329, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 384, column 9 - line 386, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
@@ -5033,36 +5146,36 @@ var PS = {};
               if (v instanceof Data_Maybe.Just && v.value0 === "metric") {
                   if (xs.length === 5) {
                       var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                          var $113 = xs[1] === "cpu_mem";
-                          if ($113) {
+                          var $121 = xs[1] === "cpu_mem";
+                          if ($121) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
                       })());
                       var uptime = (function () {
-                          var $114 = xs[1] === "uptime";
-                          if ($114) {
+                          var $122 = xs[1] === "uptime";
+                          if ($122) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
                       })();
                       var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                          var $115 = xs[1] === "fs./";
-                          if ($115) {
+                          var $123 = xs[1] === "fs./";
+                          if ($123) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
                       })());
                       var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                          var $116 = xs[1] === "fd";
-                          if ($116) {
+                          var $124 = xs[1] === "fd";
+                          if ($124) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
                       })());
                       var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                          var $117 = xs[1] === "thr";
-                          if ($117) {
+                          var $125 = xs[1] === "thr";
+                          if ($125) {
                               return new Data_Maybe.Just(xs[2]);
                           };
                           return Data_Maybe.Nothing.value;
@@ -5076,6 +5189,86 @@ var PS = {};
                               fs: fs,
                               fd: fd,
                               thr: thr
+                          }),
+                          measure: Data_Maybe.Nothing.value,
+                          err: Data_Maybe.Nothing.value,
+                          action: Data_Maybe.Nothing.value
+                      });
+                  };
+                  return Effect_Console.error("bad format");
+              };
+              if (v instanceof Data_Maybe.Just && v.value0 === "measure") {
+                  if (xs.length === 5) {
+                      var value$prime = Global.readInt(10)(xs[2]);
+                      var searchTs = (function () {
+                          var $133 = xs[1] === "search.ts";
+                          if ($133) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      var searchTs_thirdQ = (function () {
+                          var $134 = xs[1] === "search.ts.thirdQ";
+                          if ($134) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      var searchWc = (function () {
+                          var $135 = xs[1] === "search.wc";
+                          if ($135) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      var searchWc_thirdQ = (function () {
+                          var $136 = xs[1] === "search.wc.thirdQ";
+                          if ($136) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      var staticCreate = (function () {
+                          var $137 = xs[1] === "static.create";
+                          if ($137) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      var staticCreate_thirdQ = (function () {
+                          var $138 = xs[1] === "static.create.thirdQ";
+                          if ($138) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      var staticGen = (function () {
+                          var $139 = xs[1] === "static.gen";
+                          if ($139) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      var staticGen_thirdQ = (function () {
+                          var $140 = xs[1] === "static.gen.thirdQ";
+                          if ($140) {
+                              return new Data_Maybe.Just(xs[2]);
+                          };
+                          return Data_Maybe.Nothing.value;
+                      })();
+                      return updateWith({
+                          addr: xs[4],
+                          time: xs[3],
+                          metrics: Data_Maybe.Nothing.value,
+                          measure: new Data_Maybe.Just({
+                              searchTs: searchTs,
+                              searchTs_thirdQ: searchTs_thirdQ,
+                              searchWc: searchWc,
+                              searchWc_thirdQ: searchWc_thirdQ,
+                              staticCreate: staticCreate,
+                              staticCreate_thirdQ: staticCreate_thirdQ,
+                              staticGen: staticGen,
+                              staticGen_thirdQ: staticGen_thirdQ
                           }),
                           err: Data_Maybe.Nothing.value,
                           action: Data_Maybe.Nothing.value
@@ -5100,6 +5293,7 @@ var PS = {};
                           addr: xs[5],
                           time: xs[4],
                           metrics: Data_Maybe.Nothing.value,
+                          measure: Data_Maybe.Nothing.value,
                           err: new Data_Maybe.Just(err),
                           action: Data_Maybe.Nothing.value
                       });
@@ -5112,6 +5306,7 @@ var PS = {};
                           addr: xs[3],
                           time: xs[2],
                           metrics: Data_Maybe.Nothing.value,
+                          measure: Data_Maybe.Nothing.value,
                           err: Data_Maybe.Nothing.value,
                           action: new Data_Maybe.Just(xs[1])
                       });
