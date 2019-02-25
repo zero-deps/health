@@ -1,4 +1,4 @@
-module BigChart
+module BarChart
   ( reactClass
   ) where
 
@@ -7,33 +7,31 @@ import Prelude hiding (div)
 import React (ReactClass, component, getProps)
 import React.DOM (canvas)
 import ReactOps (Ref, ref', createRef)
-import Schema (NumPoint, StrPoint)
+import Schema (NumPoint)
 
 type State = {}
-type Props =
-  { cpuPoints :: Array NumPoint
-  , memPoints :: Array NumPoint
-  , actionPoints :: Array StrPoint
-  }
+type Props = {
+  points :: Array NumPoint
+}
 
 reactClass :: ReactClass Props
-reactClass = component "BigChart" \this -> do
+reactClass = component "BarChart" \this -> do
   p <- getProps this
   let r = createRef
   pure
     { state: {}
     , render: pure $ canvas [ ref' r ] []
-    , componentDidMount: createChart r p
-    , componentDidUpdate: \p' _ _ -> updateChart p'
+    , componentDidMount: createChart r p.points
+    , componentDidUpdate: \p' _ _ -> updateChart p'.points
     , componentWillUnmount: destroyChart
     }
 
 foreign import createChart
   :: Ref
-  -> Props
+  -> Array NumPoint
   -> Effect Unit
 foreign import updateChart
-  :: Props
+  :: Array NumPoint
   -> Effect Unit
 foreign import destroyChart
   :: Effect Unit

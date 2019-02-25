@@ -18,19 +18,10 @@ exports.updateChart = function(data) {
       console.error("chart is not created")
       return
     }
-    chart.config.data.datasets[0].data = data.cpuPoints
-    chart.config.data.datasets[1].data = actionsDataset(data.actionPoints)
-    chart.config.data.datasets[2].data = data.memPoints
+    var data = chart.config.data
+    data.datasets[0].data = cpuLoad
     chart.update()
   }
-}
-
-function actionsDataset(actions) {
-  actionsMap = new Map()
-  return actions.map(function(x) {
-    actionsMap.set(x.t, x.label)
-    return { t: x.t, y: 0 }
-  })
 }
 
 exports.createChart = function(ref) {
@@ -55,7 +46,7 @@ exports.createChart = function(ref) {
             borderDashOffset: 0.0,
             borderWidth: 2,
             cubicInterpolationMode: 'monotone',
-            data: data.cpuPoints,
+            data: data,
             fill: true,
             label: "CPU Load",
             pointBackgroundColor: '#d346b1',
@@ -66,40 +57,6 @@ exports.createChart = function(ref) {
             pointHoverRadius: 4,
             pointRadius: 4,
             yAxisID: 'left-y-axis'
-          }, {
-            borderColor: '#1f8ef1',
-            borderDash: [],
-            borderDashOffset: 0.0,
-            borderWidth: 2,
-            data: actionsDataset(data.actionPoints),
-            fill: false,
-            label: "Events",
-            pointBackgroundColor: '#1f8ef1',
-            pointBorderColor: 'rgba(255,255,255,0)',
-            pointBorderWidth: 20,
-            pointHoverBackgroundColor: '#1f8ef1',
-            pointHoverBorderWidth: 15,
-            pointHoverRadius: 4,
-            pointRadius: 4,
-            showLine: false,
-            yAxisID: 'left-y-axis'
-          }, {
-            borderColor: '#00d6b4',
-            borderDash: [],
-            borderDashOffset: 0.0,
-            borderWidth: 2,
-            data: data.memPoints,
-            fill: false,
-            label: "Memory Usage",
-            lineTension: 0,
-            pointBackgroundColor: '#00d6b4',
-            pointBorderColor: 'rgba(255,255,255,0)',
-            pointBorderWidth: 20,
-            pointHoverBackgroundColor: '#00d6b4',
-            pointHoverBorderWidth: 15,
-            pointHoverRadius: 4,
-            pointRadius: 4,
-            yAxisID: 'right-y-axis'
           }]
         },
         options: {
