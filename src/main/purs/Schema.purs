@@ -46,7 +46,7 @@ type NodeInfo =
   , lastUpdate :: String
   , cpuPoints :: Array NumPoint
   , memPoints :: Array NumPoint
-  , actionPoints :: Array StrPoint
+  , actPoints :: Array StrPoint
   , uptime :: Maybe String
   , cpuLast :: Maybe String
   , memLast :: Maybe Number
@@ -56,13 +56,13 @@ type NodeInfo =
   , fd :: Maybe FdInfo
   , thr :: Maybe ThrInfo
   , errs :: Array ErrorInfo
-  , searchTs_points :: Array NumPoint
+  , searchTs_points :: Array Number
   , searchTs_thirdQ :: Maybe String
-  , searchWc_points :: Array NumPoint
+  , searchWc_points :: Array Number
   , searchWc_thirdQ :: Maybe String
-  , staticCreate_points :: Array NumPoint
+  , staticCreate_points :: Array Number
   , staticCreate_thirdQ :: Maybe String
-  , staticGen_points :: Array NumPoint
+  , staticGen_points :: Array Number
   , staticGen_thirdQ :: Maybe String
   }
 

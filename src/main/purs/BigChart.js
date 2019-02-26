@@ -1,51 +1,35 @@
 "use strict"
 
-var chart = null
-var actionsMap = new Map()
-
-exports.destroyChart = function() {
-  if (chart === null) {
-    console.error("chart is not created")
-    return
-  }
-  chart.destroy()
-  chart = null
-}
-
-exports.updateChart = function(data) {
+exports.destroyChart = function(chart) {
   return function() {
-    if (chart === null) {
-      console.error("chart is not created")
-      return
-    }
-    chart.config.data.datasets[0].data = data.cpuPoints
-    chart.config.data.datasets[1].data = actionsDataset(data.actionPoints)
-    chart.config.data.datasets[2].data = data.memPoints
-    chart.update()
+    chart.destroy()
+    chart = null
   }
 }
 
-function actionsDataset(actions) {
-  actionsMap = new Map()
-  return actions.map(function(x) {
-    actionsMap.set(x.t, x.label)
-    return { t: x.t, y: 0 }
-  })
+exports.updateChart = function(chart) {
+  return function(values) {
+    return function() {
+      chart.config.data.datasets[0].data = values.cpuPoints
+      chart.config.data.datasets[1].data = values.actPoints
+      chart.config.data.datasets[1].actLabels = values.actLabels
+      chart.config.data.datasets[2].data = values.memPoints
+      chart.update()
+    }
+  }
 }
 
 exports.createChart = function(ref) {
-  return function(data) {
+  return function(values) {
     return function() {
-      if (chart !== null) {
-        console.error("chart already exists")
-        return
-      }
       const ctx = ref.current.getContext('2d')
+      
       const purpleBg = ctx.createLinearGradient(0, 230, 0, 50)
       purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
       purpleBg.addColorStop(0.4, 'rgba(72,72,176,0.0)')
       purpleBg.addColorStop(0, 'rgba(119,52,169,0)')
-      return chart = new Chart(ctx, {
+      
+      return new Chart(ctx, {
         type: 'line',
         data: {
           datasets: [{
@@ -55,7 +39,7 @@ exports.createChart = function(ref) {
             borderDashOffset: 0.0,
             borderWidth: 2,
             cubicInterpolationMode: 'monotone',
-            data: data.cpuPoints,
+            data: values.cpuPoints,
             fill: true,
             label: "CPU Load",
             pointBackgroundColor: '#d346b1',
@@ -71,7 +55,8 @@ exports.createChart = function(ref) {
             borderDash: [],
             borderDashOffset: 0.0,
             borderWidth: 2,
-            data: actionsDataset(data.actionPoints),
+            actLabels: values.actLabels,
+            data: values.actPoints,
             fill: false,
             label: "Events",
             pointBackgroundColor: '#1f8ef1',
@@ -88,7 +73,7 @@ exports.createChart = function(ref) {
             borderDash: [],
             borderDashOffset: 0.0,
             borderWidth: 2,
-            data: data.memPoints,
+            data: values.memPoints,
             fill: false,
             label: "Memory Usage",
             lineTension: 0,
@@ -121,12 +106,9 @@ exports.createChart = function(ref) {
                 var dataset = data.datasets[item.datasetIndex]
                 var datasetLabel = dataset.label + ": "
                 switch (datasetIndex) {
-                  case 0:
-                    return datasetLabel + item.yLabel + "%"
-                  case 1:
-                    return datasetLabel + actionsMap.get(dataset.data[item.index].t)
-                  case 2:
-                    return datasetLabel + item.yLabel + " GB"
+                  case 0: return datasetLabel + item.yLabel + "%"
+                  case 1: return datasetLabel + data.datasets[1].actLabels[item.index]
+                  case 2: return datasetLabel + item.yLabel + " GB"
                 }
               },
             },

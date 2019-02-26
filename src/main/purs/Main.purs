@@ -18,12 +18,12 @@ import Errors as ErrorsCom
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude hiding (div)
+import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (-), (/), (<>), (==), (>), (>>=))
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
 import ReactDOM as ReactDOM
-import Schema
+import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
 
@@ -301,13 +301,13 @@ reactClass = component "Main" \this -> do
 
         let action = fromMaybe [] $ map (\b -> [{t: time', label: b }]) a.action
 
-        let searchTs_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchTs
+        let searchTs_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.searchTs
         let searchTs_thirdQ = a.measure >>= _.searchTs_thirdQ
-        let searchWc_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchWc
+        let searchWc_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.searchWc
         let searchWc_thirdQ = a.measure >>= _.searchWc_thirdQ
-        let staticCreate_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticCreate
+        let staticCreate_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.staticCreate
         let staticCreate_thirdQ = a.measure >>= _.staticCreate_thirdQ
-        let staticGen_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticGen
+        let staticGen_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.staticGen
         let staticGen_thirdQ = a.measure >>= _.staticGen_thirdQ
 
         let errs = maybe [] singleton a.err
@@ -317,14 +317,14 @@ reactClass = component "Main" \this -> do
               Just node -> do
                 let cpuPoints' = node.cpuPoints <> cpuPoints
                 let memPoints' = node.memPoints <> memPoints
-                let actionPoints' = node.actionPoints <> action
+                let actPoints' = node.actPoints <> action
                 let minTime = max
                       (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 cpuPoints') $ max
                       (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 memPoints')
-                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 actionPoints')
+                      (fromMaybe 0.0 $ map _.t $ last $ dropEnd 20 actPoints')
                 let cpuPoints'' = filter (\x -> x.t > minTime) cpuPoints'
                 let memPoints'' = filter (\x -> x.t > minTime) memPoints'
-                let actionPoints'' = filter (\x -> x.t > minTime) actionPoints'
+                let actPoints'' = filter (\x -> x.t > minTime) actPoints'
 
                 let searchTs_points' = takeEnd 5 $ node.searchTs_points <> searchTs_points
                 let searchWc_points' = takeEnd 5 $ node.searchWc_points <> searchWc_points
@@ -337,7 +337,7 @@ reactClass = component "Main" \this -> do
                   { lastUpdate = a.time
                   , cpuPoints = cpuPoints''
                   , memPoints = memPoints''
-                  , actionPoints = actionPoints''
+                  , actPoints = actPoints''
                   , cpuLast = cpu <|> node.cpuLast
                   , memLast = memUsed <|> node.memLast
                   , uptime = uptime <|> node.uptime
@@ -361,7 +361,7 @@ reactClass = component "Main" \this -> do
                 , lastUpdate: a.time
                 , cpuPoints: cpuPoints
                 , memPoints: memPoints
-                , actionPoints: action
+                , actPoints: action
                 , cpuLast: cpu
                 , memLast: memUsed
                 , uptime: uptime

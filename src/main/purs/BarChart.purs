@@ -2,36 +2,60 @@ module BarChart
   ( reactClass
   ) where
 
+import Data.Maybe (Maybe(Just, Nothing))
 import Effect (Effect)
-import Prelude hiding (div)
+import Effect.Console (error)
+import Effect.Ref as E
+import Prelude
 import React (ReactClass, component, getProps)
 import React.DOM (canvas)
 import ReactOps (Ref, ref', createRef)
 import Schema (NumPoint)
 
 type State = {}
-type Props = {
-  points :: Array NumPoint
-}
+type Props =
+  { points :: Array Number
+  }
 
 reactClass :: ReactClass Props
 reactClass = component "BarChart" \this -> do
-  p <- getProps this
+  props <- getProps this
   let r = createRef
+  chart <- E.new Nothing
   pure
     { state: {}
     , render: pure $ canvas [ ref' r ] []
-    , componentDidMount: createChart r p.points
-    , componentDidUpdate: \p' _ _ -> updateChart p'.points
-    , componentWillUnmount: destroyChart
+    , componentDidMount: do
+        c <- E.read chart
+        case c of
+          Just _ -> error "chart already exists"
+          Nothing -> do
+            c' <- createChart r props.points
+            E.write (Just c') chart
+    , componentDidUpdate: \p _ _ -> do
+        c <- E.read chart
+        case c of
+          Just c' -> updateChart c' p.points
+          Nothing -> error "chart doesn't exists"
+    , componentWillUnmount: do
+        c <- E.read chart
+        case c of
+          Just c' -> do
+            destroyChart c'
+            E.write Nothing chart
+          Nothing -> error "chart doesn't exists"
     }
+
+foreign import data Chart :: Type
 
 foreign import createChart
   :: Ref
-  -> Array NumPoint
-  -> Effect Unit
+  -> Array Number
+  -> Effect Chart
 foreign import updateChart
-  :: Array NumPoint
+  :: Chart
+  -> Array Number
   -> Effect Unit
 foreign import destroyChart
-  :: Effect Unit
+  :: Chart
+  -> Effect Unit

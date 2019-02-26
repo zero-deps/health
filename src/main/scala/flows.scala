@@ -70,7 +70,7 @@ object Flows {
           kvs.stream_unsafe[StatEn](s"${name}.latest").map{ xs =>
             val xs1 = xs.filter(_.addr == addr).toVector.sortBy(_.data)
             val thirdQ = xs1((xs1.length*0.7).toInt).data
-            val msg = Msg(MeasureStat(s"${name}.thirdQ", thirdQ), StatMeta(time="", addr))
+            val msg = Msg(MeasureStat(s"${name}.thirdQ", thirdQ), StatMeta(time="0", addr))
             system.eventStream.publish(msg)
           }
       }

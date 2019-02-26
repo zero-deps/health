@@ -1,62 +1,47 @@
 "use strict"
 
-var chart = null
-var actionsMap = new Map()
-
-exports.destroyChart = function() {
-  if (chart === null) {
-    console.error("chart is not created")
-    return
+exports.destroyChart = function(chart) {
+  return function() {
+    chart.destroy()
   }
-  chart.destroy()
-  chart = null
 }
 
-exports.updateChart = function(data) {
-  return function() {
-    if (chart === null) {
-      console.error("chart is not created")
-      return
+exports.updateChart = function(chart) {
+  return function(data) {
+    return function() {
+      chart.config.data.datasets[0].data = data
+      chart.update()
     }
-    var data = chart.config.data
-    data.datasets[0].data = cpuLoad
-    chart.update()
   }
 }
 
 exports.createChart = function(ref) {
   return function(data) {
     return function() {
-      if (chart !== null) {
-        console.error("chart already exists")
-        return
-      }
       const ctx = ref.current.getContext('2d')
-      const purpleBg = ctx.createLinearGradient(0, 230, 0, 50)
-      purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
-      purpleBg.addColorStop(0.4, 'rgba(72,72,176,0.0)')
-      purpleBg.addColorStop(0, 'rgba(119,52,169,0)')
-      return chart = new Chart(ctx, {
-        type: 'line',
+
+      const gradientStroke = ctx.createLinearGradient(0, 230, 0, 50);
+      gradientStroke.addColorStop(1, 'rgba(29,140,248,0.2)');
+      gradientStroke.addColorStop(0.4, 'rgba(29,140,248,0.0)');
+      gradientStroke.addColorStop(0, 'rgba(29,140,248,0)'); //blue colors
+
+      return new Chart(ctx, {
+        type: 'bar',
+        responsive: true,
+        legend: {
+          display: false
+        },
         data: {
+          labels: ['1','2','3','4','5'],
           datasets: [{
-            backgroundColor: purpleBg,
-            borderColor: '#d346b1',
+            fill: true,
+            backgroundColor: gradientStroke,
+            hoverBackgroundColor: gradientStroke,
+            borderColor: '#1f8ef1',
+            borderWidth: 2,
             borderDash: [],
             borderDashOffset: 0.0,
-            borderWidth: 2,
-            cubicInterpolationMode: 'monotone',
             data: data,
-            fill: true,
-            label: "CPU Load",
-            pointBackgroundColor: '#d346b1',
-            pointBorderColor: 'rgba(255,255,255,0)',
-            pointBorderWidth: 20,
-            pointHoverBackgroundColor: '#d346b1',
-            pointHoverBorderWidth: 15,
-            pointHoverRadius: 4,
-            pointRadius: 4,
-            yAxisID: 'left-y-axis'
           }]
         },
         options: {
@@ -71,77 +56,33 @@ exports.createChart = function(ref) {
             bodySpacing: 4,
             xPadding: 12,
             mode: "nearest",
-            position: "nearest",
-            callbacks: {
-              label: function(item, data) {
-                var datasetIndex = item.datasetIndex
-                var dataset = data.datasets[item.datasetIndex]
-                var datasetLabel = dataset.label + ": "
-                switch (datasetIndex) {
-                  case 0:
-                    return datasetLabel + item.yLabel + "%"
-                  case 1:
-                    return datasetLabel + actionsMap.get(dataset.data[item.index].t)
-                  case 2:
-                    return datasetLabel + item.yLabel + " GB"
-                }
-              },
-            },
+            intersect: 0,
+            position: "nearest"
           },
           responsive: true,
           scales: {
             yAxes: [{
-              id: 'left-y-axis',
-              type: 'logarithmic',
-              position: 'left',
-              barPercentage: 1.6,
               gridLines: {
                 drawBorder: false,
-                color: 'rgba(29,140,248,0.0)',
+                color: 'rgba(29,140,248,0.1)',
                 zeroLineColor: "transparent",
               },
               ticks: {
                 suggestedMin: 0,
-                suggestedMax: 5,
                 padding: 20,
-                fontColor: "#9a9a9a",
-                callback: function(value, index, values) {
-                  return value + "%";
-                },
+                fontColor: "#9e9e9e"
               }
-            }, {
-              id: 'right-y-axis',
-              type: 'linear',
-              position: 'right',
-              barPercentage: 1.6,
-              gridLines: {
-                drawBorder: false,
-                color: 'rgba(29,140,248,0.0)',
-                zeroLineColor: "transparent",
-              },
-              ticks: {
-                padding: 20,
-                fontColor: "#9a9a9a",
-                stepSize: 0.5,
-                callback: function(value, index, values) {
-                  return value + " GB";
-                },
-              },
-              gridLines: {
-                drawOnChartArea: false,
-              },
             }],
             xAxes: [{
-              type: 'time',
-              barPercentage: 1.6,
+              display: false,
               gridLines: {
                 drawBorder: false,
-                color: 'rgba(225,78,202,0.1)',
+                color: 'rgba(29,140,248,0.1)',
                 zeroLineColor: "transparent",
               },
               ticks: {
                 padding: 20,
-                fontColor: "#9a9a9a"
+                fontColor: "#9e9e9e"
               }
             }]
           }

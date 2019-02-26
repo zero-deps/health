@@ -41,6 +41,7 @@ One-time setup:
 ```bash
 npm install
 npm i -g bower purescript
+npm update -g
 npm -s run dep
 ```
 
@@ -91,6 +92,7 @@ Examples:
 ```
 echo -n "metric::::127.0.0.1:4245::mem.heap::153.97" >/dev/udp/127.0.0.1/50123
 echo -n 'action::test::101' >/dev/udp/127.0.0.1/50123
+echo -n 'measure::search.ts::557::80' >/dev/udp/127.0.0.1/50123
 echo -n 'error::TEST::local::Test Exception::[{"className":".stats.handlers.ErrorHandlerTest$$anonfun$1$$anonfun$apply$mcV$sp$1","method":"apply$mcV$sp","fileName":"ErrorHandlerTest.scala","lineNumber":14}]' >/dev/udp/localhost/50123
 ```
 

@@ -2,17 +2,18 @@ module Node
   ( reactClass
   ) where
 
-import Data.Maybe (fromMaybe)
+import BarChart as BarChart
+import BigChart as BigChart
+import Data.Maybe (Maybe, fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
-import FormatOps (formatNum, duration)
-import Prelude hiding (div)
-import React (ReactClass, ReactElement, ReactThis, component, getProps, createLeafElement)
-import React.DOM (div, div', h2, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
-import React.DOM.Props (style)
-import Schema
 import Errors as Errors
-import BigChart as BigChart
+import FormatOps (formatNum, duration)
+import Prelude (bind, map, pure, ($), (<>))
+import React (ReactClass, ReactElement, ReactThis, component, getProps, createLeafElement)
+import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
+import React.DOM.Props (style)
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo)
 
 type State = {}
 type Props = NodeInfo
@@ -69,11 +70,17 @@ reactClass = component "Node" \this -> do
               ]
             , div [ cn "card-body" ]
               [ div [ cn "chart-area" ]
-                [ createLeafElement BigChart.reactClass { cpuPoints: p.cpuPoints, memPoints: p.memPoints, actionPoints: p.actionPoints }
+                [ createLeafElement BigChart.reactClass { cpuPoints: p.cpuPoints, memPoints: p.memPoints, actPoints: map (\x->{t:x.t,y:0.0}) p.actPoints, actLabels: map (_.label) p.actPoints }
                 ]
               ]
             ]
           ]
+        ]
+      , div [ cn "row" ]
+        [ barChart "Translations: Search" p.searchTs_thirdQ p.searchTs_points
+        , barChart "Web Contents: Search" p.searchWc_thirdQ p.searchWc_points
+        , barChart "Static: Creation" p.staticCreate_thirdQ p.staticCreate_points
+        , barChart "Static: Generation" p.staticGen_thirdQ p.staticGen_points
         ]
       , div [ cn "row" ]
         [ fromMaybe (div' []) (map fsCard p.fs)
@@ -84,6 +91,24 @@ reactClass = component "Node" \this -> do
         , othCard p
         ]
       , createLeafElement Errors.reactClass { errors: p.errs, showAddr: false }
+      ]
+  barChart :: String -> Maybe String -> Array Number -> ReactElement
+  barChart title thirdQ points =
+    div [ cn "col-lg-3 col-md-12" ]
+      [ div [ cn "card card-chart" ]
+        [ div [ cn "card-header" ]
+          [ h5 [ cn "card-category" ] [ text title ]
+          , h3 [ cn "card-title" ]
+            [ i [ cn "tim-icons icon-user-run text-info" ] []
+            , text $ fromMaybe "--" thirdQ
+            ]
+          ]
+        , div [ cn "card-body" ]
+          [ div [ cn "chart-area" ]
+            [ createLeafElement BarChart.reactClass { points }
+            ]
+          ]
+        ]
       ]
   card :: String -> Array ReactElement -> Array ReactElement -> ReactElement
   card title xs ys =

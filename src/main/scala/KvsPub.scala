@@ -21,7 +21,7 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
       kvs.stream_unsafe[StatEn](s"${name}.latest").map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
         val xs1 = xs.toVector
         val thirdQ = xs1.sortBy(_.data).apply((xs1.length*0.7).toInt).data
-        self ! Msg(MeasureStat(s"${name}.thirdQ", thirdQ), StatMeta(time="", addr))
+        self ! Msg(MeasureStat(s"${name}.thirdQ", thirdQ), StatMeta(time="0", addr))
         xs1.sortBy(_.time).takeRight(5).foreach(x =>
           self ! Msg(MeasureStat(s"${name}", x.data), StatMeta(x.time, addr))
         )
