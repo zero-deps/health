@@ -19,6 +19,7 @@ ThisBuild / publishArtifact := true
 ThisBuild / publishMavenStyle := true
 ThisBuild / isSnapshot := true
 ThisBuild / resolvers += " Releases" at "http://nexus.mobile..com/nexus3/repository/releases"
+ThisBuild / resolvers += Resolver.jcenterRepo
 
 ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % "0-10-g6f2f17b")
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "0-10-g6f2f17b"
