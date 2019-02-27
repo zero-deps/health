@@ -1,5 +1,6 @@
 module FormatOps
   ( localDateTime
+  , localDateTime'
   , formatNum
   , duration
   ) where
@@ -11,8 +12,10 @@ import Global (readInt)
 import Prelude
 
 localDateTime :: String -> String
-localDateTime x = let
-  ms = readInt 10 x
+localDateTime ms = localDateTime' $ readInt 10 ms
+
+localDateTime' :: Number -> String
+localDateTime' ms = let
   d = fromTime ms
   day = datePart $ floor $ getUTCDate d
   month = datePart $ floor $ (getUTCMonth d) + 1.0

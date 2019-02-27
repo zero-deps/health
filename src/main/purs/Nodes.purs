@@ -5,11 +5,11 @@ module Nodes
 import FormatOps (localDateTime)
 import DomOps (cn)
 import Effect (Effect)
-import Prelude hiding (div)
+import Prelude (Unit, bind, map, pure, ($))
 import React (ReactClass, ReactElement, ReactThis, component, getProps)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr, tr')
 import React.DOM.Props (onClick, style)
-import Schema
+import Schema (NodeInfo)
 
 type State = {}
 type Props =

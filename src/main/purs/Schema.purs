@@ -56,13 +56,13 @@ type NodeInfo =
   , fd :: Maybe FdInfo
   , thr :: Maybe ThrInfo
   , errs :: Array ErrorInfo
-  , searchTs_points :: Array Number
+  , searchTs_points :: Array NumPoint
   , searchTs_thirdQ :: Maybe String
-  , searchWc_points :: Array Number
+  , searchWc_points :: Array NumPoint
   , searchWc_thirdQ :: Maybe String
-  , staticCreate_points :: Array Number
+  , staticCreate_points :: Array NumPoint
   , staticCreate_thirdQ :: Maybe String
-  , staticGen_points :: Array Number
+  , staticGen_points :: Array NumPoint
   , staticGen_thirdQ :: Maybe String
   }
 

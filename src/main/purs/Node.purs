@@ -8,12 +8,12 @@ import Data.Maybe (Maybe, fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
 import Errors as Errors
-import FormatOps (formatNum, duration)
-import Prelude (bind, map, pure, ($), (<>))
+import FormatOps (formatNum, duration, localDateTime')
+import Prelude (bind, map, pure, ($), (<>), (<<<))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, createLeafElement)
 import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
 import React.DOM.Props (style)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo)
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, NumPoint)
 
 type State = {}
 type Props = NodeInfo
@@ -92,8 +92,8 @@ reactClass = component "Node" \this -> do
         ]
       , createLeafElement Errors.reactClass { errors: p.errs, showAddr: false }
       ]
-  barChart :: String -> Maybe String -> Array Number -> ReactElement
-  barChart title thirdQ points =
+  barChart :: String -> Maybe String -> Array NumPoint -> ReactElement
+  barChart title thirdQ values =
     div [ cn "col-lg-3 col-md-12" ]
       [ div [ cn "card card-chart" ]
         [ div [ cn "card-header" ]
@@ -105,7 +105,7 @@ reactClass = component "Node" \this -> do
           ]
         , div [ cn "card-body" ]
           [ div [ cn "chart-area" ]
-            [ createLeafElement BarChart.reactClass { points }
+            [ createLeafElement BarChart.reactClass { points: map _.y values, labels: map (localDateTime' <<< _.t) values }
             ]
           ]
         ]

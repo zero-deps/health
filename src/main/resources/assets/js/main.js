@@ -10,16 +10,17 @@ var PS = {};
   }
 
   exports.updateChart = function(chart) {
-    return function(data) {
+    return function(values) {
       return function() {
-        chart.config.data.datasets[0].data = data
+        chart.config.data.datasets[0].data = values.points
+        chart.config.data.datasets[0].customLabels = values.labels
         chart.update()
       }
     }
   }
 
   exports.createChart = function(ref) {
-    return function(data) {
+    return function(values) {
       return function() {
         const ctx = ref.current.getContext('2d')
 
@@ -44,7 +45,8 @@ var PS = {};
               borderWidth: 2,
               borderDash: [],
               borderDashOffset: 0.0,
-              data: data,
+              data: values.points,
+              customLabels: values.labels,
             }]
           },
           options: {
@@ -60,7 +62,11 @@ var PS = {};
               xPadding: 12,
               mode: "nearest",
               intersect: 0,
-              position: "nearest"
+              position: "nearest",
+              callbacks: {
+                title: function(items, data) { return data.datasets[0].customLabels[items[0].index] },
+                label: function(item, data) { return item.yLabel + " ms" },
+              },
             },
             responsive: true,
             scales: {
@@ -1784,8 +1790,7 @@ var PS = {};
   var Prelude = PS["Prelude"];
   var React = PS["React"];
   var React_DOM = PS["React.DOM"];
-  var ReactOps = PS["ReactOps"];
-  var Schema = PS["Schema"];                 
+  var ReactOps = PS["ReactOps"];                 
   var reactClass = React.component(React.reactComponentSpec()())("BarChart")(function ($$this) {
       return function __do() {
           var v = React.getProps($$this)();
@@ -1799,7 +1804,7 @@ var PS = {};
                       return Effect_Console.error("chart already exists")();
                   };
                   if (v2 instanceof Data_Maybe.Nothing) {
-                      var v3 = $foreign.createChart(ReactOps.createRef)(v.points)();
+                      var v3 = $foreign.createChart(ReactOps.createRef)(v)();
                       return Effect_Ref.write(new Data_Maybe.Just(v3))(v1)();
                   };
                   throw new Error("Failed pattern match at BarChart (line 30, column 9 - line 34, column 36): " + [ v2.constructor.name ]);
@@ -1810,7 +1815,7 @@ var PS = {};
                           return function __do() {
                               var v4 = Effect_Ref.read(v1)();
                               if (v4 instanceof Data_Maybe.Just) {
-                                  return $foreign.updateChart(v4.value0)(p.points)();
+                                  return $foreign.updateChart(v4.value0)(p)();
                               };
                               if (v4 instanceof Data_Maybe.Nothing) {
                                   return Effect_Console.error("chart doesn't exists")();
@@ -4411,8 +4416,7 @@ var PS = {};
       };
       return str;
   };
-  var localDateTime = function (x) {
-      var ms = Global.readInt(10)(x);
+  var localDateTime$prime = function (ms) {
       var d = Data_JSDate.fromTime(ms);
       var day = datePart(Data_Int.floor(Data_JSDate.getUTCDate(d)));
       var hours = datePart(Data_Int.floor(Data_JSDate.getUTCHours(d)));
@@ -4422,7 +4426,11 @@ var PS = {};
       var year = datePart(Data_Int.floor(Data_JSDate.getUTCFullYear(d)));
       return day + ("." + (month + ("." + (year + (" " + (hours + (":" + (minutes + (":" + seconds)))))))));
   };
+  var localDateTime = function (ms) {
+      return localDateTime$prime(Global.readInt(10)(ms));
+  };
   exports["localDateTime"] = localDateTime;
+  exports["localDateTime'"] = localDateTime$prime;
   exports["duration"] = duration;
   exports["formatNum"] = $foreign.formatNum;
 })(PS["FormatOps"] = PS["FormatOps"] || {});
@@ -4536,6 +4544,7 @@ var PS = {};
   var BigChart = PS["BigChart"];
   var Control_Applicative = PS["Control.Applicative"];
   var Control_Bind = PS["Control.Bind"];
+  var Control_Semigroupoid = PS["Control.Semigroupoid"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
   var Data_Maybe = PS["Data.Maybe"];
@@ -4606,11 +4615,18 @@ var PS = {};
       };
       var barChart = function (title) {
           return function (thirdQ) {
-              return function (points) {
+              return function (values) {
                   return React_DOM.div([ DomOps.cn("col-lg-3 col-md-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text(title) ]), React_DOM.h3([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-user-run text-info") ])([  ]), React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
                       return v + " ms";
                   })(thirdQ))) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement(React.reactPropFields()())(BarChart.reactClass)({
-                      points: points
+                      points: Data_Functor.map(Data_Functor.functorArray)(function (v) {
+                          return v.y;
+                      })(values),
+                      labels: Data_Functor.map(Data_Functor.functorArray)(function ($10) {
+                          return FormatOps["localDateTime'"]((function (v) {
+                              return v.t;
+                          })($10));
+                      })(values)
                   }) ]) ]) ]) ]);
               };
           };
@@ -5223,7 +5239,10 @@ var PS = {};
                           } ];
                       })(a.action));
                       var searchTs_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
-                          return [ Global.readInt(10)(y) ];
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
                       })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
                           return v4.searchTs;
                       })));
@@ -5231,7 +5250,10 @@ var PS = {};
                           return v4.searchTs_thirdQ;
                       });
                       var searchWc_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
-                          return [ Global.readInt(10)(y) ];
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
                       })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
                           return v4.searchWc;
                       })));
@@ -5239,7 +5261,10 @@ var PS = {};
                           return v4.searchWc_thirdQ;
                       });
                       var staticCreate_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
-                          return [ Global.readInt(10)(y) ];
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
                       })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
                           return v4.staticCreate;
                       })));
@@ -5247,7 +5272,10 @@ var PS = {};
                           return v4.staticCreate_thirdQ;
                       });
                       var staticGen_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
-                          return [ Global.readInt(10)(y) ];
+                          return [ {
+                              t: time$prime,
+                              y: Global.readInt(10)(y)
+                          } ];
                       })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v4) {
                           return v4.staticGen;
                       })));

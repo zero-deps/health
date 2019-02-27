@@ -7,16 +7,17 @@ exports.destroyChart = function(chart) {
 }
 
 exports.updateChart = function(chart) {
-  return function(data) {
+  return function(values) {
     return function() {
-      chart.config.data.datasets[0].data = data
+      chart.config.data.datasets[0].data = values.points
+      chart.config.data.datasets[0].customLabels = values.labels
       chart.update()
     }
   }
 }
 
 exports.createChart = function(ref) {
-  return function(data) {
+  return function(values) {
     return function() {
       const ctx = ref.current.getContext('2d')
 
@@ -41,7 +42,8 @@ exports.createChart = function(ref) {
             borderWidth: 2,
             borderDash: [],
             borderDashOffset: 0.0,
-            data: data,
+            data: values.points,
+            customLabels: values.labels,
           }]
         },
         options: {
@@ -57,7 +59,11 @@ exports.createChart = function(ref) {
             xPadding: 12,
             mode: "nearest",
             intersect: 0,
-            position: "nearest"
+            position: "nearest",
+            callbacks: {
+              title: function(items, data) { return data.datasets[0].customLabels[items[0].index] },
+              label: function(item, data) { return item.yLabel + " ms" },
+            },
           },
           responsive: true,
           scales: {

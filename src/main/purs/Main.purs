@@ -299,15 +299,15 @@ reactClass = component "Main" \this -> do
           Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
           Nothing -> pure Nothing
 
-        let action = fromMaybe [] $ map (\b -> [{t: time', label: b }]) a.action
+        let action = fromMaybe [] $ map (\b -> [{ t: time', label: b }]) a.action
 
-        let searchTs_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.searchTs
+        let searchTs_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchTs
         let searchTs_thirdQ = a.measure >>= _.searchTs_thirdQ
-        let searchWc_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.searchWc
+        let searchWc_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchWc
         let searchWc_thirdQ = a.measure >>= _.searchWc_thirdQ
-        let staticCreate_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.staticCreate
+        let staticCreate_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticCreate
         let staticCreate_thirdQ = a.measure >>= _.staticCreate_thirdQ
-        let staticGen_points = fromMaybe [] $ map (\y -> [ readInt 10 y ]) $ a.measure >>= _.staticGen
+        let staticGen_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticGen
         let staticGen_thirdQ = a.measure >>= _.staticGen_thirdQ
 
         let errs = maybe [] singleton a.err
