@@ -44,7 +44,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
   }
 
   def measure(name: String, ns: Long): Unit = {
-    send(MeasureStat(name, ns/i"1'000'000"))
+    send(MeasureStat(name, Math.min(1,ns/i"1'000'000")))
   }
 
   def action(action: String): Unit = {
