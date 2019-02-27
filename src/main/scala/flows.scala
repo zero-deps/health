@@ -85,7 +85,7 @@ object Flows {
       }
       val save_error = Flow[Msg].collect{
         case Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr)) =>
-          val i = kvs.el.get[String](s"errors.idx.${addr}").getOrElse("")
+          val i = kvs.el.get[String](s"errors.idx.${addr}").getOrElse("0")
           for {
             _ <- kvs.put(StatEn(fid="errors", id=s"${addr}${i}", prev=.kvs.empty, s"${exception}|${stacktrace}|${toptrace}", time, addr))
             i1 = ((i.toInt + 1) % 100).toString
