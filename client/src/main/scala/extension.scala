@@ -39,12 +39,12 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val t0 = System.nanoTime
     val result = block
     val t1 = System.nanoTime
-    measure(name, time=t1-t0)
+    measure(name, ns=t1-t0)
     result
   }
 
-  def measure(name: String, time: Long): Unit = {
-    send(MeasureStat(name, time))
+  def measure(name: String, ns: Long): Unit = {
+    send(MeasureStat(name, ns/i"1'000'000"))
   }
 
   def action(action: String): Unit = {
