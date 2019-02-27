@@ -100,7 +100,7 @@ reactClass = component "Node" \this -> do
           [ h5 [ cn "card-category" ] [ text title ]
           , h3 [ cn "card-title" ]
             [ i [ cn "tim-icons icon-user-run text-info" ] []
-            , text $ fromMaybe "--" thirdQ
+            , text $ fromMaybe "--" $ map (_<>" ms") thirdQ
             ]
           ]
         , div [ cn "card-body" ]

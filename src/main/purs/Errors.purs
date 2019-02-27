@@ -5,11 +5,11 @@ module Errors
 import FormatOps (localDateTime)
 import DomOps (cn)
 import Effect (Effect)
-import Prelude hiding (div)
+import Prelude (Unit, bind, map, pure, ($), (<>))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr', div')
 import React.DOM.Props (onClick, style)
-import Schema
+import Schema (ErrorInfo)
 
 type State = {}
 type Props =
@@ -79,7 +79,9 @@ errorReactClass = component "Error" \this -> do
         tr' $ ( if props.showAddr then
         [ td [ cn "align-top" ] [ text props.err.addr ] ] else [] ) <>
         [ td [ cn "align-top" ] [ text $ localDateTime props.err.time ]
-        , td [ cn "align-top" ] $ map (\y -> div' [ text y ]) props.err.exception
+        , td [ cn "align-top", style { width: "40%" } ] $ map (\y -> 
+            div [ style { wordBreak: "break-all" } ]
+              [ text y ]) props.err.exception
         , case s.expandStack of
             false -> 
               td [ cn "align-top", onClick \_ -> fullStack, style { cursor: "zoom-in", fontFamily: "Fira Code", wordBreak: "break-all" } ]

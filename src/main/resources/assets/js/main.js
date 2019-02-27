@@ -4462,8 +4462,12 @@ var PS = {};
                       return [ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.err.addr) ]) ];
                   };
                   return [  ];
-              })())([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(FormatOps.localDateTime(v1.err.time)) ]), React_DOM.td([ DomOps.cn("align-top") ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
-                  return React_DOM["div'"]([ React_DOM.text(y) ]);
+              })())([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(FormatOps.localDateTime(v1.err.time)) ]), React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.style({
+                  width: "40%"
+              }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+                  return React_DOM.div([ React_DOM_Props.style({
+                      wordBreak: "break-all"
+                  }) ])([ React_DOM.text(y) ]);
               })(v1.err.exception)), (function () {
                   if (!v.expandStack) {
                       return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v2) {
@@ -4486,7 +4490,7 @@ var PS = {};
                           return React_DOM["div'"]([ React_DOM.text(y) ]);
                       })(v1.err.stacktrace)) ]);
                   };
-                  throw new Error("Failed pattern match at Errors (line 83, column 11 - line 91, column 16): " + [ v.expandStack.constructor.name ]);
+                  throw new Error("Failed pattern match at Errors (line 85, column 11 - line 93, column 16): " + [ v.expandStack.constructor.name ]);
               })() ]));
           };
       };
@@ -4603,7 +4607,9 @@ var PS = {};
       var barChart = function (title) {
           return function (thirdQ) {
               return function (points) {
-                  return React_DOM.div([ DomOps.cn("col-lg-3 col-md-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text(title) ]), React_DOM.h3([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-user-run text-info") ])([  ]), React_DOM.text(Data_Maybe.fromMaybe("--")(thirdQ)) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement(React.reactPropFields()())(BarChart.reactClass)({
+                  return React_DOM.div([ DomOps.cn("col-lg-3 col-md-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text(title) ]), React_DOM.h3([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-user-run text-info") ])([  ]), React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
+                      return v + " ms";
+                  })(thirdQ))) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement(React.reactPropFields()())(BarChart.reactClass)({
                       points: points
                   }) ]) ]) ]) ]);
               };
