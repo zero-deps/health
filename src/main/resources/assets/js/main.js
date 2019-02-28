@@ -1670,10 +1670,12 @@ var PS = {};
   var onClick = function (f) {
       return $foreign.unsafeMkProps("onClick")(Effect_Uncurried.mkEffectFn1(f));
   };                                                
-  var href = $foreign.unsafeMkProps("href");      
+  var href = $foreign.unsafeMkProps("href");  
+  var colSpan = $foreign.unsafeMkProps("colSpan");
   var className = $foreign.unsafeMkProps("className");
   exports["style"] = style;
   exports["className"] = className;
+  exports["colSpan"] = colSpan;
   exports["href"] = href;
   exports["target"] = target;
   exports["onClick"] = onClick;
@@ -3390,7 +3392,10 @@ var PS = {};
   var Data_Time_Duration = PS["Data.Time.Duration"];
   var Effect = PS["Effect"];
   var Foreign = PS["Foreign"];
-  var Prelude = PS["Prelude"];
+  var Prelude = PS["Prelude"];                    
+  var getUTCSeconds = function (dt) {
+      return $foreign.dateMethod("getUTCSeconds", dt);
+  };
   var getUTCMonth = function (dt) {
       return $foreign.dateMethod("getUTCMonth", dt);
   };
@@ -3414,6 +3419,7 @@ var PS = {};
   exports["getUTCHours"] = getUTCHours;
   exports["getUTCMinutes"] = getUTCMinutes;
   exports["getUTCMonth"] = getUTCMonth;
+  exports["getUTCSeconds"] = getUTCSeconds;
   exports["getTimezoneOffset"] = getTimezoneOffset;
   exports["now"] = $foreign.now;
   exports["fromTime"] = $foreign.fromTime;
@@ -4443,7 +4449,8 @@ var PS = {};
           var year = datePart(Data_JSDate.getUTCFullYear(d));
           var hours = datePart(Data_JSDate.getUTCHours(d));
           var minutes = datePart(Data_JSDate.getUTCMinutes(d));
-          return day + ("." + (month + ("." + (year + (" " + (hours + (":" + minutes)))))));
+          var seconds = datePart(Data_JSDate.getUTCSeconds(d));
+          return day + ("." + (month + ("." + (year + (" " + (hours + (":" + (minutes + (":" + seconds)))))))));
       };
   };
   exports["dateTime"] = dateTime;
@@ -4455,6 +4462,8 @@ var PS = {};
   "use strict";
   var Control_Applicative = PS["Control.Applicative"];
   var Control_Bind = PS["Control.Bind"];
+  var Data_Array = PS["Data.Array"];
+  var Data_Eq = PS["Data.Eq"];
   var Data_Function = PS["Data.Function"];
   var Data_Functor = PS["Data.Functor"];
   var Data_Semigroup = PS["Data.Semigroup"];
@@ -4483,41 +4492,52 @@ var PS = {};
               var v = React.getState($$this)();
               var v1 = React.getProps($$this)();
               var v2 = FormatOps.dateTime(Global.readInt(10)(v1.err.time))();
+              var nocause = v1.err.toptrace === "--";
               return React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
                   if (v1.showAddr) {
                       return [ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.err.addr) ]) ];
                   };
                   return [  ];
-              })())([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v2) ]), React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.style({
+              })())(Data_Semigroup.append(Data_Semigroup.semigroupArray)([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v2) ]), React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.style({
                   width: "40%"
-              }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+              }), React_DOM_Props.colSpan((function () {
+                  if (nocause) {
+                      return 2;
+                  };
+                  return 1;
+              })()) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
                   return React_DOM.div([ React_DOM_Props.style({
                       wordBreak: "break-all"
                   }) ])([ React_DOM.text(y) ]);
-              })(v1.err.exception)), (function () {
-                  if (!v.expandStack) {
-                      return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v3) {
-                          return fullStack;
-                      }), React_DOM_Props.style({
-                          cursor: "zoom-in",
-                          fontFamily: "Fira Code",
-                          wordBreak: "break-all"
-                      }) ])([ React_DOM.text(v1.err.toptrace) ]);
+              })(v1.err.exception)) ])((function () {
+                  if (nocause) {
+                      return [  ];
                   };
-                  if (v.expandStack) {
-                      return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v3) {
-                          return shortStack;
-                      }), React_DOM_Props.style({
-                          cursor: "zoom-out"
-                      }) ])([ React_DOM.div([ React_DOM_Props.style({
-                          fontFamily: "Fira Code",
-                          wordBreak: "break-all"
-                      }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
-                          return React_DOM["div'"]([ React_DOM.text(y) ]);
-                      })(v1.err.stacktrace)) ]);
-                  };
-                  throw new Error("Failed pattern match at Errors (line 87, column 11 - line 95, column 16): " + [ v.expandStack.constructor.name ]);
-              })() ]));
+                  return Data_Array.singleton((function () {
+                      if (!v.expandStack) {
+                          return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v3) {
+                              return fullStack;
+                          }), React_DOM_Props.style({
+                              cursor: "zoom-in",
+                              fontFamily: "Fira Code",
+                              wordBreak: "break-all"
+                          }) ])([ React_DOM.text(v1.err.toptrace) ]);
+                      };
+                      if (v.expandStack) {
+                          return React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.onClick(function (v3) {
+                              return shortStack;
+                          }), React_DOM_Props.style({
+                              cursor: "zoom-out"
+                          }) ])([ React_DOM.div([ React_DOM_Props.style({
+                              fontFamily: "Fira Code",
+                              wordBreak: "break-all"
+                          }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
+                              return React_DOM["div'"]([ React_DOM.text(y) ]);
+                          })(v1.err.stacktrace)) ]);
+                      };
+                      throw new Error("Failed pattern match at Errors (line 90, column 11 - line 98, column 16): " + [ v.expandStack.constructor.name ]);
+                  })());
+              })())));
           };
       };
       return React.component(React.reactComponentSpec()())("Error")(function ($$this) {

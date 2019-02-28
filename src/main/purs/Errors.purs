@@ -3,13 +3,14 @@ module Errors
   ) where
 
 import FormatOps (dateTime)
+import Data.Array (singleton)
 import DomOps (cn)
 import Effect (Effect)
 import Global (readInt)
-import Prelude (Unit, bind, map, pure, ($), (<>))
+import Prelude (Unit, bind, map, pure, ($), (<>), (==))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr', div')
-import React.DOM.Props (onClick, style)
+import React.DOM.Props (onClick, style, colSpan)
 import Schema (ErrorInfo)
 
 type State = {}
@@ -77,14 +78,16 @@ errorReactClass = component "Error" \this -> do
       s <- getState this
       props <- getProps this
       dt <- dateTime $ readInt 10 props.err.time
+      let nocause = props.err.toptrace == "--"
       pure $
-        tr' $ ( if props.showAddr then
+        tr' $ (if props.showAddr then
         [ td [ cn "align-top" ] [ text props.err.addr ] ] else [] ) <>
         [ td [ cn "align-top" ] [ text dt ]
-        , td [ cn "align-top", style { width: "40%" } ] $ map (\y -> 
+        , td [ cn "align-top", style { width: "40%" }, colSpan (if nocause then 2 else 1) ] $ map (\y -> 
             div [ style { wordBreak: "break-all" } ]
               [ text y ]) props.err.exception
-        , case s.expandStack of
+        ] <> (if nocause then [] else singleton $
+          case s.expandStack of
             false -> 
               td [ cn "align-top", onClick \_ -> fullStack, style { cursor: "zoom-in", fontFamily: "Fira Code", wordBreak: "break-all" } ]
               [ text props.err.toptrace ]
@@ -92,8 +95,7 @@ errorReactClass = component "Error" \this -> do
               td [ cn "align-top", onClick \_ -> shortStack, style { cursor: "zoom-out" } ]
               [ div [ style { fontFamily: "Fira Code", wordBreak: "break-all" } ] $ map (\y -> 
                   div' [ text y ]) props.err.stacktrace
-              ]
-        ]
+              ])
       where
       fullStack :: Effect Unit
       fullStack = modifyState this _{ expandStack = true }
