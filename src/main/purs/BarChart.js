@@ -68,15 +68,17 @@ exports.createChart = function(ref) {
           responsive: true,
           scales: {
             yAxes: [{
+              type: 'logarithmic',
               gridLines: {
                 drawBorder: false,
                 color: 'rgba(29,140,248,0.1)',
                 zeroLineColor: "transparent",
               },
               ticks: {
-                suggestedMin: 0,
+                suggestedMin: 1,
                 padding: 20,
-                fontColor: "#9e9e9e"
+                fontColor: "#9e9e9e",
+                callback: function(v) { return v < 1000 ? v : (v/1000|0)+"k" },
               }
             }],
             xAxes: [{

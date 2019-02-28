@@ -2,7 +2,6 @@ module Nodes
   ( reactClass
   ) where
 
-import FormatOps (localDateTime)
 import DomOps (cn)
 import Effect (Effect)
 import Prelude (Unit, bind, map, pure, ($))
@@ -47,7 +46,7 @@ reactClass = component "Errors" \this -> do
                   , tbody' $ map (\x ->
                       tr [ onClick \_ -> props.openNode x.addr, style { cursor: "zoom-in" } ]
                       [ td [ style { fontFamily: "Fira Code" } ] [ text x.addr ]
-                      , td [ style { fontFamily: "Fira Code" } ] [ text $ localDateTime x.lastUpdate ]
+                      , td [ style { fontFamily: "Fira Code" } ] [ text x.lastUpdate ]
                       ]) props.nodes
                   ]
                 ]

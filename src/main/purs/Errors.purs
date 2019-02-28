@@ -2,9 +2,10 @@ module Errors
   ( reactClass
   ) where
 
-import FormatOps (localDateTime)
+import FormatOps (dateTime)
 import DomOps (cn)
 import Effect (Effect)
+import Global (readInt)
 import Prelude (Unit, bind, map, pure, ($), (<>))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr', div')
@@ -75,10 +76,11 @@ errorReactClass = component "Error" \this -> do
     render this = do
       s <- getState this
       props <- getProps this
+      dt <- dateTime $ readInt 10 props.err.time
       pure $
         tr' $ ( if props.showAddr then
         [ td [ cn "align-top" ] [ text props.err.addr ] ] else [] ) <>
-        [ td [ cn "align-top" ] [ text $ localDateTime props.err.time ]
+        [ td [ cn "align-top" ] [ text dt ]
         , td [ cn "align-top", style { width: "40%" } ] $ map (\y -> 
             div [ style { wordBreak: "break-all" } ]
               [ text y ]) props.err.exception

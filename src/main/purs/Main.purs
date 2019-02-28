@@ -15,6 +15,7 @@ import DomOps as DomOps
 import Effect (Effect)
 import Effect.Console (error)
 import Errors as ErrorsCom
+import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
@@ -253,6 +254,7 @@ reactClass = component "Main" \this -> do
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
         let time' = readInt 10 a.time
+        dt <- dateTime time'
         let uptime = a.metrics >>= _.uptime
         let cpu_mem = a.metrics >>= _.cpu_mem
         let cpu = cpu_mem >>= head
@@ -301,13 +303,13 @@ reactClass = component "Main" \this -> do
 
         let action = fromMaybe [] $ map (\b -> [{ t: time', label: b }]) a.action
 
-        let searchTs_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchTs
+        let searchTs_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.searchTs
         let searchTs_thirdQ = a.measure >>= _.searchTs_thirdQ
-        let searchWc_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.searchWc
+        let searchWc_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.searchWc
         let searchWc_thirdQ = a.measure >>= _.searchWc_thirdQ
-        let staticCreate_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticCreate
+        let staticCreate_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.staticCreate
         let staticCreate_thirdQ = a.measure >>= _.staticCreate_thirdQ
-        let staticGen_points = fromMaybe [] $ map (\y -> [{ t: time', y: readInt 10 y }]) $ a.measure >>= _.staticGen
+        let staticGen_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.staticGen
         let staticGen_thirdQ = a.measure >>= _.staticGen_thirdQ
 
         let errs = maybe [] singleton a.err
@@ -334,7 +336,7 @@ reactClass = component "Main" \this -> do
                 let errs' = take 100 $ errs <> node.errs
 
                 node
-                  { lastUpdate = a.time
+                  { lastUpdate = dt
                   , cpuPoints = cpuPoints''
                   , memPoints = memPoints''
                   , actPoints = actPoints''
@@ -358,7 +360,7 @@ reactClass = component "Main" \this -> do
                   }
               Nothing ->
                 { addr: a.addr
-                , lastUpdate: a.time
+                , lastUpdate: dt
                 , cpuPoints: cpuPoints
                 , memPoints: memPoints
                 , actPoints: action

@@ -1,33 +1,31 @@
 module FormatOps
-  ( localDateTime
-  , localDateTime'
+  ( dateTime
   , formatNum
   , duration
   ) where
 
+import Effect (Effect)
 import Data.Int (floor)
-import Data.JSDate (fromTime, getUTCDate, getUTCFullYear, getUTCHours, getUTCMinutes, getUTCMonth, getUTCSeconds)
+import Data.JSDate (fromTime, getUTCDate, getUTCFullYear, getUTCHours, getUTCMinutes, getUTCMonth, getUTCSeconds, getTimezoneOffset, now)
 import Data.String.CodePoints (length)
 import Global (readInt)
 import Prelude
 
-localDateTime :: String -> String
-localDateTime ms = localDateTime' $ readInt 10 ms
+dateTime :: Number -> Effect String
+dateTime ms' = do
+  timezone <- now >>= getTimezoneOffset
+  let ms = ms' - timezone * 60.0 * 1000.0
+  let d = fromTime ms
+  let day = datePart $ getUTCDate d
+  let month = datePart $ (getUTCMonth d) + 1.0
+  let year = datePart $ getUTCFullYear d
+  let hours = datePart $ getUTCHours d
+  let minutes = datePart $ getUTCMinutes d
+  pure $ day<>"."<>month<>"."<>year<>" "<>hours<>":"<>minutes
 
-localDateTime' :: Number -> String
-localDateTime' ms = let
-  d = fromTime ms
-  day = datePart $ floor $ getUTCDate d
-  month = datePart $ floor $ (getUTCMonth d) + 1.0
-  year = datePart $ floor $ getUTCFullYear d
-  hours = datePart $ floor $ getUTCHours d
-  minutes = datePart $ floor $ getUTCMinutes d
-  seconds = datePart $ floor $ getUTCSeconds d
-  in day<>"."<>month<>"."<>year<>" "<>hours<>":"<>minutes<>":"<>seconds
-
-datePart :: Int -> String
+datePart :: Number -> String
 datePart num =
-  let str = show num
+  let str = show $ floor num
   in if length str < 2 then "0"<>str else str
 
 foreign import formatNum :: Number -> String
