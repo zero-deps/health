@@ -128,11 +128,8 @@ exports.createChart = function(ref) {
               ticks: {
                 suggestedMin: 0,
                 suggestedMax: 5,
-                padding: 20,
                 fontColor: "#9a9a9a",
-                callback: function(value, index, values) {
-                  return value + "%";
-                },
+                callback: function(value) { return value+"%" },
               }
             }, {
               id: 'right-y-axis',
@@ -145,12 +142,9 @@ exports.createChart = function(ref) {
                 zeroLineColor: "transparent",
               },
               ticks: {
-                padding: 20,
                 fontColor: "#9a9a9a",
                 stepSize: 0.5,
-                callback: function(value, index, values) {
-                  return value + " GB";
-                },
+                callback: function(value) { return value+" GB" },
               },
               gridLines: {
                 drawOnChartArea: false,
@@ -158,6 +152,9 @@ exports.createChart = function(ref) {
             }],
             xAxes: [{
               type: 'time',
+              time: {
+                tooltipFormat: "DD.MM.YYYY HH:mm:ss",
+              },
               barPercentage: 1.6,
               gridLines: {
                 drawBorder: false,
@@ -165,7 +162,6 @@ exports.createChart = function(ref) {
                 zeroLineColor: "transparent",
               },
               ticks: {
-                padding: 20,
                 fontColor: "#9a9a9a"
               }
             }]

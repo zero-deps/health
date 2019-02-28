@@ -33,7 +33,7 @@ exports.createChart = function(ref) {
           display: false
         },
         data: {
-          labels: ['1','2','3','4','5'],
+          labels: values.points.map(function() { return '' }),
           datasets: [{
             fill: true,
             backgroundColor: gradientStroke,
@@ -62,7 +62,7 @@ exports.createChart = function(ref) {
             position: "nearest",
             callbacks: {
               title: function(items, data) { return data.datasets[0].customLabels[items[0].index] },
-              label: function(item, data) { return item.yLabel + " ms" },
+              label: function(item, data) { return item.yLabel+" ms" },
             },
           },
           responsive: true,
@@ -76,22 +76,13 @@ exports.createChart = function(ref) {
               },
               ticks: {
                 suggestedMin: 1,
-                padding: 20,
+                padding: 15,
                 fontColor: "#9e9e9e",
-                callback: function(v) { return v < 1000 ? v : (v/1000|0)+"k" },
+                callback: function(v) { return v<1000 ? v : (v/1000|0)+"k" },
               }
             }],
             xAxes: [{
               display: false,
-              gridLines: {
-                drawBorder: false,
-                color: 'rgba(29,140,248,0.1)',
-                zeroLineColor: "transparent",
-              },
-              ticks: {
-                padding: 20,
-                fontColor: "#9e9e9e"
-              }
             }]
           }
         }

@@ -36,7 +36,7 @@ var PS = {};
             display: false
           },
           data: {
-            labels: ['1','2','3','4','5'],
+            labels: values.points.map(function() { return '' }),
             datasets: [{
               fill: true,
               backgroundColor: gradientStroke,
@@ -65,7 +65,7 @@ var PS = {};
               position: "nearest",
               callbacks: {
                 title: function(items, data) { return data.datasets[0].customLabels[items[0].index] },
-                label: function(item, data) { return item.yLabel + " ms" },
+                label: function(item, data) { return item.yLabel+" ms" },
               },
             },
             responsive: true,
@@ -79,22 +79,13 @@ var PS = {};
                 },
                 ticks: {
                   suggestedMin: 1,
-                  padding: 20,
+                  padding: 15,
                   fontColor: "#9e9e9e",
-                  callback: function(v) { return v < 1000 ? v : (v/1000|0)+"k" },
+                  callback: function(v) { return v<1000 ? v : (v/1000|0)+"k" },
                 }
               }],
               xAxes: [{
                 display: false,
-                gridLines: {
-                  drawBorder: false,
-                  color: 'rgba(29,140,248,0.1)',
-                  zeroLineColor: "transparent",
-                },
-                ticks: {
-                  padding: 20,
-                  fontColor: "#9e9e9e"
-                }
               }]
             }
           }
@@ -1976,11 +1967,8 @@ var PS = {};
                 ticks: {
                   suggestedMin: 0,
                   suggestedMax: 5,
-                  padding: 20,
                   fontColor: "#9a9a9a",
-                  callback: function(value, index, values) {
-                    return value + "%";
-                  },
+                  callback: function(value) { return value+"%" },
                 }
               }, {
                 id: 'right-y-axis',
@@ -1993,12 +1981,9 @@ var PS = {};
                   zeroLineColor: "transparent",
                 },
                 ticks: {
-                  padding: 20,
                   fontColor: "#9a9a9a",
                   stepSize: 0.5,
-                  callback: function(value, index, values) {
-                    return value + " GB";
-                  },
+                  callback: function(value) { return value+" GB" },
                 },
                 gridLines: {
                   drawOnChartArea: false,
@@ -2006,6 +1991,9 @@ var PS = {};
               }],
               xAxes: [{
                 type: 'time',
+                time: {
+                  tooltipFormat: "DD.MM.YYYY HH:mm:ss",
+                },
                 barPercentage: 1.6,
                 gridLines: {
                   drawBorder: false,
@@ -2013,7 +2001,6 @@ var PS = {};
                   zeroLineColor: "transparent",
                 },
                 ticks: {
-                  padding: 20,
                   fontColor: "#9a9a9a"
                 }
               }]
