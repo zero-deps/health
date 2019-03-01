@@ -128,7 +128,8 @@ class Stats(implicit system: ActorSystem) extends Extension {
                 notification.getUserData match {
                   case data: CompositeData => 
                     val info = Info.from(data)
-                    send(ActionStat(s"${info.getGcAction} in ${info.getGcInfo.getDuration} ms"))
+                    if (info.getGcAction == "end of minor GC") ()
+                    else send(ActionStat(s"${info.getGcAction} in ${info.getGcInfo.getDuration} ms"))
                   case _ =>
                 }
               } else ()
