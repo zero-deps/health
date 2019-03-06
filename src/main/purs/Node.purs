@@ -12,7 +12,7 @@ import FormatOps (duration, formatNum)
 import Prelude (bind, map, pure, ($), (<>))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, createLeafElement)
 import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
-import React.DOM.Props (style)
+import React.DOM.Props (style, colSpan)
 import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo)
 
 type State = {}
@@ -129,8 +129,8 @@ reactClass = component "Node" \this -> do
           ]
         ]
       ]
-  othCard :: Props -> ReactElement
-  othCard p = let fuptime = map duration p.uptime in card "Other Metrics"
+  othCard :: NodeInfo -> ReactElement
+  othCard p = let uptime = map duration p.uptime in card "Other Metrics"
     [ th' [ text "Name" ]
     , th [ cn "text-right" ] [ text "Value" ]
     , th' [ text "Unit" ]
@@ -138,8 +138,8 @@ reactClass = component "Node" \this -> do
     [ tr'
       [ td' [ text "Uptime" ]
       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
-        [ text $ fromMaybe "--" $ map _.value fuptime ]
-      , td' [ text $ fromMaybe "--" $ map _.unit fuptime ]
+        [ text $ fromMaybe "--" $ map _.value uptime ]
+      , td' [ text $ fromMaybe "--" $ map _.unit uptime ]
       ]
     , tr'
       [ td' [ text "CPU Load" ]
@@ -164,6 +164,11 @@ reactClass = component "Node" \this -> do
       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
         [ text $ fromMaybe "--" $ map formatNum p.memTotal ]
       , td' [ text "MB" ]
+      ]
+    , tr'
+      [ td' [ text "Version" ]
+      , td [ cn "text-center", style { fontFamily: "Fira Code" }, colSpan 2 ]
+        [ text $ fromMaybe "--" p.version ]
       ]
     ]
   fsCard :: FsInfo -> ReactElement

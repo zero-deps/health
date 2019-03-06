@@ -189,13 +189,14 @@ reactClass = component "Main" \this -> do
             [ _, name, value, time, addr ] -> do
               let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
               let uptime = if name == "uptime" then Just value else Nothing
+              let version = if name == "v" then Just value else Nothing
               let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
               let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
               let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
               updateWith
                 { addr: addr
                 , time: time
-                , metrics: Just { cpu_mem, uptime, fs, fd, thr }
+                , metrics: Just { cpu_mem, uptime, version, fs, fd, thr }
                 , measure: Nothing
                 , err: Nothing
                 , action: Nothing
@@ -256,6 +257,7 @@ reactClass = component "Main" \this -> do
         let time' = readInt 10 a.time
         dt <- dateTime time'
         let uptime = a.metrics >>= _.uptime
+        let version = a.metrics >>= _.version
         let cpu_mem = a.metrics >>= _.cpu_mem
         let cpu = cpu_mem >>= head
         let cpuPoints = fromMaybe [] $ map (\b -> [{ t: time', y: readInt 10 b }]) cpu
@@ -337,6 +339,7 @@ reactClass = component "Main" \this -> do
 
                 node
                   { lastUpdate = dt
+                  , version = version <|> node.version
                   , cpuPoints = cpuPoints''
                   , memPoints = memPoints''
                   , actPoints = actPoints''
@@ -361,6 +364,7 @@ reactClass = component "Main" \this -> do
               Nothing ->
                 { addr: a.addr
                 , lastUpdate: dt
+                , version: version
                 , cpuPoints: cpuPoints
                 , memPoints: memPoints
                 , actPoints: action

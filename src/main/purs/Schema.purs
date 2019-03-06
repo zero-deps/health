@@ -25,6 +25,7 @@ type UpdateData =
 type MetricsUpdate =
   { cpu_mem :: Maybe (Array String)
   , uptime :: Maybe String
+  , version :: Maybe String
   , fs :: Maybe (Array String)
   , fd :: Maybe (Array String)
   , thr :: Maybe (Array String)
@@ -44,6 +45,7 @@ type MeasureUpdate =
 type NodeInfo =
   { addr :: String
   , lastUpdate :: String
+  , version :: Maybe String
   , cpuPoints :: Array NumPoint
   , memPoints :: Array NumPoint
   , actPoints :: Array StrPoint
