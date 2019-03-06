@@ -35,6 +35,10 @@ class Stats(implicit system: ActorSystem) extends Extension {
     client map (_ ! m)
   }
 
+  def metric(name: String, value: String): Unit = {
+    send(MetricStat(name, value))
+  }
+
   def measure[R](name: String)(block: => R): R = {
     val t0 = System.nanoTime
     val result = block
@@ -77,7 +81,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
       val daemon = thr.getDaemonThreadCount
       val peak = thr.getPeakThreadCount
       val total = thr.getTotalStartedThreadCount
-      send(MetricStat("thr", s"${all}~${daemon}~${peak}~${total}"))
+      metric("thr", s"${all}~${daemon}~${peak}~${total}")
     }
     // Uptime (seconds)
     def scheduleUptime(): Unit = {
@@ -87,7 +91,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
         else if (uptime < 3600) 1 minute
         else 1 hour;
       scheduler.scheduleOnce(t) {
-        send(MetricStat("uptime", uptime.toString))
+        metric("uptime", uptime.toString)
         scheduleUptime()
       }
     }
@@ -103,7 +107,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
           // Memory (Mbytes)
           val free = os.getFreePhysicalMemorySize
           val total = os.getTotalPhysicalMemorySize
-          send(MetricStat("cpu_mem", s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}"))
+          metric("cpu_mem", s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}")
         }
         os match {
           case os: com.sun.management.UnixOperatingSystemMXBean =>
@@ -111,7 +115,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
             scheduler.schedule(1 second, timeout.fd) {
               val open = os.getOpenFileDescriptorCount
               val max = os.getMaxFileDescriptorCount
-              send(MetricStat("fd", s"${open}~${max}"))
+              metric("fd", s"${open}~${max}")
             }
           case _ => log.info("unix descriptors are unavailable")
         }
@@ -148,7 +152,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
             scheduler.schedule(1 second, timeout.fs) {
               (usable, total) match {
                 case (Success(usable), Success(total)) =>
-                  send(MetricStat("fs./", s"${usable/i"1'000'000"}~${total/i"1'000'000"}"))
+                  metric("fs./", s"${usable/i"1'000'000"}~${total/i"1'000'000"}")
                 case _ => log.error("can't get disk usage")
               }
             }
