@@ -10811,7 +10811,7 @@ table.tablesorter thead tr .headerSortDown {
   float: right;
   width: 100%;
   min-height: 100vh;
-  border-top: 2px solid #e14eca;
+  /*border-top: 2px solid #e14eca;*/
   background: linear-gradient(#1e1e2f, #1e1e24);
   transition: all 0.5s cubic-bezier(0.685, 0.0473, 0.346, 1); }
   .main-panel[data="blue"] {
@@ -12455,5 +12455,3 @@ Copyright (c) 2015 Daniel Eden
   .card-plain:not(.card-subcategories).card-body {
     padding-left: 0;
     padding-right: 0; }
-
-/*# sourceMappingURL=black-dashboard.css.map */

@@ -4997,7 +4997,7 @@ var PS = {};
               if (v instanceof Errors) {
                   return "icon-alert-circle-exc";
               };
-              throw new Error("Failed pattern match at Main (line 153, column 7 - line 153, column 33): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 154, column 7 - line 154, column 33): " + [ v.constructor.name ]);
           };
           var menuContent = function (v) {
               if (v.menu instanceof Nodes && v.node instanceof Data_Maybe.Just) {
@@ -5015,7 +5015,7 @@ var PS = {};
                           return React.createLeafElement(React.reactPropFields()())(dummy)({});
                       })(Effect_Console.error("bad node"));
                   };
-                  throw new Error("Failed pattern match at Main (line 159, column 9 - line 162, column 9): " + [ v1.constructor.name ]);
+                  throw new Error("Failed pattern match at Main (line 160, column 9 - line 163, column 9): " + [ v1.constructor.name ]);
               };
               if (v.menu instanceof Nodes) {
                   return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement(React.reactPropFields()())(Nodes_1.reactClass)({
@@ -5042,7 +5042,7 @@ var PS = {};
                       showAddr: true
                   }));
               };
-              throw new Error("Failed pattern match at Main (line 157, column 7 - line 157, column 50): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 158, column 7 - line 158, column 50): " + [ v.constructor.name ]);
           };
           var $$goto = function (v) {
               if (v instanceof Nodes) {
@@ -5073,7 +5073,7 @@ var PS = {};
                       };
                   });
               };
-              throw new Error("Failed pattern match at Main (line 170, column 7 - line 170, column 34): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 171, column 7 - line 171, column 34): " + [ v.constructor.name ]);
           };
           return function __do() {
               var v = React.getState($$this)();
@@ -5120,7 +5120,7 @@ var PS = {};
                   return "";
               })()) ])([ React_DOM.a([ React_DOM_Props.href("#"), DomOps.cn("dropdown-toggle nav-link"), React_DOM_Props.onClick(function (v3) {
                   return toggleNotifications;
-              }) ])([ React_DOM.div([ DomOps.cn("notification d-none d-lg-block d-xl-block") ])([  ]), React_DOM.i([ DomOps.cn("tim-icons icon-sound-wave") ])([  ]), React_DOM.p([ DomOps.cn("d-lg-none") ])([ React_DOM.text("Notifications") ]) ]), React_DOM.ul([ DomOps.cn("dropdown-menu dropdown-menu-right dropdown-navbar" + (function () {
+              }) ])([ React_DOM.div([ DomOps.cn("notification d-none") ])([  ]), React_DOM.i([ DomOps.cn("tim-icons icon-sound-wave") ])([  ]), React_DOM.p([ DomOps.cn("d-lg-none") ])([ React_DOM.text("Notifications") ]) ]), React_DOM.ul([ DomOps.cn("dropdown-menu dropdown-menu-right dropdown-navbar" + (function () {
                   if (v.notifications) {
                       return " show";
                   };
@@ -5169,7 +5169,7 @@ var PS = {};
                           if (cpu_mem instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 265, column 16 - line 272, column 34): " + [ cpu_mem.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 266, column 16 - line 273, column 34): " + [ cpu_mem.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
                           return v2.used;
@@ -5208,7 +5208,7 @@ var PS = {};
                           if (v2 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 278, column 15 - line 285, column 34): " + [ v2.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 279, column 15 - line 286, column 34): " + [ v2.constructor.name ]);
                       })();
                       var v3 = (function () {
                           var v3 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v4) {
@@ -5230,7 +5230,7 @@ var PS = {};
                           if (v3 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 287, column 15 - line 293, column 34): " + [ v3.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 288, column 15 - line 294, column 34): " + [ v3.constructor.name ]);
                       })();
                       var v4 = (function () {
                           var v4 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v5) {
@@ -5258,7 +5258,7 @@ var PS = {};
                           if (v4 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 295, column 16 - line 304, column 34): " + [ v4.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 296, column 16 - line 305, column 34): " + [ v4.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
@@ -5392,7 +5392,7 @@ var PS = {};
                                   staticGen_thirdQ: staticGen_thirdQ
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 320, column 21 - line 388, column 18): " + [ v6.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 321, column 21 - line 389, column 18): " + [ v6.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -5423,7 +5423,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 390, column 9 - line 392, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 391, column 9 - line 393, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var xs = Data_String_Common.split("::")(payload);
