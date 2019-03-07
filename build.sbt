@@ -1,6 +1,11 @@
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := "2.12.8"
-ThisBuild / version := org.eclipse.jgit.api.Git.open(file(".")).describe().call()
+ThisBuild / version := {
+  val repo = org.eclipse.jgit.api.Git.open(file("."))
+  val desc = repo.describe.call
+  val dirty = if (repo.status.call.isClean) "" else "-dirty"
+  s"${desc}${dirty}"
+}
 ThisBuild / fork := true
 ThisBuild / cancelable in Global := true
 ThisBuild / scalacOptions in Compile ++= Vector(
