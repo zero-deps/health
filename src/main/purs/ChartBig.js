@@ -3,7 +3,6 @@
 exports.destroyChart = function(chart) {
   return function() {
     chart.destroy()
-    chart = null
   }
 }
 

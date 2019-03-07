@@ -1,6 +1,7 @@
 module Schema where
 
 import Data.Maybe (Maybe)
+import Prelude (class Eq)
 
 type NodeAddr = String
 
@@ -24,6 +25,7 @@ type UpdateData =
 
 type MetricsUpdate =
   { cpu_mem :: Maybe (Array String)
+  , cpu_hour :: Maybe String
   , uptime :: Maybe String
   , version :: Maybe String
   , fs :: Maybe (Array String)
@@ -47,6 +49,7 @@ type NodeInfo =
   , lastUpdate :: String
   , version :: Maybe String
   , cpuPoints :: Array NumPoint
+  , cpuHourPoints :: Array NumPoint
   , memPoints :: Array NumPoint
   , actPoints :: Array StrPoint
   , uptime :: Maybe String
@@ -67,6 +70,9 @@ type NodeInfo =
   , staticGen_points :: Array {t::String,y::Number}
   , staticGen_thirdQ :: Maybe String
   }
+
+data ChartRange = Live | Hour
+derive instance eqChartRange :: Eq ChartRange
 
 type FsInfo =
   { used :: Number

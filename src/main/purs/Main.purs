@@ -3,7 +3,7 @@ module Main
   ) where
 
 import Control.Alt ((<|>))
-import Data.Array (dropEnd, filter, fromFoldable, index, last, head, singleton, take, takeEnd, (:))
+import Data.Array (dropEnd, filter, fromFoldable, head, index, last, singleton, snoc, take, takeEnd, (:))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
@@ -19,7 +19,7 @@ import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (-), (/), (<>), (==), (>), (>>=))
+import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/), (/=), (<>), (==), (>), (>=), (>>=))
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
@@ -189,6 +189,7 @@ reactClass = component "Main" \this -> do
           case xs of
             [ _, name, value, time, addr ] -> do
               let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
+              let cpu_hour = if name == "cpu.hour" then Just value else Nothing
               let uptime = if name == "uptime" then Just value else Nothing
               let version = if name == "v" then Just value else Nothing
               let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
@@ -197,7 +198,7 @@ reactClass = component "Main" \this -> do
               updateWith
                 { addr: addr
                 , time: time
-                , metrics: Just { cpu_mem, uptime, version, fs, fd, thr }
+                , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr }
                 , measure: Nothing
                 , err: Nothing
                 , action: Nothing
@@ -262,6 +263,7 @@ reactClass = component "Main" \this -> do
         let cpu_mem = a.metrics >>= _.cpu_mem
         let cpu = cpu_mem >>= head
         let cpuPoints = fromMaybe [] $ map (\b -> [{ t: time', y: readInt 10 b }]) cpu
+        let cpuHourPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.cpu_hour
         
         mem <- case cpu_mem of
           Just ([ _, free', total' ]) -> do
@@ -331,6 +333,8 @@ reactClass = component "Main" \this -> do
                 let memPoints'' = filter (\x -> x.t > minTime) memPoints'
                 let actPoints'' = filter (\x -> x.t > minTime) actPoints'
 
+                let cpuHourPoints' = maybe node.cpuHourPoints (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 60.0*60.0*1000.0) node.cpuHourPoints) x) cpuHourPoint
+
                 let searchTs_points' = takeEnd 5 $ node.searchTs_points <> searchTs_points
                 let searchWc_points' = takeEnd 5 $ node.searchWc_points <> searchWc_points
                 let staticCreate_points' = takeEnd 5 $ node.staticCreate_points <> staticCreate_points
@@ -342,6 +346,7 @@ reactClass = component "Main" \this -> do
                   { lastUpdate = dt
                   , version = version <|> node.version
                   , cpuPoints = cpuPoints''
+                  , cpuHourPoints = cpuHourPoints'
                   , memPoints = memPoints''
                   , actPoints = actPoints''
                   , cpuLast = cpu <|> node.cpuLast
@@ -367,6 +372,7 @@ reactClass = component "Main" \this -> do
                 , lastUpdate: dt
                 , version: version
                 , cpuPoints: cpuPoints
+                , cpuHourPoints: maybe [] singleton cpuHourPoint
                 , memPoints: memPoints
                 , actPoints: action
                 , cpuLast: cpu

@@ -4,31 +4,35 @@ module Node
 
 import BarChart as BarChart
 import BigChart as BigChart
+import CpuChart as CpuChart
 import Data.Maybe (Maybe, fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
 import Errors as Errors
 import FormatOps (duration, formatNum)
-import Prelude (bind, map, pure, ($), (<>))
-import React (ReactClass, ReactElement, ReactThis, component, getProps, createLeafElement)
+import Prelude (bind, map, pure, ($), (<>), (==))
+import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
-import React.DOM.Props (style, colSpan)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo)
+import React.DOM.Props (style, colSpan, onClick)
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour))
 
-type State = {}
+type State =
+  { bigChartRange :: ChartRange
+  }
 type Props = NodeInfo
 
 reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
   p <- getProps this
   pure
-    { state: {}
+    { state: { bigChartRange: Live }
     , render: render this
     }
   where
   render :: ReactThis Props State -> Effect ReactElement
   render this = do
     p <- getProps this
+    s <- getState this
     pure $
       div'
       [ div [ cn "row" ]
@@ -46,31 +50,28 @@ reactClass = component "Node" \this -> do
                   ]
                 , div [ cn "col-5 col-sm-6" ]
                   [ div [ cn "btn-group btn-group-toggle float-right" ]
-                    [ label [ cn "btn btn-sm btn-primary btn-simple active" ]
+                    [ label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.bigChartRange == Live then " active" else "", onClick \_ -> modifyState this _{ bigChartRange = Live } ]
                       [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
                         [ text "Live" ]
                       , span [ cn "d-block d-sm-none" ]
                         [ text "L" ]
                       ]
-                    , label [ cn "btn btn-sm btn-primary btn-simple" ]
+                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.bigChartRange == Hour then " active" else "", onClick \_ -> modifyState this _{ bigChartRange = Hour } ]
                       [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
                         [ text "Hour" ]
                       , span [ cn "d-block d-sm-none" ]
                         [ text "H" ]
-                      ]
-                    , label [ cn "btn btn-sm btn-primary btn-simple" ]
-                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
-                        [ text "Week" ]
-                      , span [ cn "d-block d-sm-none" ]
-                        [ text "W" ]
                       ]
                     ]
                   ]
                 ]
               ]
             , div [ cn "card-body" ]
-              [ div [ cn "chart-area" ]
+              [ div [ cn $ "chart-area" <> if s.bigChartRange == Live then "" else " d-none" ]
                 [ createLeafElement BigChart.reactClass { cpuPoints: p.cpuPoints, memPoints: p.memPoints, actPoints: map (\x->{t:x.t,y:0.0}) p.actPoints, actLabels: map (_.label) p.actPoints }
+                ]
+              , div [ cn $ "chart-area" <> if s.bigChartRange == Hour then "" else " d-none" ]
+                [ createLeafElement CpuChart.reactClass { cpuPoints: p.cpuHourPoints }
                 ]
               ]
             ]

@@ -46,17 +46,41 @@ object Flows {
       val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
       val logIn = Flow[Msg].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save_metric = Flow[Msg].collect{
+        case Msg(MetricStat("cpu_mem", _), _) =>
         case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
           kvs.put(StatEn(fid="metrics", id=s"${addr}${name}", prev=.kvs.empty, s"${name}|${value}", time, addr))
       }
       val save_cpumem = Flow[Msg].collect{
         case Msg(MetricStat("cpu_mem", value), StatMeta(time, addr)) =>
-          val i = kvs.el.get[String](s"cpu_mem.live.idx.${addr}").getOrElse("0")
-          for {
-            _ <- kvs.put(StatEn(fid="cpu_mem.live", id=s"${addr}${i}", prev=.kvs.empty, s"cpu_mem|${value}", time, addr))
-            i1 = ((i.toInt + 1) % 20).toString
-            _ <- kvs.el.put(s"cpu_mem.live.idx.${addr}", i1)
-          } yield ()
+          { // live
+            val i = kvs.el.get[String](s"cpu_mem.live.idx.${addr}").getOrElse("0")
+            for {
+              _ <- kvs.put(StatEn(fid="cpu_mem.live", id=s"${addr}${i}", prev=.kvs.empty, value, time, addr))
+              i1 = ((i.toInt + 1) % 20).toString
+              _ <- kvs.el.put(s"cpu_mem.live.idx.${addr}", i1)
+            } yield ()
+          }
+          value.split('~') match {
+            case Array(cpu, _, _) =>
+              { // hour
+                val i = ((time.toLong / 1000 / 60) % 60) / 3 // [0, 19]
+                val now = System.currentTimeMillis
+                val last = kvs.el.get[String](s"cpu.hour.t.${addr}${i}").map(_.toLong).getOrElse(now)
+                val n =
+                  if (now - last >= 3*60*1000) 0
+                  else kvs.el.get[String](s"cpu.hour.n.${addr}${i}").map(_.toInt).getOrElse(0)
+                val v = kvs.el.get[String](s"cpu.hour.v.${addr}${i}").map(_.toFloat).getOrElse(0f)
+                val n1 = n + 1
+                val v1 = (v * n + cpu.toInt) / n1
+                kvs.el.put(s"cpu.hour.t.${addr}${i}", time)
+                kvs.el.put(s"cpu.hour.n.${addr}${i}", n1.toString)
+                kvs.el.put(s"cpu.hour.v.${addr}${i}", v1.toString)
+                val time1 = (((time.toLong / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000).toString
+                kvs.put(StatEn(fid="cpu.hour", id=s"${addr}${i}", prev=.kvs.empty, v1.toInt.toString, time1, addr))
+                system.eventStream.publish(Msg(MetricStat("cpu.hour", v1.toInt.toString), StatMeta(time1, addr)))
+              }
+            case _ =>
+          }
       }
       val save_measure = Flow[Msg].collect{
         case Msg(MeasureStat(name, value), StatMeta(time, addr)) =>

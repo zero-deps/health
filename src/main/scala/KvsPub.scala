@@ -10,12 +10,15 @@ object KvsPub {
 class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   override def preStart(): Unit = {
     kvs.stream_unsafe[StatEn]("cpu_mem.live").map(_.sortBy(_.time).foreach{
-      case StatEn(_,_,_,stat,time,addr) =>
-        stat.split('|') match {
-          case Array(name, value) =>
-            self ! Msg(MetricStat(name, value), StatMeta(time, addr))
-          case _ =>
-        }
+      case StatEn(_,_,_,value,time,addr) =>
+        self ! Msg(MetricStat("cpu_mem", value), StatMeta(time, addr))
+    })
+    kvs.stream_unsafe[StatEn]("cpu.hour").map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
+      val xs1 = xs.toVector.sortBy(_.time.toLong)
+      val min = xs1.last.time.toLong-60*60*1000
+      xs1.dropWhile(_.time.toLong < min).foreach{ case StatEn(_,_,_,value,time,addr) =>
+        self ! Msg(MetricStat("cpu.hour", value), StatMeta(time, addr))
+      }
     })
     List("search.ts", "search.wc", "static.create", "static.gen").foreach(name =>
       kvs.stream_unsafe[StatEn](s"${name}.latest").map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
@@ -52,7 +55,6 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   def receive: Receive = {
     case _: Msg => stash()
     case stageActor: ActorRef =>
-      log.debug("got stage actor")
       unstashAll()
       context.become(ready(stageActor))
   }
