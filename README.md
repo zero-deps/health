@@ -31,7 +31,7 @@ See details in `presentation.pdf`.
 
 ## Showcase
 
-http://ua--newcms2:8002/
+http://ua--monitoring.ee..corp:8002/
 
 ## Build
 
@@ -68,7 +68,7 @@ Do `sbt run`
 
 ```
 sbt
-deploySsh cms2
+deploySsh mon
 ```
 
 ## Input

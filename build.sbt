@@ -37,7 +37,7 @@ lazy val stats = project.in(file(".")).settings(
   libraryDependencies += "com.." %% "kvs" % "4.1.2",
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
   deployConfigs ++= Seq(
-    ServerConfig(name="cms2", host="ua--newcms2", user=Some("anle")),
+    ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
   ),
   deployArtifacts ++= Seq(
     ArtifactSSH((packageBin in Universal).value, "stats")
@@ -64,7 +64,7 @@ lazy val stats = project.in(file(".")).settings(
         shell.execute("cd stats")
         shell.execute(s"unzip -q -o ${name}.zip")
         shell.execute(s"rm ${name}.zip")
-        shell.execute(s"nohup ./${name}/bin/${script} -Dconfig.file=/home/anle/stats/app.conf &")
+        shell.execute(s"nohup ./${name}/bin/${script} -Dconfig.file=$$(pwd)/app.conf &")
         shell.execute("echo $! > pid")
         shell.execute("touch pid")
         val pid = shell.execute("cat pid")
