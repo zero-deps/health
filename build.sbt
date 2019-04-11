@@ -34,7 +34,7 @@ import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
   libraryDependencies += "com.." %% "ftier" % "2.0.1",
-  libraryDependencies += "com.." %% "kvs" % "4.1.2",
+  libraryDependencies += "com.." %% "kvs" % "4.4.0-7-g9c53dea",
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
   deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
