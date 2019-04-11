@@ -37,9 +37,9 @@ package object stats {
         case Array(id, top, count) =>
           Try(count.toInt) match {
             case Success(count) => kvs.en.Fd(id, top, count).right
-            case Failure(_) => kvs.UnpickleFail(s"count=${count} is not a number").left
+            case Failure(_) => kvs.UnpickleFail(new Exception(s"count=${count} is not a number")).left
           }
-        case _ => kvs.UnpickleFail(s"bad format=${s}").left
+        case _ => kvs.UnpickleFail(new Exception(s"bad format=${s}")).left
       }
     }
   }
@@ -53,7 +53,7 @@ package object stats {
       s.split('^') match {
         case Array(fid, id, prev, data, time, addr) =>
           StatEn(fid, id, prev, data, time, addr).right
-        case _ => kvs.UnpickleFail(s"bad format=${s}").left
+        case _ => kvs.UnpickleFail(new Exception(s"bad format=${s}")).left
       }
     }
 
