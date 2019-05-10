@@ -6,7 +6,10 @@ import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler, StageLogging}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import scala.collection.immutable.Queue
 import scalaz.Scalaz._
-import scala.util.{Try, Success, Failure}
+
+import zd.proto.api.{N, MessageCodec, encode, decode}
+import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums}
+
 
 package object stats {
   sealed trait Stat
@@ -22,40 +25,28 @@ package object stats {
   def now_ms(): String = System.currentTimeMillis.toString
 
   final case class StatEn
-    ( fid: String
-    , id: String
-    , prev: String
-    , data: String
-    , time: String
-    , addr: String) extends kvs.en.En
+    ( @N(1) fid: String
+    , @N(2) id: String
+    , @N(3) prev: String
+    , @N(4) data: String
+    , @N(5) time: String
+    , @N(6) addr: String) extends kvs.en.En
 
   implicit object FdHandler extends kvs.en.FdHandler {
-    def pickle(e: kvs.en.Fd): kvs.Res[Array[Byte]] = s"${e.id}^${e.top}^${e.count}".getBytes("utf8").right
-    def unpickle(a: Array[Byte]): kvs.Res[kvs.en.Fd] = {
-      val s = new String(a, "utf8")
-      s.split('^') match {
-        case Array(id, top, count) =>
-          Try(count.toInt) match {
-            case Success(count) => kvs.en.Fd(id, top, count).right
-            case Failure(_) => kvs.UnpickleFail(new Exception(s"count=${count} is not a number")).left
-          }
-        case _ => kvs.UnpickleFail(new Exception(s"bad format=${s}")).left
-      }
-    }
+
+    implicit val fdCodec: MessageCodec[kvs.en.Fd] = caseCodecNums[kvs.en.Fd]('id->1, 'top->2, 'count->3)
+
+    def pickle(e: kvs.en.Fd): kvs.Res[Array[Byte]] = encode[kvs.en.Fd](e).right
+    def unpickle(a: Array[Byte]): kvs.Res[kvs.en.Fd] = decode[kvs.en.Fd](a).right
   }
 
   implicit object StatEnHandler extends kvs.en.EnHandler[StatEn] {
     val fh: kvs.en.FdHandler = FdHandler
 
-    def pickle(e: StatEn): kvs.Res[Array[Byte]] = s"${e.fid}^${e.id}^${e.prev}^${e.data}^${e.time}^${e.addr}".getBytes("utf8").right
-    def unpickle(a: Array[Byte]): kvs.Res[StatEn] = {
-      val s = new String(a, "utf8")
-      s.split('^') match {
-        case Array(fid, id, prev, data, time, addr) =>
-          StatEn(fid, id, prev, data, time, addr).right
-        case _ => kvs.UnpickleFail(new Exception(s"bad format=${s}")).left
-      }
-    }
+    implicit val statEnCodec: MessageCodec[StatEn] = caseCodecAuto[StatEn]
+
+    def pickle(e: StatEn): kvs.Res[Array[Byte]] = encode(e).right
+    def unpickle(a: Array[Byte]): kvs.Res[StatEn] = decode[StatEn](a).right
 
     protected def update(en: StatEn, prev: String): StatEn = en.copy(prev=prev)
     protected def update(en: StatEn, id: String, prev: String): StatEn = en.copy(id=id, prev=prev)
