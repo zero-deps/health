@@ -30,6 +30,9 @@ ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-p
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "0-10-g6f2f17b"
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "0-10-g6f2f17b"
 
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % "1.1.4" % Compile
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % "1.1.4" 
+
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
