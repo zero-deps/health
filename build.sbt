@@ -1,3 +1,5 @@
+import build._
+
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := "2.12.8"
 ThisBuild / version := {
@@ -30,14 +32,14 @@ ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-p
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "0-10-g6f2f17b"
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "0-10-g6f2f17b"
 
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % "1.1.4" % Compile
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % "1.1.4" 
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % Versions.proto % Compile
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % Versions.proto 
 
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
-  libraryDependencies += "com.." %% "ftier" % "2.0.1",
-  libraryDependencies += "com.." %% "kvs" % "4.4.0-7-g9c53dea",
+  libraryDependencies += "com.." %% "ftier" % Versions.ftier,
+  libraryDependencies += "com.." %% "kvs" % Versions.kvs,
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
   deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
@@ -82,5 +84,9 @@ lazy val stats = project.in(file(".")).settings(
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats",
-  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.19",
+  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % Versions.akka,
 )
+
+lazy val prjs = project.in(file("prjs")).settings(
+  libraryDependencies += "io.github.zero-deps" %% "proto-js" % Versions.proto,
+).dependsOn(stats)

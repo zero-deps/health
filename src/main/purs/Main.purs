@@ -3,7 +3,7 @@ module Main
   ) where
 
 import Control.Alt ((<|>))
-import Data.Array (dropEnd, filter, fromFoldable, head, index, last, singleton, snoc, take, takeEnd, (:))
+import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
@@ -27,6 +27,9 @@ import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
+import Data.ArrayBuffer.Types (Uint8Array)
+
+import Api (StatMsg(MetricStat, MeasureStat, ErrorStat, ActionStat), decodeStatMsg)
 
 type State = 
   { menu :: Menu
@@ -181,77 +184,65 @@ reactClass = component "Main" \this -> do
       toggleTopMenu :: Effect Unit
       toggleTopMenu = modifyState this \s -> s{ topMenu = not s.topMenu }
 
-    onMsg :: ReactThis Props State -> String -> Effect Unit
-    onMsg this payload = do
-      let xs = split (Pattern "::") payload
-      case index xs 0 of
-        Just "metric" ->
-          case xs of
-            [ _, name, value, time, addr ] -> do
-              let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
-              let cpu_hour = if name == "cpu.hour" then Just value else Nothing
-              let uptime = if name == "uptime" then Just value else Nothing
-              let version = if name == "v" then Just value else Nothing
-              let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
-              let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
-              let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
-              updateWith
-                { addr: addr
-                , time: time
-                , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr }
-                , measure: Nothing
-                , err: Nothing
-                , action: Nothing
-                }
-            _ -> error "bad format"
-        Just "measure" ->
-          case xs of
-            [ _, name, value, time, addr ] -> do
-              let value' = readInt 10 value
-              let searchTs = if name == "search.ts" then Just value else Nothing
-              let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
-              let searchWc = if name == "search.wc" then Just value else Nothing
-              let searchWc_thirdQ = if name == "search.wc.thirdQ" then Just value else Nothing
-              let staticCreate = if name == "static.create" then Just value else Nothing
-              let staticCreate_thirdQ = if name == "static.create.thirdQ" then Just value else Nothing
-              let staticGen = if name == "static.gen" then Just value else Nothing
-              let staticGen_thirdQ = if name == "static.gen.thirdQ" then Just value else Nothing
-              updateWith
-                { addr: addr
-                , time: time
-                , metrics: Nothing
-                , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticCreate, staticCreate_thirdQ, staticGen, staticGen_thirdQ }
-                , err: Nothing
-                , action: Nothing
-                }
-            _ -> error "bad format"
-        Just "error" ->
-          case xs of
-            [ _, exception', stacktrace', toptrace, time, addr ] -> do
-              let exception = split (Pattern "~") exception'
-              let stacktrace = split (Pattern "~") stacktrace'
-              let key = addr<>time
-              let err = { exception, stacktrace, toptrace, time, addr, key }
-              updateWith
-                { addr: addr
-                , time: time
-                , metrics: Nothing
-                , measure: Nothing
-                , err: Just err
-                , action: Nothing
-                }
-            _ -> error "bad format"
-        Just "action" ->
-          case xs of
-            [ _, action, time, addr ] -> updateWith
-              { addr: addr
-              , time: time
-              , metrics: Nothing
-              , measure: Nothing
-              , err: Nothing
-              , action: Just action
-              }
-            _ -> error "bad format"
+    onMsg :: ReactThis Props State -> Uint8Array -> Effect Unit
+    onMsg this bytes = do
+      x <- decodeStatMsg bytes
+      case x of
+        Just (MetricStat { name: name, value: value, time: time, addr: addr }) -> do
+          let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
+          let cpu_hour = if name == "cpu.hour" then Just value else Nothing
+          let uptime = if name == "uptime" then Just value else Nothing
+          let version = if name == "v" then Just value else Nothing
+          let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
+          let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
+          let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
+          updateWith
+            { addr: addr
+            , time: time
+            , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr }
+            , measure: Nothing
+            , err: Nothing
+            , action: Nothing
+            }
+        Just (MeasureStat { name: name, value: value, time: time, addr: addr }) -> do
+          let value' = readInt 10 value
+          let searchTs = if name == "search.ts" then Just value else Nothing
+          let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
+          let searchWc = if name == "search.wc" then Just value else Nothing
+          let searchWc_thirdQ = if name == "search.wc.thirdQ" then Just value else Nothing
+          let staticCreate = if name == "static.create" then Just value else Nothing
+          let staticCreate_thirdQ = if name == "static.create.thirdQ" then Just value else Nothing
+          let staticGen = if name == "static.gen" then Just value else Nothing
+          let staticGen_thirdQ = if name == "static.gen.thirdQ" then Just value else Nothing
+          updateWith
+            { addr: addr
+            , time: time
+            , metrics: Nothing
+            , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticCreate, staticCreate_thirdQ, staticGen, staticGen_thirdQ }
+            , err: Nothing
+            , action: Nothing
+            }
+        Just (ErrorStat { exception: exception', stacktrace: stacktrace', toptrace: toptrace, time: time, addr: addr }) -> do
+          let exception = split (Pattern "~") exception'
+          let stacktrace = split (Pattern "~") stacktrace'
+          let key = addr<>time
+          let err = { exception, stacktrace, toptrace, time, addr, key }
+          updateWith
+            { addr: addr
+            , time: time
+            , metrics: Nothing
+            , measure: Nothing
+            , err: Just err
+            , action: Nothing
+            }
+        Just (ActionStat { action: action, time: time, addr: addr}) -> updateWith
+          { addr: addr
+          , time: time
+          , metrics: Nothing
+          , measure: Nothing
+          , err: Nothing
+          , action: Just action
+          }
         _ -> error "unknown type"
       where
       updateWith :: UpdateData -> Effect Unit
