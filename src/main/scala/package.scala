@@ -8,19 +8,34 @@ import scala.collection.immutable.Queue
 import scalaz.Scalaz._
 
 import zd.proto.api.{N, MessageCodec, encode, decode}
-import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums}
-
+import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums, sealedTraitCodecAuto}
 
 package object stats {
-  sealed trait Stat
-  final case class MetricStat(name: String, value: String) extends Stat
-  final case class MeasureStat(name: String, value: String) extends Stat
-  final case class ErrorStat(exception: String, stacktrace: String, toptrace: String) extends Stat
-  final case class ActionStat(action: String) extends Stat
+  sealed trait StatMsg
+  @N(1) final case class MetricStat
+    ( @N(1) name: String
+    , @N(2) value: String
+    , @N(3) time: String
+    , @N(4) addr: String) extends StatMsg
+  @N(2) final case class MeasureStat
+    ( @N(1) name: String
+    , @N(2) value: String
+    , @N(3) time: String
+    , @N(4) addr: String) extends StatMsg
+  @N(3) final case class ErrorStat
+    ( @N(1) exception: String
+    , @N(2) stacktrace: String
+    , @N(3) toptrace: String
+    , @N(4) time: String
+    , @N(5) addr: String
+    ) extends StatMsg
+  @N(4) final case class ActionStat
+    ( @N(1) action: String
+    , @N(4) time: String
+    , @N(5) addr: String 
+    ) extends StatMsg
 
-  final case class StatMeta(time: String, addr: String)
-
-  final case class Msg(stat: Stat, meta: StatMeta)
+  sealed trait Pull
 
   def now_ms(): String = System.currentTimeMillis.toString
 
@@ -31,6 +46,14 @@ package object stats {
     , @N(4) data: String
     , @N(5) time: String
     , @N(6) addr: String) extends kvs.en.En
+
+  implicit val StatMsgCodec: MessageCodec[StatMsg] = {
+    implicit val MetricStatCodec: MessageCodec[MetricStat] = caseCodecAuto[MetricStat]
+    implicit val MeasureStatCodec: MessageCodec[MeasureStat] = caseCodecAuto[MeasureStat]
+    implicit val ErrorStatCodec: MessageCodec[ErrorStat] = caseCodecAuto[ErrorStat]
+    implicit val ActionStatCodec: MessageCodec[ActionStat] = caseCodecAuto[ActionStat]
+    sealedTraitCodecAuto[StatMsg]
+  }
 
   implicit object FdHandler extends kvs.en.FdHandler {
 
@@ -52,14 +75,14 @@ package object stats {
     protected def update(en: StatEn, id: String, prev: String): StatEn = en.copy(id=id, prev=prev)
   }
 
-  class MsgSource(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Msg]] {
-    val out: Outlet[Msg] = Outlet("MessageSource")
-    override val shape: SourceShape[Msg] = SourceShape(out)
+  class MsgSource(sourceFeeder: ActorRef) extends GraphStage[SourceShape[StatMsg]] {
+    val out: Outlet[StatMsg] = Outlet("MessageSource")
+    override val shape: SourceShape[StatMsg] = SourceShape(out)
     override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = {
       new GraphStageLogic(shape) with StageLogging {
-        var messages: Queue[Msg] = Queue()
+        var messages: Queue[StatMsg] = Queue()
         lazy val self: StageActor = getStageActor({
-          case (_, msg: Msg) =>
+          case (_, msg: StatMsg) =>
             log.debug("received msg, queueing: {} ", msg)
             messages = messages.enqueue(msg)
             pump()
@@ -75,7 +98,7 @@ package object stats {
           if (isAvailable(out) && messages.nonEmpty) {
             log.debug("ready to dequeue")
             messages.dequeue match {
-              case (msg: Msg, newQueue: Queue[Msg]) =>
+              case (msg: StatMsg, newQueue: Queue[StatMsg]) =>
                 log.debug("got message from queue, pushing: {} ", msg)
                 push(out, msg)
                 messages = newQueue
@@ -88,7 +111,7 @@ package object stats {
         }
         private def onMessage(x: (ActorRef, Any)): Unit = {
           x match {
-            case (_, msg: Msg) =>
+            case (_, msg: StatMsg) =>
               log.debug("received msg, queueing: {} ", msg)
               messages = messages.enqueue(msg)
               pump()

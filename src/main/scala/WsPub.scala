@@ -9,11 +9,11 @@ object WsPub {
 class WsPub extends Actor with Stash with ActorLogging {
   import context.system
 
-  override def preStart: Unit = system.eventStream.subscribe(self, classOf[Msg])
+  override def preStart: Unit = system.eventStream.subscribe(self, classOf[StatMsg])
   override def postStop: Unit = system.eventStream.unsubscribe(self)
 
   def receive: Receive = {
-    case _: Msg => stash()
+    case _: StatMsg => stash()
     case stageActor: ActorRef =>
       log.debug("got stage actor")
       unstashAll()
@@ -21,6 +21,6 @@ class WsPub extends Actor with Stash with ActorLogging {
   }
 
   def ready(stageActor: ActorRef): Receive = {
-    case msg: Msg => stageActor ! msg
+    case msg: StatMsg => stageActor ! msg
   }
 }

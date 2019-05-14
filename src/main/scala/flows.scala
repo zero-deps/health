@@ -1,13 +1,16 @@
 package .stats
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.ws.{TextMessage, Message => WsMessage}
+import akka.http.scaladsl.model.ws.{TextMessage, BinaryMessage, Message => WsMessage}
 import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Sink, Source, Merge, GraphDSL, RunnableGraph, Broadcast}
 import akka.stream.{ClosedShape, FlowShape}
 import .kvs.Kvs
 import scalaz._
 import scalaz.Scalaz._
+
+import akka.util.ByteString
+import zd.proto.api.{encode}
 
 object Flows {
   def ws(system: ActorSystem, kvs: Kvs): Flow[WsMessage, WsMessage, NotUsed] =
@@ -19,22 +22,16 @@ object Flows {
       val logOut = Flow[String].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
       val kvspub = Source.fromGraph(new MsgSource(system.actorOf(KvsPub.props(kvs))))
       val wspub = Source.fromGraph(new MsgSource(system.actorOf(WsPub.props)))
-      val pub = b.add(Merge[Msg](2))
-      val toMsg = b.add(Flow[Msg].map{
-        case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
-          s"metric::${name}::${value}::${time}::${addr}"
-        case Msg(MeasureStat(name, value), StatMeta(time, addr)) =>
-          s"measure::${name}::${value.toString}::${time}::${addr}"
-        case Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr)) =>
-          s"error::${exception}::${stacktrace}::${toptrace}::${time}::${addr}"
-        case Msg(ActionStat(action), StatMeta(time, addr)) =>
-          s"action::${action}::${time}::${addr}"
+      val pub = b.add(Merge[StatMsg](2))
+
+      val toBytes = b.add(Flow[StatMsg].map{
+        case m: StatMsg => encode[StatMsg](m)
       })
-      val msgOut = b.add(Flow[String].map[TextMessage] { TextMessage.Strict })
+      val msgOut = b.add(Flow[Array[Byte]].map[BinaryMessage] { bytes => BinaryMessage.Strict(ByteString(bytes)) })
 
       msgIn ~> logIn ~> Sink.ignore // ignore income messages
       wspub  ~> pub
-      kvspub ~> pub ~> toMsg ~> logOut ~> msgOut
+      kvspub ~> pub ~> toBytes ~> msgOut
 
       FlowShape(msgIn.in, msgOut.out)
     })
@@ -44,14 +41,14 @@ object Flows {
       import GraphDSL.Implicits._
 
       val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
-      val logIn = Flow[Msg].map{ msg => system.log.debug("UDP: {}", msg); msg }
-      val save_metric = Flow[Msg].collect{
-        case Msg(MetricStat("cpu_mem", _), _) =>
-        case Msg(MetricStat(name, value), StatMeta(time, addr)) =>
+      val logIn = Flow[StatMsg].map{ msg => system.log.debug("UDP: {}", msg); msg }
+      val save_metric = Flow[StatMsg].collect{
+        case MetricStat("cpu_mem", _, _, _) =>
+        case MetricStat(name, value, time, addr) =>
           kvs.put(StatEn(fid="metrics", id=s"${addr}${name}", prev=.kvs.empty, s"${name}|${value}", time, addr))
       }
-      val save_cpumem = Flow[Msg].collect{
-        case Msg(MetricStat("cpu_mem", value), StatMeta(time, addr)) =>
+      val save_cpumem = Flow[StatMsg].collect{
+        case MetricStat("cpu_mem", value, time, addr) =>
           { // live
             val i = kvs.el.get[String](s"cpu_mem.live.idx.${addr}").getOrElse("0")
             for {
@@ -77,13 +74,13 @@ object Flows {
                 kvs.el.put(s"cpu.hour.v.${addr}${i}", v1.toString)
                 val time1 = (((time.toLong / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000).toString
                 kvs.put(StatEn(fid="cpu.hour", id=s"${addr}${i}", prev=.kvs.empty, v1.toInt.toString, time1, addr))
-                system.eventStream.publish(Msg(MetricStat("cpu.hour", v1.toInt.toString), StatMeta(time1, addr)))
+                system.eventStream.publish(MetricStat("cpu.hour", v1.toInt.toString, time1, addr))
               }
             case _ =>
           }
       }
-      val save_measure = Flow[Msg].collect{
-        case Msg(MeasureStat(name, value), StatMeta(time, addr)) =>
+      val save_measure = Flow[StatMsg].collect{
+        case MeasureStat(name, value, time, addr) =>
           val i = kvs.el.get[String](s"${name}.latest.idx.${addr}").getOrElse("0")
           for {
             _ <- kvs.put(StatEn(fid=s"${name}.latest", id=s"${addr}${i}", prev=.kvs.empty, value, time, addr))
@@ -94,12 +91,12 @@ object Flows {
           kvs.stream_unsafe[StatEn](s"${name}.latest").map{ xs =>
             val xs1 = xs.filter(_.addr == addr).toVector.sortBy(_.data)
             val thirdQ = xs1((xs1.length*0.7).toInt).data
-            val msg = Msg(MeasureStat(s"${name}.thirdQ", thirdQ), StatMeta(time="0", addr))
+            val msg = MeasureStat(s"${name}.thirdQ", thirdQ, time="0", addr)
             system.eventStream.publish(msg)
           }
       }
-      val save_action = Flow[Msg].collect{
-        case Msg(ActionStat(action), StatMeta(time, addr)) =>
+      val save_action = Flow[StatMsg].collect{
+        case ActionStat(action, time, addr) =>
           val i = kvs.el.get[String](s"action.live.idx.${addr}").getOrElse("0")
           for {
             _ <- kvs.put(StatEn(fid="action.live", id=s"${addr}${i}", prev=.kvs.empty, action, time, addr))
@@ -107,8 +104,8 @@ object Flows {
             _ <- kvs.el.put(s"action.live.idx.${addr}", i1)
           } yield ()
       }
-      val save_error = Flow[Msg].collect{
-        case Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr)) =>
+      val save_error = Flow[StatMsg].collect{
+        case ErrorStat(exception, stacktrace, toptrace, time, addr) =>
           val i = kvs.el.get[String](s"errors.idx.${addr}").getOrElse("0")
           for {
             _ <- kvs.put(StatEn(fid="errors", id=s"${addr}${i}", prev=.kvs.empty, s"${exception}|${stacktrace}|${toptrace}", time, addr))
@@ -116,11 +113,11 @@ object Flows {
             _ <- kvs.el.put(s"errors.idx.${addr}", i1)
           } yield ()
       }
-      def pub = Sink.foreach[Msg]{ case msg =>
+      def pub = Sink.foreach[StatMsg]{ case msg =>
         system.log.debug(s"pub=${msg}")
         system.eventStream.publish(msg)
       }
-      val b1 = b.add(Broadcast[Msg](6))
+      val b1 = b.add(Broadcast[StatMsg](6))
 
       udppub ~> logIn ~> b1 ~> pub
                          b1 ~> save_metric  ~> Sink.ignore

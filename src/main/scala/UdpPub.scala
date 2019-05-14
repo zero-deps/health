@@ -29,13 +29,13 @@ class UdpPub extends Actor with Stash with ActorLogging {
       val host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
       data.decodeString("UTF-8").split("::").toList match {
         case "metric" :: name :: value :: port :: Nil =>
-          self ! Msg(MetricStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))
+          self ! MetricStat(name, value, now_ms(), addr=s"${host}:${port}")
         case "measure" :: name :: value :: port :: Nil =>
-          self ! Msg(MeasureStat(name, value), StatMeta(now_ms(), addr=s"${host}:${port}"))
+          self ! MeasureStat(name, value, now_ms(), addr=s"${host}:${port}")
         case "error" :: exception :: stacktrace :: toptrace :: port :: Nil =>
-          self ! Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(now_ms(), addr=s"${host}:${port}"))
+          self ! ErrorStat(exception, stacktrace, toptrace, now_ms(), addr=s"${host}:${port}")
         case "action" :: action :: port :: Nil =>
-          self ! Msg(ActionStat(action), StatMeta(now_ms(), addr=s"${host}:${port}"))
+          self ! ActionStat(action, now_ms(), addr=s"${host}:${port}")
         case unknown =>
           log.info(s"unknown message=${unknown}")
       }
@@ -46,7 +46,7 @@ class UdpPub extends Actor with Stash with ActorLogging {
       log.debug("got stage actor for udp")
       unstashAll()
       stageActor = a.some
-    case msg: Msg =>
+    case msg: StatMsg =>
       stageActor match {
         case Some(a) => a ! msg
         case None => stash()

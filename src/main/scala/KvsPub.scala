@@ -11,34 +11,34 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   override def preStart(): Unit = {
     kvs.stream_unsafe[StatEn]("cpu_mem.live").map(_.sortBy(_.time).foreach{
       case StatEn(_,_,_,value,time,addr) =>
-        self ! Msg(MetricStat("cpu_mem", value), StatMeta(time, addr))
+        self ! MetricStat("cpu_mem", value, time, addr)
     })
     kvs.stream_unsafe[StatEn]("cpu.hour").map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
       val xs1 = xs.toVector.sortBy(_.time.toLong)
       val min = xs1.last.time.toLong-60*60*1000
       xs1.dropWhile(_.time.toLong < min).foreach{ case StatEn(_,_,_,value,time,addr) =>
-        self ! Msg(MetricStat("cpu.hour", value), StatMeta(time, addr))
+        self ! MetricStat("cpu.hour", value, time, addr)
       }
     })
     List("search.ts", "search.wc", "static.create", "static.gen").foreach(name =>
       kvs.stream_unsafe[StatEn](s"${name}.latest").map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
         val xs1 = xs.toVector
         val thirdQ = xs1.sortBy(_.data).apply((xs1.length*0.7).toInt).data
-        self ! Msg(MeasureStat(s"${name}.thirdQ", thirdQ), StatMeta(time="0", addr))
+        self ! MeasureStat(s"${name}.thirdQ", thirdQ, time="0", addr)
         xs1.sortBy(_.time).takeRight(5).foreach(x =>
-          self ! Msg(MeasureStat(s"${name}", x.data), StatMeta(x.time, addr))
+          self ! MeasureStat(s"${name}", x.data, x.time, addr)
         )
       })
     )
     kvs.stream_unsafe[StatEn]("action.live").map(_.sortBy(_.time).foreach{
       case StatEn(_,_,_,action,time,addr) =>
-        self ! Msg(ActionStat(action), StatMeta(time, addr))
+        self ! ActionStat(action, time, addr)
     })
     kvs.stream_unsafe[StatEn]("metrics").map(_.foreach{
       case StatEn(_,_,_,stat,time,addr) =>
         stat.split('|') match {
           case Array(name, value) =>
-            self ! Msg(MetricStat(name, value), StatMeta(time, addr))
+            self ! MetricStat(name, value, time, addr)
           case _ =>
         }
     })
@@ -46,20 +46,20 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
       case StatEn(_,_,_,stat,time,addr) =>
         stat.split('|') match {
           case Array(exception, stacktrace, toptrace) =>
-            self ! Msg(ErrorStat(exception, stacktrace, toptrace), StatMeta(time, addr))
+            self ! ErrorStat(exception, stacktrace, toptrace, time, addr)
           case _ =>
         }
     })
   }
 
   def receive: Receive = {
-    case _: Msg => stash()
+    case _: StatMsg => stash()
     case stageActor: ActorRef =>
       unstashAll()
       context.become(ready(stageActor))
   }
 
   def ready(stageActor: ActorRef): Receive = {
-    case msg: Msg => stageActor ! msg
+    case msg: StatMsg => stageActor ! msg
   }
 }
