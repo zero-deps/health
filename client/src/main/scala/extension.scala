@@ -17,6 +17,7 @@ object StatsExtension extends ExtensionId[Stats] with ExtensionIdProvider {
 class Stats(implicit system: ActorSystem) extends Extension {
   import system.dispatcher
   import system.log
+  import .stats.client.Client._
 
   private val cfg = system.settings.config
   private val enabled = cfg.getBoolean("stats.client.enabled")

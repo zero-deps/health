@@ -4,6 +4,8 @@ import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.io.{IO, Udp}
 import java.net.InetSocketAddress
 import scalaz.Scalaz._
+import zd.proto.api.{decode}
+import .stats.client._
 
 object UdpPub {
   def props: Props = Props(new UdpPub)
@@ -27,17 +29,15 @@ class UdpPub extends Actor with Stash with ActorLogging {
       socket = sender.some
     case Udp.Received(data, remote) =>
       val host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
-      data.decodeString("UTF-8").split("::").toList match {
-        case "metric" :: name :: value :: port :: Nil =>
+      decode[ClientMsg](data.toArray) match {
+        case MetricMsg(name, value, port) => 
           self ! MetricStat(name, value, now_ms(), addr=s"${host}:${port}")
-        case "measure" :: name :: value :: port :: Nil =>
+        case MeasureMsg(name, value, port) => 
           self ! MeasureStat(name, value, now_ms(), addr=s"${host}:${port}")
-        case "error" :: exception :: stacktrace :: toptrace :: port :: Nil =>
+        case ErrorMsg(exception, stacktrace, toptrace, port) =>
           self ! ErrorStat(exception, stacktrace, toptrace, now_ms(), addr=s"${host}:${port}")
-        case "action" :: action :: port :: Nil =>
+        case ActionMsg(action, port) =>
           self ! ActionStat(action, now_ms(), addr=s"${host}:${port}")
-        case unknown =>
-          log.info(s"unknown message=${unknown}")
       }
     case Udp.Unbound =>
       context.stop(self)
