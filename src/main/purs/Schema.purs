@@ -31,6 +31,7 @@ type MetricsUpdate =
   , fs :: Maybe (Array String)
   , fd :: Maybe (Array String)
   , thr :: Maybe (Array String)
+  , kvsSize_year :: Maybe String
   }
 
 type MeasureUpdate =
@@ -40,8 +41,10 @@ type MeasureUpdate =
   , searchWc_thirdQ :: Maybe String
   , staticCreate :: Maybe String
   , staticCreate_thirdQ :: Maybe String
+  , staticCreate_year :: Maybe String
   , staticGen :: Maybe String
   , staticGen_thirdQ :: Maybe String
+  , staticGen_year :: Maybe String
   }
 
 type NodeInfo =
@@ -66,9 +69,12 @@ type NodeInfo =
   , searchWc_points :: Array {t::String,y::Number}
   , searchWc_thirdQ :: Maybe String
   , staticCreate_points :: Array {t::String,y::Number}
+  , staticCreateYear_points :: Array NumPoint
   , staticCreate_thirdQ :: Maybe String
   , staticGen_points :: Array {t::String,y::Number}
+  , staticGenYear_points :: Array NumPoint
   , staticGen_thirdQ :: Maybe String
+  , kvsSizeYearPoints :: Array NumPoint
   }
 
 data ChartRange = Live | Hour
