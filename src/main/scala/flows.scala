@@ -8,6 +8,7 @@ import akka.stream.{ClosedShape, FlowShape}
 import .kvs.Kvs
 import scalaz._
 import scalaz.Scalaz._
+import java.time.{LocalDateTime}
 
 import akka.util.ByteString
 import zd.proto.api.{encode}
@@ -43,7 +44,7 @@ object Flows {
       val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
       val logIn = Flow[StatMsg].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save_metric = Flow[StatMsg].collect{
-        case MetricStat("cpu_mem", _, _, _) =>
+        case MetricStat("cpu_mem"| "kvs.size", _, _, _) =>
         case MetricStat(name, value, time, addr) =>
           kvs.put(StatEn(fid="metrics", id=s"${addr}${name}", prev=.kvs.empty, s"${name}|${value}", time, addr))
       }
@@ -95,6 +96,32 @@ object Flows {
             system.eventStream.publish(msg)
           }
       }
+      def saveYearValue(name: String, value: Long, time: String, addr: String): (Long, String) = {
+        val date = time.toLong.toLocalDataTime
+        val i = date.getMonthValue - 1
+        val now = LocalDateTime.now()
+        val last = kvs.el.get[String](s"${name}.year.t.${addr}${i}").map(_.toLong.toLocalDataTime).getOrElse(now)
+        val n =
+          if (date.getYear =/= last.getYear) 0
+          else kvs.el.get[String](s"${name}.year.n.${addr}${i}").map(_.toInt).getOrElse(0)
+        val v = kvs.el.get[String](s"${name}.year.v.${addr}${i}").map(_.toLong).getOrElse(0L)
+        val n1 = n + 1
+        val v1 = (v * n + value.toLong) / n1
+        kvs.el.put(s"${name}.year.t.${addr}${i}", time)
+        kvs.el.put(s"${name}.year.n.${addr}${i}", n1.toString)
+        kvs.el.put(s"${name}.year.v.${addr}${i}", v1.toString)
+        val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
+        kvs.put(StatEn(fid=s"${name}.year", id=s"${addr}${i}", prev=.kvs.empty, v1.toString, time1, addr))
+        (v1, time1)
+      }
+      val save_year_value = Flow[StatMsg].collect{
+        case MeasureStat(name@("static.create" | "static.gen"), value, time, addr) => 
+          val (v1, t1) = saveYearValue(name, value.toLong, time, addr)
+          system.eventStream.publish(MeasureStat(s"${name}.year", v1.toString, t1, addr))
+        case MetricStat(name@"kvs.size", value, time, addr) => 
+          val (v1, t1) = saveYearValue(name, value.toLong/1024/1024, time, addr)
+          system.eventStream.publish(MetricStat(s"${name}.year", v1.toString, t1, addr))
+      }
       val save_action = Flow[StatMsg].collect{
         case ActionStat(action, time, addr) =>
           val i = kvs.el.get[String](s"action.live.idx.${addr}").getOrElse("0")
@@ -117,12 +144,13 @@ object Flows {
         system.log.debug(s"pub=${msg}")
         system.eventStream.publish(msg)
       }
-      val b1 = b.add(Broadcast[StatMsg](6))
+      val b1 = b.add(Broadcast[StatMsg](7))
 
       udppub ~> logIn ~> b1 ~> pub
                          b1 ~> save_metric  ~> Sink.ignore
                          b1 ~> save_cpumem  ~> Sink.ignore
                          b1 ~> save_measure ~> Sink.ignore
+                         b1 ~> save_year_value   ~> Sink.ignore
                          b1 ~> save_action  ~> Sink.ignore
                          b1 ~> save_error   ~> Sink.ignore
 

@@ -71,10 +71,12 @@ class Stats(implicit system: ActorSystem) extends Extension {
       val cpu_mem = 30 seconds
       val fd = 5 minutes
       val fs = 1 hour
+      val kvs = 1 hour
       // val thr = 5 seconds
       // val cpu_mem = 5 seconds
       // val fd = 5 seconds
       // val fs = 5 seconds
+      // val kvs = 5 seconds
     }
     // Threads
     scheduler.schedule(1 second, timeout.thr) {
@@ -160,6 +162,21 @@ class Stats(implicit system: ActorSystem) extends Extension {
           case Failure(t) => log.error("can't get file store", t)
         }
       case None => log.error("no root directory (impossible)")
+    }
+
+    scheduler.schedule(1 second, timeout.kvs) {
+      val size = getFolderSize(new java.io.File(cfg.getString("ring.leveldb.dir")))
+      metric("kvs.size", size.toString)
+    }
+  }
+
+  def getFolderSize(f: java.io.File): Long = {
+    if (f.isDirectory) {
+      f.listFiles.foldLeft(0L)((acc, x) => 
+        acc + getFolderSize(x)
+      )
+    } else {
+      f.length
     }
   }
 }

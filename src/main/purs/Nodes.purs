@@ -17,7 +17,7 @@ type Props =
   }
 
 reactClass :: ReactClass Props
-reactClass = component "Errors" \this -> do
+reactClass = component "Nodes" \this -> do
   pure
     { state: {}
     , render: render this

@@ -2,6 +2,7 @@ package .stats
 
 import akka.actor.{ActorLogging, Actor, ActorRef, Props, Stash}
 import .kvs.Kvs
+import java.time.LocalDateTime
 
 object KvsPub {
   def props(kvs: Kvs): Props = Props(new KvsPub(kvs))
@@ -30,6 +31,21 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
         )
       })
     )
+    List("static.create.year", "static.gen.year").foreach(name => 
+      kvs.stream_unsafe[StatEn](name).map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
+        val xs1 = xs.toVector.sortBy(_.time.toLong)
+        val min = LocalDateTime.now().minusYears(1)
+        xs1.dropWhile(_.time.toLong.toLocalDataTime.isBefore(min)).foreach{ case StatEn(_,_,_,value, time, addr) =>
+          self ! MeasureStat(name, value, time, addr)
+        }
+    }))
+    kvs.stream_unsafe[StatEn]("kvs.size.year").map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
+        val xs1 = xs.toVector.sortBy(_.time.toLong)
+        val min = LocalDateTime.now().minusYears(1)
+        xs1.dropWhile(_.time.toLong.toLocalDataTime.isBefore(min)).foreach{ case StatEn(_,_,_,value, time, addr) =>
+          self ! MetricStat("kvs.size.year", value, time, addr)
+        }
+    })
     kvs.stream_unsafe[StatEn]("action.live").map(_.sortBy(_.time).foreach{
       case StatEn(_,_,_,action,time,addr) =>
         self ! ActionStat(action, time, addr)

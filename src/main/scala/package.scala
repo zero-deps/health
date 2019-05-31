@@ -6,6 +6,7 @@ import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler, StageLogging}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import scala.collection.immutable.Queue
 import scalaz.Scalaz._
+import java.time.{LocalDateTime, ZoneId, Instant}
 
 import zd.proto.api.{N, MessageCodec, encode, decode}
 import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums, sealedTraitCodecAuto}
@@ -121,4 +122,17 @@ package object stats {
       }
     }
   }
+
+  implicit class LocalDateTimeWrapper(v: LocalDateTime) {
+    def toMillis(): Long = {
+      v.atZone(ZoneId.systemDefault).toInstant.toEpochMilli
+    }
+  }
+
+  implicit class EposhTimeWrapper(v: Long) {
+    def toLocalDataTime(): LocalDateTime = {
+      Instant.ofEpochMilli(v).atZone(ZoneId.systemDefault).toLocalDateTime
+    }
+  }
+
 }

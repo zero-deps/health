@@ -5,6 +5,7 @@ module Node
 import BarChart as BarChart
 import BigChart as BigChart
 import CpuChart as CpuChart
+import YearChart as YearChart
 import Data.Maybe (Maybe, fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
@@ -82,6 +83,48 @@ reactClass = component "Node" \this -> do
         , barChart "Web Contents: Search" p.searchWc_thirdQ p.searchWc_points
         , barChart "Static: Creation" p.staticCreate_thirdQ p.staticCreate_points
         , barChart "Static: Generation" p.staticGen_thirdQ p.staticGen_points
+        ]
+      , div [cn "row"]
+        [ div [ cn "col-12" ]
+          [ div [ cn "card card-chart" ]
+            [ div [ cn "card-header" ]
+              [ h5 [ cn "card-category" ] [ text "Static: Creation" ]
+              ]
+            , div [ cn "card-body" ]
+              [ div [ cn "chart-area" ]
+                [ createLeafElement YearChart.reactClass { points: p.staticCreateYear_points, label: "ms" }
+                ]
+              ]
+            ]
+          ]
+        ]
+      , div [cn "row"]
+        [ div [ cn "col-12" ]
+          [ div [ cn "card card-chart" ]
+            [ div [ cn "card-header" ]
+              [ h5 [ cn "card-category" ] [ text "Static: Generation" ]
+              ]
+            , div [ cn "card-body" ]
+              [ div [ cn "chart-area" ]
+                [ createLeafElement YearChart.reactClass { points: p.staticGenYear_points, label: "ms" }
+                ]
+              ]
+            ]
+          ]
+        ]
+      , div [cn "row"]
+        [ div [ cn "col-12" ]
+          [ div [ cn "card card-chart" ]
+            [ div [ cn "card-header" ]
+              [ h5 [ cn "card-category" ] [ text "Kvs size" ]
+              ]
+            , div [ cn "card-body" ]
+              [ div [ cn "chart-area" ]
+                [ createLeafElement YearChart.reactClass { points: p.kvsSizeYearPoints, label: "mb" }
+                ]
+              ]
+            ]
+          ]
         ]
       , div [ cn "row" ]
         [ fromMaybe (div' []) (map fsCard p.fs)
