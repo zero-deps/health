@@ -71,7 +71,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
       val cpu_mem = 30 seconds
       val fd = 5 minutes
       val fs = 1 hour
-      val kvs = 1 hour
+      val kvs = 1 day
       // val thr = 5 seconds
       // val cpu_mem = 5 seconds
       // val fd = 5 seconds
