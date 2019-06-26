@@ -6,6 +6,7 @@ import java.net.InetSocketAddress
 import scalaz.Scalaz._
 import zd.proto.api.{decode}
 import .stats.client._
+import scala.util.Try
 
 object UdpPub {
   def props: Props = Props(new UdpPub)
@@ -29,16 +30,18 @@ class UdpPub extends Actor with Stash with ActorLogging {
       socket = sender.some
     case Udp.Received(data, remote) =>
       val host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
-      decode[ClientMsg](data.toArray) match {
-        case MetricMsg(name, value, port) => 
-          self ! MetricStat(name, value, now_ms(), addr=s"${host}:${port}")
-        case MeasureMsg(name, value, port) => 
-          self ! MeasureStat(name, value, now_ms(), addr=s"${host}:${port}")
-        case ErrorMsg(exception, stacktrace, toptrace, port) =>
-          self ! ErrorStat(exception, stacktrace, toptrace, now_ms(), addr=s"${host}:${port}")
-        case ActionMsg(action, port) =>
-          self ! ActionStat(action, now_ms(), addr=s"${host}:${port}")
-      }
+      Try(decode[ClientMsg](data.toArray)).foreach(
+        _ match {
+          case MetricMsg(name, value, port) => 
+            self ! MetricStat(name, value, now_ms(), addr=s"${host}:${port}")
+          case MeasureMsg(name, value, port) => 
+            self ! MeasureStat(name, value, now_ms(), addr=s"${host}:${port}")
+          case ErrorMsg(exception, stacktrace, toptrace, port) =>
+            self ! ErrorStat(exception, stacktrace, toptrace, now_ms(), addr=s"${host}:${port}")
+          case ActionMsg(action, port) =>
+            self ! ActionStat(action, now_ms(), addr=s"${host}:${port}")
+        }
+      )
     case Udp.Unbound =>
       context.stop(self)
 
