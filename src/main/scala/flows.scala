@@ -82,10 +82,14 @@ object Flows {
       }
       val save_measure = Flow[StatMsg].collect{
         case MeasureStat(name, value, time, addr) =>
+          val limit = name match {
+            case _ if name.startsWith("reindex") => 100
+            case _ => 20
+          }
           val i = kvs.el.get[String](s"${name}.latest.idx.${addr}").getOrElse("0")
           for {
             _ <- kvs.put(StatEn(fid=s"${name}.latest", id=s"${addr}${i}", prev=.kvs.empty, value, time, addr))
-            i1 = ((i.toInt + 1) % 20).toString
+            i1 = ((i.toInt + 1) % limit).toString
             _ <- kvs.el.put(s"${name}.latest.idx.${addr}", i1)
           } yield ()
           // calculate new quartile
@@ -96,6 +100,7 @@ object Flows {
             system.eventStream.publish(msg)
           }
       }
+
       def saveYearValue(name: String, value: Long, time: String, addr: String): (Long, String) = {
         val date = time.toLong.toLocalDataTime
         val i = date.getMonthValue - 1

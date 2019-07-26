@@ -21,16 +21,24 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
         self ! MetricStat("cpu.hour", value, time, addr)
       }
     })
-    List("search.ts", "search.wc", "static.create", "static.gen").foreach(name =>
+    List(("search.ts", 5)
+       , ("search.wc", 5)
+       , ("static.create", 5)
+       , ("static.gen", 5)
+       , ("reindex.ts", 100)
+       , ("reindex.wc", 100)
+       , ("reindex.files", 100)
+       )
+    .foreach{ case (name, n) =>
       kvs.stream_unsafe[StatEn](s"${name}.latest").map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
         val xs1 = xs.toVector
         val thirdQ = xs1.sortBy(_.data).apply((xs1.length*0.7).toInt).data
         self ! MeasureStat(s"${name}.thirdQ", thirdQ, time="0", addr)
-        xs1.sortBy(_.time).takeRight(5).foreach(x =>
+        xs1.sortBy(_.time).takeRight(n).foreach(x =>
           self ! MeasureStat(s"${name}", x.data, x.time, addr)
         )
       })
-    )
+    }
     List("static.create.year", "static.gen.year").foreach(name => 
       kvs.stream_unsafe[StatEn](name).map(_.groupBy(_.addr).foreach{ case (addr, xs) =>
         val xs1 = xs.toVector.sortBy(_.time.toLong)

@@ -6,6 +6,7 @@ import BarChart as BarChart
 import BigChart as BigChart
 import CpuChart as CpuChart
 import YearChart as YearChart
+import MeasureChart as MeasureChart
 import Data.Maybe (Maybe, fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
@@ -15,10 +16,11 @@ import Prelude (bind, map, pure, ($), (<>), (==))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
 import React.DOM.Props (style, colSpan, onClick)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour))
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), ReindexChart(TsReindex, WcReindex, FilesReindex))
 
 type State =
   { bigChartRange :: ChartRange
+  , reindexChart :: ReindexChart
   }
 type Props = NodeInfo
 
@@ -26,7 +28,7 @@ reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
   p <- getProps this
   pure
-    { state: { bigChartRange: Live }
+    { state: { bigChartRange: Live, reindexChart: TsReindex }
     , render: render this
     }
   where
@@ -83,6 +85,61 @@ reactClass = component "Node" \this -> do
         , barChart "Web Contents: Search" p.searchWc_thirdQ p.searchWc_points
         , barChart "Static: Creation" p.staticCreate_thirdQ p.staticCreate_points
         , barChart "Static: Generation" p.staticGen_thirdQ p.staticGen_points
+        ]
+      , let thirdQ = case s.reindexChart of
+              TsReindex -> p.reindexTs_thirdQ
+              WcReindex -> p.reindexWc_thirdQ
+              FilesReindex -> p.reindexFiles_thirdQ
+        in div [ cn "row" ] 
+        [ div [ cn "col-12" ]
+          [ div [ cn "card card-chart" ]
+            [ div [ cn "card-header" ]
+              [ div [ cn "row" ]
+                [ div [ cn "col-7 col-sm-6 text-left" ]
+                  [ h5 [ cn "card-category" ]
+                    [ text "Reindex" ]
+                  , h2 [ cn "card-title" ]
+                    [ i [ cn "tim-icons icon-user-run text-info" ] []
+                    , text $ fromMaybe "--" $ map (_<>" ms") thirdQ
+                    ]
+                  ]
+                  , div [ cn "col-5 col-sm-6" ]
+                  [ div [ cn "btn-group btn-group-toggle float-right" ]
+                    [ label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == TsReindex then " active" else "", onClick \_ -> modifyState this _{ reindexChart = TsReindex } ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Traslations" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "Ts" ]
+                      ]
+                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == WcReindex then " active" else "", onClick \_ -> modifyState this _{ reindexChart = WcReindex } ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Web Contents" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "Ws" ]
+                      ]
+                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == FilesReindex then " active" else "", onClick \_ -> modifyState this _{ reindexChart = FilesReindex } ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Files" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "Fs" ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            , div [ cn "card-body" ]
+              [ div [ cn $ "chart-area" <> if s.reindexChart == TsReindex then "" else " d-none" ]
+                [ createLeafElement MeasureChart.reactClass { points: map _.y p.reindexTs_points, labels: map _.t p.reindexTs_points }
+                ]
+              , div [ cn $ "chart-area" <> if s.reindexChart == WcReindex then "" else " d-none" ]
+                [ createLeafElement MeasureChart.reactClass { points: map _.y p.reindexWc_points, labels: map _.t p.reindexWc_points }
+                ]
+              , div [ cn $ "chart-area" <> if s.reindexChart == FilesReindex then "" else " d-none" ]
+                [ createLeafElement MeasureChart.reactClass { points: map _.y p.reindexFiles_points, labels: map _.t p.reindexFiles_points }
+                ]
+              ]
+            ]
+          ]
         ]
       , div [cn "row"]
         [ div [ cn "col-12" ]
@@ -154,6 +211,7 @@ reactClass = component "Node" \this -> do
           ]
         ]
       ]
+
   card :: String -> Array ReactElement -> Array ReactElement -> ReactElement
   card title xs ys =
     div [ cn "col-lg-6 col-md-12" ]

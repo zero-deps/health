@@ -217,11 +217,17 @@ reactClass = component "Main" \this -> do
           let staticGen = if name == "static.gen" then Just value else Nothing
           let staticGen_thirdQ = if name == "static.gen.thirdQ" then Just value else Nothing
           let staticGen_year = if name == "static.gen.year" then Just value else Nothing
+          let reindexTs = if name == "reindex.ts" then Just value else Nothing
+          let reindexTs_thirdQ = if name == "reindex.ts.thirdQ" then Just value else Nothing
+          let reindexWc = if name == "reindex.wc" then Just value else Nothing
+          let reindexWc_thirdQ = if name == "reindex.wc.thirdQ" then Just value else Nothing
+          let reindexFiles = if name == "reindex.files" then Just value else Nothing
+          let reindexFiles_thirdQ = if name == "reindex.files.thirdQ" then Just value else Nothing
           updateWith
             { addr: addr
             , time: time
             , metrics: Nothing
-            , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticCreate, staticCreate_thirdQ, staticCreate_year, staticGen, staticGen_thirdQ, staticGen_year }
+            , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticCreate, staticCreate_thirdQ, staticCreate_year, staticGen, staticGen_thirdQ, staticGen_year, reindexTs, reindexTs_thirdQ, reindexWc, reindexWc_thirdQ, reindexFiles, reindexFiles_thirdQ }
             , err: Nothing
             , action: Nothing
             }
@@ -311,9 +317,14 @@ reactClass = component "Main" \this -> do
         let staticCreate_thirdQ = a.measure >>= _.staticCreate_thirdQ
         let staticGen_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.staticGen
         let staticGen_thirdQ = a.measure >>= _.staticGen_thirdQ
-
         let staticCreateYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.measure >>= _.staticCreate_year
         let staticGenYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.measure >>= _.staticGen_year
+        let reindexTs_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.reindexTs
+        let reindexTs_thirdQ = a.measure >>= _.reindexTs_thirdQ
+        let reindexWc_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.reindexWc
+        let reindexWc_thirdQ = a.measure >>= _.reindexWc_thirdQ
+        let reindexFiles_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.reindexFiles
+        let reindexFiles_thirdQ = a.measure >>= _.reindexFiles_thirdQ
 
         let errs = maybe [] singleton a.err
         
@@ -342,6 +353,10 @@ reactClass = component "Main" \this -> do
                 let staticCreateYear_points' = maybe node.staticCreateYear_points (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 365.0*24.0*3600.0*1000.0) node.staticCreateYear_points) x) staticCreateYearPoint
                 let staticGenYear_points' = maybe node.staticGenYear_points (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 365.0*24.0*3600.0*1000.0) node.staticGenYear_points) x) staticGenYearPoint
                 
+                let reindexTs_points' = takeEnd 100 $ node.reindexTs_points <> reindexTs_points
+                let reindexWc_points' = takeEnd 100 $ node.reindexWc_points <> reindexWc_points
+                let reindexFiles_points' = takeEnd 100 $ node.reindexFiles_points <> reindexFiles_points
+
                 let errs' = take 100 $ errs <> node.errs
 
                 node
@@ -364,6 +379,12 @@ reactClass = component "Main" \this -> do
                   , searchTs_thirdQ = searchTs_thirdQ <|> node.searchTs_thirdQ
                   , searchWc_points = searchWc_points'
                   , searchWc_thirdQ = searchWc_thirdQ <|> node.searchWc_thirdQ
+                  , reindexTs_points = reindexTs_points'
+                  , reindexTs_thirdQ = reindexTs_thirdQ <|> node.reindexTs_thirdQ
+                  , reindexWc_points = reindexWc_points'
+                  , reindexWc_thirdQ = reindexWc_thirdQ <|> node.reindexWc_thirdQ
+                  , reindexFiles_points = reindexFiles_points'
+                  , reindexFiles_thirdQ = reindexFiles_thirdQ <|> node.reindexFiles_thirdQ
                   , staticCreate_points = staticCreate_points'
                   , staticCreateYear_points = staticCreateYear_points'
                   , staticCreate_thirdQ = staticCreate_thirdQ <|> node.staticCreate_thirdQ
@@ -393,6 +414,12 @@ reactClass = component "Main" \this -> do
                 , searchTs_thirdQ: searchTs_thirdQ
                 , searchWc_points: searchWc_points
                 , searchWc_thirdQ: searchWc_thirdQ
+                , reindexTs_points: reindexTs_points
+                , reindexTs_thirdQ: reindexTs_thirdQ
+                , reindexWc_points: reindexWc_points
+                , reindexWc_thirdQ: reindexWc_thirdQ
+                , reindexFiles_points: reindexFiles_points
+                , reindexFiles_thirdQ: reindexFiles_thirdQ
                 , staticCreate_points: staticCreate_points
                 , staticCreateYear_points: maybe [] singleton staticCreateYearPoint
                 , staticCreate_thirdQ: staticCreate_thirdQ
