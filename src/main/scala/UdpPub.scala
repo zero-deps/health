@@ -3,10 +3,10 @@ package .stats
 import akka.actor.{Actor, ActorLogging, ActorRef, Props, Stash}
 import akka.io.{IO, Udp}
 import java.net.InetSocketAddress
-import scalaz.Scalaz._
 import zd.proto.api.{decode}
 import .stats.client._
 import scala.util.Try
+import zd.gs.z._
 
 object UdpPub {
   def props: Props = Props(new UdpPub)
@@ -27,7 +27,7 @@ class UdpPub extends Actor with Stash with ActorLogging {
 
   def receive: Receive = {
     case _: Udp.Bound =>
-      socket = sender.some
+      socket = sender.just
     case Udp.Received(data, remote) =>
       val host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
       Try(decode[ClientMsg](data.toArray)).foreach(
@@ -48,7 +48,7 @@ class UdpPub extends Actor with Stash with ActorLogging {
     case a: ActorRef =>
       log.debug("got stage actor for udp")
       unstashAll()
-      stageActor = a.some
+      stageActor = a.just
     case msg: StatMsg =>
       stageActor match {
         case Some(a) => a ! msg

@@ -1,7 +1,7 @@
 package .stats
 
 import akka.actor.{ActorLogging, Actor, ActorRef, Props, Stash}
-import .kvs.Kvs
+import zd.kvs.Kvs
 import java.time.LocalDateTime
 
 object KvsPub {

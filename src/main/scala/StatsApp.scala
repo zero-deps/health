@@ -3,7 +3,7 @@ package .stats
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import .ftier._
-import .kvs._
+import zd.kvs._
 
 object StatsApp extends App {
   implicit val system = ActorSystem("Stats")

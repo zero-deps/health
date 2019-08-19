@@ -5,11 +5,12 @@ import akka.stream.stage.GraphStageLogic.StageActor
 import akka.stream.stage.{GraphStage, GraphStageLogic, OutHandler, StageLogging}
 import akka.stream.{Attributes, Outlet, SourceShape}
 import scala.collection.immutable.Queue
-import scalaz.Scalaz._
 import java.time.{LocalDateTime, ZoneId, Instant}
 
 import zd.proto.api.{N, MessageCodec, encode, decode}
 import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums, sealedTraitCodecAuto}
+import zd.kvs
+import zd.gs.z._
 
 package object stats {
   sealed trait StatMsg
@@ -58,7 +59,7 @@ package object stats {
 
   implicit object FdHandler extends kvs.en.FdHandler {
 
-    implicit val fdCodec: MessageCodec[kvs.en.Fd] = caseCodecNums[kvs.en.Fd]('id->1, 'top->2, 'count->3)
+    implicit val fdCodec: MessageCodec[kvs.en.Fd] = caseCodecNums[kvs.en.Fd](Symbol("id")->1, Symbol("top")->2, Symbol("count")->3)
 
     def pickle(e: kvs.en.Fd): kvs.Res[Array[Byte]] = encode[kvs.en.Fd](e).right
     def unpickle(a: Array[Byte]): kvs.Res[kvs.en.Fd] = decode[kvs.en.Fd](a).right

@@ -4,7 +4,7 @@ import akka.actor.{ActorRef, ActorSystem, ExtendedActorSystem, Extension, Extens
 import java.lang.management.ManagementFactory
 import java.nio.file.{FileSystems, Files}
 import javax.management.{NotificationBroadcaster, NotificationListener, Notification}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 import zd.gs.meta.Literals
