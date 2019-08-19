@@ -4,8 +4,9 @@
   "dependencies": {
     "purescript-react": "*",
     "purescript-react-dom": "*",
-    "purescript-web-html": "^1.2.0",
-    "purescript-web-socket": "^1.0.0"
+    "purescript-web-html": "*",
+    "purescript-web-socket": "*",
+    "purescript-protobuf": "https://github.com/zero-deps/purescript-protobuf.git"
   },
   "devDependencies": {
     "purescript-psci-support": "*"

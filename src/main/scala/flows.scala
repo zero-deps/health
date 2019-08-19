@@ -5,9 +5,7 @@ import akka.http.scaladsl.model.ws.{TextMessage, BinaryMessage, Message => WsMes
 import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Sink, Source, Merge, GraphDSL, RunnableGraph, Broadcast}
 import akka.stream.{ClosedShape, FlowShape}
-import .kvs.Kvs
-import scalaz._
-import scalaz.Scalaz._
+import zd.kvs.Kvs
 import java.time.{LocalDateTime}
 
 import akka.util.ByteString
@@ -46,14 +44,14 @@ object Flows {
       val save_metric = Flow[StatMsg].collect{
         case MetricStat("cpu_mem"| "kvs.size", _, _, _) =>
         case MetricStat(name, value, time, addr) =>
-          kvs.put(StatEn(fid="metrics", id=s"${addr}${name}", prev=.kvs.empty, s"${name}|${value}", time, addr))
+          kvs.put(StatEn(fid="metrics", id=s"${addr}${name}", prev=zd.kvs.empty, s"${name}|${value}", time, addr))
       }
       val save_cpumem = Flow[StatMsg].collect{
         case MetricStat("cpu_mem", value, time, addr) =>
           { // live
             val i = kvs.el.get[String](s"cpu_mem.live.idx.${addr}").getOrElse("0")
             for {
-              _ <- kvs.put(StatEn(fid="cpu_mem.live", id=s"${addr}${i}", prev=.kvs.empty, value, time, addr))
+              _ <- kvs.put(StatEn(fid="cpu_mem.live", id=s"${addr}${i}", prev=zd.kvs.empty, value, time, addr))
               i1 = ((i.toInt + 1) % 20).toString
               _ <- kvs.el.put(s"cpu_mem.live.idx.${addr}", i1)
             } yield ()
@@ -74,7 +72,7 @@ object Flows {
                 kvs.el.put(s"cpu.hour.n.${addr}${i}", n1.toString)
                 kvs.el.put(s"cpu.hour.v.${addr}${i}", v1.toString)
                 val time1 = (((time.toLong / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000).toString
-                kvs.put(StatEn(fid="cpu.hour", id=s"${addr}${i}", prev=.kvs.empty, v1.toInt.toString, time1, addr))
+                kvs.put(StatEn(fid="cpu.hour", id=s"${addr}${i}", prev=zd.kvs.empty, v1.toInt.toString, time1, addr))
                 system.eventStream.publish(MetricStat("cpu.hour", v1.toInt.toString, time1, addr))
               }
             case _ =>
@@ -88,7 +86,7 @@ object Flows {
           }
           val i = kvs.el.get[String](s"${name}.latest.idx.${addr}").getOrElse("0")
           for {
-            _ <- kvs.put(StatEn(fid=s"${name}.latest", id=s"${addr}${i}", prev=.kvs.empty, value, time, addr))
+            _ <- kvs.put(StatEn(fid=s"${name}.latest", id=s"${addr}${i}", prev=zd.kvs.empty, value, time, addr))
             i1 = ((i.toInt + 1) % limit).toString
             _ <- kvs.el.put(s"${name}.latest.idx.${addr}", i1)
           } yield ()
@@ -107,7 +105,7 @@ object Flows {
         val now = LocalDateTime.now()
         val last = kvs.el.get[String](s"${name}.year.t.${addr}${i}").map(_.toLong.toLocalDataTime).getOrElse(now)
         val n =
-          if (date.getYear =/= last.getYear) 0
+          if (date.getYear != last.getYear) 0
           else kvs.el.get[String](s"${name}.year.n.${addr}${i}").map(_.toInt).getOrElse(0)
         val v = kvs.el.get[String](s"${name}.year.v.${addr}${i}").map(_.toLong).getOrElse(0L)
         val n1 = n + 1
@@ -116,7 +114,7 @@ object Flows {
         kvs.el.put(s"${name}.year.n.${addr}${i}", n1.toString)
         kvs.el.put(s"${name}.year.v.${addr}${i}", v1.toString)
         val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
-        kvs.put(StatEn(fid=s"${name}.year", id=s"${addr}${i}", prev=.kvs.empty, v1.toString, time1, addr))
+        kvs.put(StatEn(fid=s"${name}.year", id=s"${addr}${i}", prev=zd.kvs.empty, v1.toString, time1, addr))
         (v1, time1)
       }
       val save_year_value = Flow[StatMsg].collect{
@@ -131,7 +129,7 @@ object Flows {
         case ActionStat(action, time, addr) =>
           val i = kvs.el.get[String](s"action.live.idx.${addr}").getOrElse("0")
           for {
-            _ <- kvs.put(StatEn(fid="action.live", id=s"${addr}${i}", prev=.kvs.empty, action, time, addr))
+            _ <- kvs.put(StatEn(fid="action.live", id=s"${addr}${i}", prev=zd.kvs.empty, action, time, addr))
             i1 = ((i.toInt + 1) % 20).toString
             _ <- kvs.el.put(s"action.live.idx.${addr}", i1)
           } yield ()
@@ -140,7 +138,7 @@ object Flows {
         case ErrorStat(exception, stacktrace, toptrace, time, addr) =>
           val i = kvs.el.get[String](s"errors.idx.${addr}").getOrElse("0")
           for {
-            _ <- kvs.put(StatEn(fid="errors", id=s"${addr}${i}", prev=.kvs.empty, s"${exception}|${stacktrace}|${toptrace}", time, addr))
+            _ <- kvs.put(StatEn(fid="errors", id=s"${addr}${i}", prev=zd.kvs.empty, s"${exception}|${stacktrace}|${toptrace}", time, addr))
             i1 = ((i.toInt + 1) % 100).toString
             _ <- kvs.el.put(s"errors.idx.${addr}", i1)
           } yield ()

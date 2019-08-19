@@ -1,13 +1,6 @@
-import build._
-
 ThisBuild / organization := "com.."
-ThisBuild / scalaVersion := "2.12.8"
-ThisBuild / version := {
-  val repo = org.eclipse.jgit.api.Git.open(file("."))
-  val desc = repo.describe.call
-  val dirty = if (repo.status.call.isClean) "" else "-dirty"
-  s"${desc}${dirty}"
-}
+ThisBuild / scalaVersion := "2.13.0"
+ThisBuild / version := zd.gs.git.GitOps.version
 ThisBuild / fork := true
 ThisBuild / cancelable in Global := true
 ThisBuild / scalacOptions in Compile ++= Vector(
@@ -18,7 +11,7 @@ ThisBuild / scalacOptions in Compile ++= Vector(
   "-language:_",
   "-encoding", "UTF-8",
   "-Xfatal-warnings",
-  "-Ywarn-unused-import",
+  "-Ywarn-unused:imports",
 )
 ThisBuild / publishTo := Some(" Releases" at "http://nexus.mobile..com/nexus3/repository/releases")
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
@@ -28,18 +21,23 @@ ThisBuild / isSnapshot := true
 ThisBuild / resolvers += " Releases" at "http://nexus.mobile..com/nexus3/repository/releases"
 ThisBuild / resolvers += Resolver.jcenterRepo
 
-ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % "0-10-g6f2f17b")
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "0-10-g6f2f17b"
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "0-10-g6f2f17b"
+ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % "1.4.3")
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "1.4.3"
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "1.4.3"
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-z" % "1.4.3"
 
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % Versions.proto % Compile
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % Versions.proto 
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % "1.3.1" % Compile
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % "1.3.1" 
+
+ThisBuild / turbo := true
+ThisBuild / useCoursier := false
+Global / onChangedBuildSource := ReloadOnSourceChanges
 
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
-  libraryDependencies += "com.." %% "ftier" % Versions.ftier,
-  libraryDependencies += "com.." %% "kvs" % Versions.kvs,
+  libraryDependencies += "com.." %% "ftier" % "2.0.2",
+  libraryDependencies += "io.github.zero-deps" %% "kvs" % "4.6.2",
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
   deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
@@ -84,9 +82,9 @@ lazy val stats = project.in(file(".")).settings(
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats",
-  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % Versions.akka,
+  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.23",
 )
 
 lazy val prjs = project.in(file("prjs")).settings(
-  libraryDependencies += "io.github.zero-deps" %% "proto-js" % Versions.proto,
+  libraryDependencies += "io.github.zero-deps" %% "proto-purs" % "1.3.1",
 ).dependsOn(stats)

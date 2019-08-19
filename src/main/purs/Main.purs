@@ -4,6 +4,7 @@ module Main
 
 import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
+import Data.Either (Either(Right))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
@@ -186,9 +187,8 @@ reactClass = component "Main" \this -> do
 
     onMsg :: ReactThis Props State -> Uint8Array -> Effect Unit
     onMsg this bytes = do
-      x <- decodeStatMsg bytes
-      case x of
-        Just (MetricStat { name: name, value: value, time: time, addr: addr }) -> do
+      case decodeStatMsg bytes of
+        Right { val: MetricStat { name: name, value: value, time: time, addr: addr }} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
           let cpu_hour = if name == "cpu.hour" then Just value else Nothing
           let uptime = if name == "uptime" then Just value else Nothing
@@ -205,7 +205,7 @@ reactClass = component "Main" \this -> do
             , err: Nothing
             , action: Nothing
             }
-        Just (MeasureStat { name: name, value: value, time: time, addr: addr }) -> do
+        Right { val: MeasureStat { name: name, value: value, time: time, addr: addr }} -> do
           let value' = readInt 10 value
           let searchTs = if name == "search.ts" then Just value else Nothing
           let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
@@ -231,7 +231,7 @@ reactClass = component "Main" \this -> do
             , err: Nothing
             , action: Nothing
             }
-        Just (ErrorStat { exception: exception', stacktrace: stacktrace', toptrace: toptrace, time: time, addr: addr }) -> do
+        Right { val: ErrorStat { exception: exception', stacktrace: stacktrace', toptrace: toptrace, time: time, addr: addr }} -> do
           let exception = split (Pattern "~") exception'
           let stacktrace = split (Pattern "~") stacktrace'
           let key = addr<>time
@@ -244,7 +244,7 @@ reactClass = component "Main" \this -> do
             , err: Just err
             , action: Nothing
             }
-        Just (ActionStat { action: action, time: time, addr: addr}) -> updateWith
+        Right { val: ActionStat { action: action, time: time, addr: addr}} -> updateWith
           { addr: addr
           , time: time
           , metrics: Nothing

@@ -5,6 +5,7 @@
     "rep": "purs repl 'bower_components/purescript-*/src/**/*.purs'"
   },
   "devDependencies": {
-    "purescript": "*"
+    "bower": "*",
+    "purescript": "0.13.2"
   }
 }

@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.StatusCodes.BadRequest
 import akka.http.scaladsl.model.ws.UpgradeToWebSocket
 import akka.http.scaladsl.model.{ HttpRequest, HttpResponse }
 import .ftier._
-import .kvs.Kvs
+import zd.kvs.Kvs
 import scala.concurrent.Future
 
 class Route(implicit val system: ExtendedActorSystem) extends RouteGrip[HttpRequest,Future[HttpResponse]] {
