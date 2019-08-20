@@ -1,3 +1,9 @@
+val akkaVersion = "2.5.23"
+val frontierVersion = "2.0.2"
+val gsVersion = "1.5.1"
+val kvsVersion = "4.6.3"
+val protoVersion = "1.3.2"
+
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := "2.13.0"
 ThisBuild / version := zd.gs.git.GitOps.version
@@ -21,13 +27,12 @@ ThisBuild / isSnapshot := true
 ThisBuild / resolvers += " Releases" at "http://nexus.mobile..com/nexus3/repository/releases"
 ThisBuild / resolvers += Resolver.jcenterRepo
 
-ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % "1.4.3")
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % "1.4.3"
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-ops" % "1.4.3"
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-z" % "1.4.3"
+ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % gsVersion)
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % gsVersion
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-z" % gsVersion
 
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % "1.3.1" % Compile
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % "1.3.1" 
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % protoVersion % Compile
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % protoVersion 
 
 ThisBuild / turbo := true
 ThisBuild / useCoursier := false
@@ -36,8 +41,8 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
-  libraryDependencies += "com.." %% "ftier" % "2.0.2",
-  libraryDependencies += "io.github.zero-deps" %% "kvs" % "4.6.2",
+  libraryDependencies += "com.." %% "ftier" % frontierVersion,
+  libraryDependencies += "io.github.zero-deps" %% "kvs" % kvsVersion,
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
   deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
@@ -82,9 +87,9 @@ lazy val stats = project.in(file(".")).settings(
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats",
-  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % "2.5.23",
+  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion,
 )
 
 lazy val prjs = project.in(file("prjs")).settings(
-  libraryDependencies += "io.github.zero-deps" %% "proto-purs" % "1.3.1",
+  libraryDependencies += "io.github.zero-deps" %% "proto-purs" % protoVersion,
 ).dependsOn(stats)
