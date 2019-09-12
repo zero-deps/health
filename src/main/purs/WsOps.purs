@@ -3,6 +3,7 @@ module WsOps
   , onOpen
   , onMsg
   , send
+  , sendB
   ) where
 
 import Control.Monad.Except (runExcept)
@@ -20,7 +21,7 @@ import Web.Event.EventTarget (addEventListener, eventListener)
 import Web.Socket.BinaryType (BinaryType(ArrayBuffer))
 import Web.Socket.Event.EventTypes (onOpen, onMessage) as WS
 import Web.Socket.Event.MessageEvent (MessageEvent, fromEvent, data_)
-import Web.Socket.WebSocket (create, sendString, setBinaryType, toEventTarget) as WS
+import Web.Socket.WebSocket (create, sendString, sendArrayBufferView, setBinaryType, toEventTarget) as WS
 import Web.Socket.WebSocket (WebSocket)
 import Data.ArrayBuffer.Types (Uint8Array, ArrayBuffer)
 import Ops.ArrayBuffer (uint8Array)
@@ -59,3 +60,6 @@ onMsg ws success failure =
 
 send :: WebSocket -> String -> Effect Unit
 send ws payload = WS.sendString ws payload
+
+sendB :: WebSocket -> Uint8Array -> Effect Unit
+sendB = WS.sendArrayBufferView

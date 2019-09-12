@@ -33,19 +33,18 @@ class Client(remote: InetSocketAddress, localPort: String) extends Actor with Ac
   }
 
   def ready(udp: ActorRef): Receive = {
-    case m: Stat => m match {
-      
-      case MetricStat(name, value) =>
-        send(udp)(MetricMsg(name, value, localPort))
-      
-      case MeasureStat(name, value) =>
-        send(udp)(MeasureMsg(name, value.toString, localPort))
-      
-      case ErrorStat(exception, stacktrace, toptrace) =>
-        send(udp)(ErrorMsg(exception, stacktrace, toptrace, localPort))
-      
-      case ActionStat(action) =>
-        send(udp)(ActionMsg(action, localPort))
-    }
+
+    case MetricStat(name, value) =>
+      send(udp)(MetricMsg(name, value, localPort))
+    
+    case MeasureStat(name, value) =>
+      send(udp)(MeasureMsg(name, value.toString, localPort))
+    
+    case ErrorStat(exception, stacktrace, toptrace) =>
+      send(udp)(ErrorMsg(exception, stacktrace, toptrace, localPort))
+    
+    case ActionStat(action) =>
+      send(udp)(ActionMsg(action, localPort))
+
   }
 }
