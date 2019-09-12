@@ -37,8 +37,6 @@ package object stats {
     , @N(5) addr: String 
     ) extends StatMsg
 
-  sealed trait Pull
-
   def now_ms(): String = System.currentTimeMillis.toString
 
   final case class StatEn

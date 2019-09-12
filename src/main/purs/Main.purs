@@ -30,7 +30,7 @@ import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
 import Data.ArrayBuffer.Types (Uint8Array)
 
-import Api (StatMsg(MetricStat, MeasureStat, ErrorStat, ActionStat), decodeStatMsg)
+import Push (Push(StatPush, NodeRemoveOk), StatMsg(MetricStat, MeasureStat, ErrorStat, ActionStat), decodePush)
 
 type State = 
   { menu :: Menu
@@ -167,8 +167,8 @@ reactClass = component "Main" \this -> do
         where
         dummy :: ReactClass {}
         dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
-      menuContent { menu: Nodes, nodes: nodes } =
-        pure $ createLeafElement NodesCom.reactClass { nodes: fromFoldable nodes, openNode: \addr -> modifyState this _{ node = Just addr } }
+      menuContent { menu: Nodes, nodes: nodes, ws } =
+        pure $ createLeafElement NodesCom.reactClass { nodes: fromFoldable nodes, ws: ws, openNode: \addr -> modifyState this _{ node = Just addr } }
       menuContent { menu: Errors, errors: errors } =
         pure $ createLeafElement ErrorsCom.reactClass { errors: errors, showAddr: true }
 
@@ -187,8 +187,8 @@ reactClass = component "Main" \this -> do
 
     onMsg :: ReactThis Props State -> Uint8Array -> Effect Unit
     onMsg this bytes = do
-      case decodeStatMsg bytes of
-        Right { val: MetricStat { name: name, value: value, time: time, addr: addr }} -> do
+      case decodePush bytes of
+        Right { val: StatPush { stat: MetricStat { name, value, time, addr }}} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
           let cpu_hour = if name == "cpu.hour" then Just value else Nothing
           let uptime = if name == "uptime" then Just value else Nothing
@@ -205,7 +205,7 @@ reactClass = component "Main" \this -> do
             , err: Nothing
             , action: Nothing
             }
-        Right { val: MeasureStat { name: name, value: value, time: time, addr: addr }} -> do
+        Right { val: StatPush { stat: MeasureStat { name, value, time, addr }}} -> do
           let value' = readInt 10 value
           let searchTs = if name == "search.ts" then Just value else Nothing
           let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
@@ -231,7 +231,7 @@ reactClass = component "Main" \this -> do
             , err: Nothing
             , action: Nothing
             }
-        Right { val: ErrorStat { exception: exception', stacktrace: stacktrace', toptrace: toptrace, time: time, addr: addr }} -> do
+        Right { val: StatPush { stat: ErrorStat { exception: exception', stacktrace: stacktrace', toptrace, time, addr }}} -> do
           let exception = split (Pattern "~") exception'
           let stacktrace = split (Pattern "~") stacktrace'
           let key = addr<>time
@@ -244,7 +244,7 @@ reactClass = component "Main" \this -> do
             , err: Just err
             , action: Nothing
             }
-        Right { val: ActionStat { action: action, time: time, addr: addr}} -> updateWith
+        Right { val: StatPush { stat: ActionStat { action, time, addr }}} -> updateWith
           { addr: addr
           , time: time
           , metrics: Nothing
@@ -252,6 +252,8 @@ reactClass = component "Main" \this -> do
           , err: Nothing
           , action: Just action
           }
+        Right { val: NodeRemoveOk { addr } } -> 
+          modifyState this \st -> st{ nodes = Map.delete addr st.nodes }
         _ -> error "unknown type"
       where
       updateWith :: UpdateData -> Effect Unit

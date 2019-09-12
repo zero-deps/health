@@ -1,39 +1,61 @@
 package .stats
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.model.ws.{TextMessage, BinaryMessage, Message => WsMessage}
+import akka.http.scaladsl.model.ws.{BinaryMessage, Message => WsMessage}
 import akka.NotUsed
 import akka.stream.scaladsl.{Flow, Sink, Source, Merge, GraphDSL, RunnableGraph, Broadcast}
 import akka.stream.{ClosedShape, FlowShape}
-import zd.kvs.Kvs
-import java.time.{LocalDateTime}
-
 import akka.util.ByteString
-import zd.proto.api.{encode}
+import java.time.{LocalDateTime}
+import scala.util.Try
+import zd.kvs.Kvs
+import zd.proto.api.{encode, decode}
+import .stats.route._
 
 object Flows {
   def ws(system: ActorSystem, kvs: Kvs): Flow[WsMessage, WsMessage, NotUsed] =
     Flow.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
 
-      val msgIn = b.add(Flow[WsMessage].collect[String] { case TextMessage.Strict(t) => t })
-      val logIn = Flow[String].map{ msg => system.log.info(s"IN: ${msg}"); msg }
-      val logOut = Flow[String].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
+      val msgIn = b.add(Flow[WsMessage].collect[ByteString] { case BinaryMessage.Strict(bytes) => bytes })
+      val logIn = Flow[Pull].map{ msg => system.log.debug(s"IN: ${msg}"); msg }
+      val logOut = Flow[Push].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
       val kvspub = Source.fromGraph(new MsgSource(system.actorOf(KvsPub.props(kvs))))
       val wspub = Source.fromGraph(new MsgSource(system.actorOf(WsPub.props)))
-      val pub = b.add(Merge[StatMsg](2))
+      val pubStat = b.add(Merge[StatMsg](2))
+      val pubPush = b.add(Merge[Push](2))
 
-      val toBytes = b.add(Flow[StatMsg].map{
-        case m: StatMsg => encode[StatMsg](m)
-      })
+      val decodeMsg = b.add(
+        Flow[ByteString].
+          map[Either[Throwable, Pull]]{ bytes => Try(decode[Pull](bytes.toArray)).toEither }.
+          collect[Pull] { case Right(pull) => pull }
+      )
+
+      val toPush = b.add(Flow[StatMsg].map[Push]{ case m: StatMsg => StatPush(stat=m) })
+      val encodeMsg = b.add(Flow[Push].map{ case m: Push => encode[Push](m) })
       val msgOut = b.add(Flow[Array[Byte]].map[BinaryMessage] { bytes => BinaryMessage.Strict(ByteString(bytes)) })
 
-      msgIn ~> logIn ~> Sink.ignore // ignore income messages
-      wspub  ~> pub
-      kvspub ~> pub ~> toBytes ~> msgOut
+                                wspub  ~> pubStat
+                                kvspub ~> pubStat ~> toPush ~> pubPush
+      msgIn ~> decodeMsg ~> logIn ~> wsHandler(system, kvs) ~> pubPush ~> logOut ~> encodeMsg ~> msgOut
 
       FlowShape(msgIn.in, msgOut.out)
     })
+
+  def wsHandler(system: ActorSystem, kvs: Kvs) =
+    Flow[Pull].map[Push] {
+      case NodeRemove(addr) =>
+        val res = LazyList("cpu_mem.live","cpu.hour","search.ts.latest","search.wc.latest","static.create.latest","static.gen.latest","reindex.ts.latest","reindex.wc.latest","reindex.files.latest","static.create.year","static.gen.year","kvs.size.year","action.live","metrics","errors").
+          flatMap(kvs.stream_unsafe[StatEn](_).getOrElse(LazyList.empty)).
+          filter(_.addr == addr).
+          map(en => kvs.remove[StatEn](en.fid, en.id)).
+          foldLeft[Either[zd.kvs.Err, Unit]](Right(())) {
+            case (Left(e), _) => Left(e)
+            case (Right(_), Right(_)) => Right(())
+            case (_, Left(e)) => Left(e)
+          }
+        res.fold(e => NodeRemoveErr(addr, "Failed to remove node"), _ => NodeRemoveOk(addr))
+    }
 
   def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
