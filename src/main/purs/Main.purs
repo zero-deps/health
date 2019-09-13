@@ -9,7 +9,9 @@ import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
-import Data.String (Pattern(Pattern), split)
+import Data.String (Pattern(Pattern), split, contains)
+import Data.String.Common (toLower)
+import Data.String.CodePoints (length) as String
 import Data.Traversable (sequence)
 import DomOps (cn)
 import DomOps as DomOps
@@ -20,7 +22,7 @@ import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/), (/=), (<>), (==), (>), (>=), (>>=))
+import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/), (/=), (<>), (==), (>), (<), (>=), (>>=))
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
@@ -29,7 +31,6 @@ import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
 import Data.ArrayBuffer.Types (Uint8Array)
-
 import Push (Push(StatPush, NodeRemoveOk), StatMsg(MetricStat, MeasureStat, ErrorStat, ActionStat), decodePush)
 
 type State = 
@@ -41,6 +42,7 @@ type State =
   , leftMenu :: Boolean
   , notifications :: Boolean
   , topMenu :: Boolean
+  , searchText :: String
   }
 type Props =
   { menu :: Array Menu
@@ -75,6 +77,7 @@ reactClass = component "Main" \this -> do
       , leftMenu: false
       , notifications: false
       , topMenu: false
+      , searchText: ""
       }
     , render: render this
     , componentDidMount: do
@@ -167,10 +170,19 @@ reactClass = component "Main" \this -> do
         where
         dummy :: ReactClass {}
         dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
-      menuContent { menu: Nodes, nodes: nodes, ws } =
-        pure $ createLeafElement NodesCom.reactClass { nodes: fromFoldable nodes, ws: ws, openNode: \addr -> modifyState this _{ node = Just addr } }
+      menuContent { menu: Nodes, nodes: nodes, ws, searchText } =
+        pure $ createLeafElement NodesCom.reactClass 
+               { nodes: filterNodes searchText $ fromFoldable nodes
+               , ws, openNode: \addr -> modifyState this _{ node = Just addr }
+               , searchText
+               , search: \v -> modifyState this _{ searchText=v }
+               }
       menuContent { menu: Errors, errors: errors } =
         pure $ createLeafElement ErrorsCom.reactClass { errors: errors, showAddr: true }
+
+      filterNodes :: String -> Array NodeInfo -> Array NodeInfo
+      filterNodes v nodes | String.length v < 3 = nodes
+      filterNodes v nodes = filter (\node -> contains (Pattern v) $ toLower node.addr) nodes
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }

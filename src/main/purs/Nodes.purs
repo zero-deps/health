@@ -2,23 +2,25 @@ module Nodes
   ( reactClass
   ) where
 
-import DomOps (cn, onClickEff)
+import DomOps (cn, onClickEff, onChangeValue)
 import Effect (Effect)
-import Prelude (Unit, bind, map, pure, ($), unit)
+import Prelude hiding (div)
 import React (ReactClass, ReactElement, ReactThis, component, getProps)
-import React.DOM (div, h4, table, tbody', td, text, th', thead, tr, tr', i, a)
-import React.DOM.Props (onClick, style, href)
-import Schema (NodeInfo)
+import React.DOM (div, h4, table, tbody', td, text, th', thead, tr, tr', i, a, input)
+import React.DOM.Props (onClick, style, href, _type, placeholder, value)
 import Web.Socket.WebSocket (WebSocket)
 import Web.HTML (window)
 import Web.HTML.Window (confirm)
 import WsOps as WsOps
+import Schema (NodeInfo)
 import Pull(Pull(NodeRemove), encodePull)
 
 type State = {}
 type Props =
   { nodes :: Array NodeInfo
   , openNode :: String -> Effect Unit
+  , searchText :: String
+  , search :: String -> Effect Unit
   , ws :: WebSocket
   }
 
@@ -39,6 +41,12 @@ reactClass = component "Nodes" \this -> do
             [ div [ cn "card-header" ]
               [ h4 [ cn "card-title" ]
                 [ text "Nodes" ]
+              , input [ _type "search"
+                      , cn "form-control"
+                      , placeholder "Filter nodes"
+                      , value props.searchText
+                      , onChangeValue \v -> props.search v
+                ]
               ]
             , div [ cn "card-body" ]
               [ div [ cn "table-responsive" ]

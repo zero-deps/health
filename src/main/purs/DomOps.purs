@@ -4,17 +4,15 @@ module DomOps
   , openUrl
   , cn
   , onClickEff
+  , onChangeValue
   ) where
 
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.String (null)
-import Control.Plus (class Plus)
-import Control.Plus as Plus
 import Effect (Effect)
 import Effect.Exception (throw)
-import Effect.Class (liftEffect, class MonadEffect)
 import Prelude
-import React.DOM.Props (Props, className, onClick)
+import React.DOM.Props (Props, className, onClick, onChange)
 import Web.DOM.Element (Element)
 import Web.DOM.NonElementParentNode (NonElementParentNode, getElementById)
 import React.SyntheticEvent (preventDefault, stopPropagation)
@@ -22,6 +20,7 @@ import Web.HTML (window)
 import Web.HTML.HTMLDocument (HTMLDocument, toNonElementParentNode)
 import Web.HTML.Location (host, setHref) as DOM
 import Web.HTML.Window (document, location)
+import Unsafe.Coerce (unsafeCoerce)
 
 byId :: String -> Effect Element
 byId id = do
@@ -51,3 +50,6 @@ onClickEff f = onClick \e -> do
     preventDefault e
     stopPropagation e
     f
+
+onChangeValue :: (String -> Effect Unit) -> Props
+onChangeValue f = onChange \e -> f (unsafeCoerce e).target.value
