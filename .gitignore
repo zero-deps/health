@@ -4,6 +4,6 @@
 /logs/
 /native/
 /node_modules/
-/rng_data_*/
+/rng_data*/
 /tmp/
 target/
