@@ -64,6 +64,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val os = ManagementFactory.getOperatingSystemMXBean
     val gc = ManagementFactory.getGarbageCollectorMXBeans
     val thr = ManagementFactory.getThreadMXBean
+    val mem = ManagementFactory.getMemoryMXBean
 
     val scheduler = system.scheduler
     object timeout {
@@ -110,7 +111,8 @@ class Stats(implicit system: ActorSystem) extends Extension {
           // Memory (Mbytes)
           val free = os.getFreePhysicalMemorySize
           val total = os.getTotalPhysicalMemorySize
-          metric("cpu_mem", s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}")
+          val heapMem = mem.getHeapMemoryUsage.getUsed
+          metric("cpu_mem", s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}~${heapMem/i"1'000'000"}")
         }
         os match {
           case os: com.sun.management.UnixOperatingSystemMXBean =>

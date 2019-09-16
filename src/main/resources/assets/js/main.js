@@ -1096,7 +1096,7 @@ var PS = {};
               borderWidth: 2,
               data: values.memPoints,
               fill: false,
-              label: "Memory Usage",
+              label: "Heap Memory Usage",
               lineTension: 0,
               pointBackgroundColor: '#00d6b4',
               pointBorderColor: 'rgba(255,255,255,0)',
@@ -1129,7 +1129,7 @@ var PS = {};
                   switch (datasetIndex) {
                     case 0: return datasetLabel + item.yLabel + "%"
                     case 1: return datasetLabel + data.datasets[1].actLabels[item.index]
-                    case 2: return datasetLabel + item.yLabel + " GB"
+                    case 2: return datasetLabel + item.yLabel + " MB"
                   }
                 },
               },
@@ -1164,8 +1164,8 @@ var PS = {};
                 },
                 ticks: {
                   fontColor: "#9a9a9a",
-                  stepSize: 0.5,
-                  callback: function(value) { return value+" GB" },
+                  //stepSize: 0.5,
+                  callback: function(value) { return value+" MB" },
                 },
                 gridLines: {
                   drawOnChartArea: false,
@@ -7441,14 +7441,16 @@ var PS = {};
                           return v1.kvsSize_year;
                       }));
                       var v1 = (function () {
-                          if (cpu_mem instanceof Data_Maybe.Just && cpu_mem.value0.length === 3) {
+                          if (cpu_mem instanceof Data_Maybe.Just && cpu_mem.value0.length === 4) {
                               var free = Global.readInt(10)(cpu_mem["value0"][1]);
                               var total = Global.readInt(10)(cpu_mem["value0"][2]);
                               var used = total - free;
+                              var heap = Global.readInt(10)(cpu_mem["value0"][3]);
                               return new Data_Maybe.Just({
                                   used: used,
                                   free: free,
-                                  total: total
+                                  total: total,
+                                  heap: heap
                               });
                           };
                           if (cpu_mem instanceof Data_Maybe.Just) {
@@ -7459,7 +7461,7 @@ var PS = {};
                           if (cpu_mem instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 288, column 16 - line 295, column 34): " + [ cpu_mem.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 288, column 16 - line 296, column 34): " + [ cpu_mem.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
                           return v2.used;
@@ -7473,7 +7475,7 @@ var PS = {};
                       var memPoints = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
                               t: time$prime,
-                              y: b.used / 1000.0
+                              y: b.heap
                           } ];
                       })(v1));
                       var v2 = (function () {
@@ -7498,7 +7500,7 @@ var PS = {};
                           if (v2 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 301, column 15 - line 308, column 34): " + [ v2.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 302, column 15 - line 309, column 34): " + [ v2.constructor.name ]);
                       })();
                       var v3 = (function () {
                           var v3 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v4) {
@@ -7520,7 +7522,7 @@ var PS = {};
                           if (v3 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 310, column 15 - line 316, column 34): " + [ v3.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 311, column 15 - line 317, column 34): " + [ v3.constructor.name ]);
                       })();
                       var v4 = (function () {
                           var v4 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v5) {
@@ -7548,7 +7550,7 @@ var PS = {};
                           if (v4 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 318, column 16 - line 327, column 34): " + [ v4.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 319, column 16 - line 328, column 34): " + [ v4.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
@@ -7776,7 +7778,7 @@ var PS = {};
                                   kvsSizeYearPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(kvsSizeYearPoint)
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 351, column 21 - line 450, column 18): " + [ v6.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 352, column 21 - line 451, column 18): " + [ v6.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -7809,63 +7811,63 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 452, column 9 - line 454, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 453, column 9 - line 455, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var v = Push.decodePush(bytes);
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push.Metric)) {
                   var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $139 = v.value0.val.value0.stat.value0.name === "cpu_mem";
-                      if ($139) {
+                      var $140 = v.value0.val.value0.stat.value0.name === "cpu_mem";
+                      if ($140) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var cpu_hour = (function () {
-                      var $140 = v.value0.val.value0.stat.value0.name === "cpu.hour";
-                      if ($140) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var uptime = (function () {
-                      var $141 = v.value0.val.value0.stat.value0.name === "uptime";
+                      var $141 = v.value0.val.value0.stat.value0.name === "cpu.hour";
                       if ($141) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var version = (function () {
-                      var $142 = v.value0.val.value0.stat.value0.name === "v";
+                  var uptime = (function () {
+                      var $142 = v.value0.val.value0.stat.value0.name === "uptime";
                       if ($142) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $143 = v.value0.val.value0.stat.value0.name === "fs./";
+                  var version = (function () {
+                      var $143 = v.value0.val.value0.stat.value0.name === "v";
                       if ($143) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
-                  })());
-                  var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $144 = v.value0.val.value0.stat.value0.name === "fd";
+                  })();
+                  var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
+                      var $144 = v.value0.val.value0.stat.value0.name === "fs./";
                       if ($144) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
-                  var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $145 = v.value0.val.value0.stat.value0.name === "thr";
+                  var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
+                      var $145 = v.value0.val.value0.stat.value0.name === "fd";
                       if ($145) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
-                  var kvsSize_year = (function () {
-                      var $146 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
+                  var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
+                      var $146 = v.value0.val.value0.stat.value0.name === "thr";
                       if ($146) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })());
+                  var kvsSize_year = (function () {
+                      var $147 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
+                      if ($147) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7892,113 +7894,113 @@ var PS = {};
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push.Measure)) {
                   var value$prime = Global.readInt(10)(v.value0.val.value0.stat.value0.value);
                   var searchTs = (function () {
-                      var $158 = v.value0.val.value0.stat.value0.name === "search.ts";
-                      if ($158) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var searchTs_thirdQ = (function () {
-                      var $159 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
+                      var $159 = v.value0.val.value0.stat.value0.name === "search.ts";
                       if ($159) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var searchWc = (function () {
-                      var $160 = v.value0.val.value0.stat.value0.name === "search.wc";
+                  var searchTs_thirdQ = (function () {
+                      var $160 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
                       if ($160) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var searchWc_thirdQ = (function () {
-                      var $161 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                  var searchWc = (function () {
+                      var $161 = v.value0.val.value0.stat.value0.name === "search.wc";
                       if ($161) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticCreate = (function () {
-                      var $162 = v.value0.val.value0.stat.value0.name === "static.create";
+                  var searchWc_thirdQ = (function () {
+                      var $162 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
                       if ($162) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticCreate_thirdQ = (function () {
-                      var $163 = v.value0.val.value0.stat.value0.name === "static.create.thirdQ";
+                  var staticCreate = (function () {
+                      var $163 = v.value0.val.value0.stat.value0.name === "static.create";
                       if ($163) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticCreate_year = (function () {
-                      var $164 = v.value0.val.value0.stat.value0.name === "static.create.year";
+                  var staticCreate_thirdQ = (function () {
+                      var $164 = v.value0.val.value0.stat.value0.name === "static.create.thirdQ";
                       if ($164) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen = (function () {
-                      var $165 = v.value0.val.value0.stat.value0.name === "static.gen";
+                  var staticCreate_year = (function () {
+                      var $165 = v.value0.val.value0.stat.value0.name === "static.create.year";
                       if ($165) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen_thirdQ = (function () {
-                      var $166 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
+                  var staticGen = (function () {
+                      var $166 = v.value0.val.value0.stat.value0.name === "static.gen";
                       if ($166) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen_year = (function () {
-                      var $167 = v.value0.val.value0.stat.value0.name === "static.gen.year";
+                  var staticGen_thirdQ = (function () {
+                      var $167 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
                       if ($167) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexTs = (function () {
-                      var $168 = v.value0.val.value0.stat.value0.name === "reindex.ts";
+                  var staticGen_year = (function () {
+                      var $168 = v.value0.val.value0.stat.value0.name === "static.gen.year";
                       if ($168) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexTs_thirdQ = (function () {
-                      var $169 = v.value0.val.value0.stat.value0.name === "reindex.ts.thirdQ";
+                  var reindexTs = (function () {
+                      var $169 = v.value0.val.value0.stat.value0.name === "reindex.ts";
                       if ($169) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexWc = (function () {
-                      var $170 = v.value0.val.value0.stat.value0.name === "reindex.wc";
+                  var reindexTs_thirdQ = (function () {
+                      var $170 = v.value0.val.value0.stat.value0.name === "reindex.ts.thirdQ";
                       if ($170) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexWc_thirdQ = (function () {
-                      var $171 = v.value0.val.value0.stat.value0.name === "reindex.wc.thirdQ";
+                  var reindexWc = (function () {
+                      var $171 = v.value0.val.value0.stat.value0.name === "reindex.wc";
                       if ($171) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexFiles = (function () {
-                      var $172 = v.value0.val.value0.stat.value0.name === "reindex.files";
+                  var reindexWc_thirdQ = (function () {
+                      var $172 = v.value0.val.value0.stat.value0.name === "reindex.wc.thirdQ";
                       if ($172) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexFiles_thirdQ = (function () {
-                      var $173 = v.value0.val.value0.stat.value0.name === "reindex.files.thirdQ";
+                  var reindexFiles = (function () {
+                      var $173 = v.value0.val.value0.stat.value0.name === "reindex.files";
                       if ($173) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })();
+                  var reindexFiles_thirdQ = (function () {
+                      var $174 = v.value0.val.value0.stat.value0.name === "reindex.files.thirdQ";
+                      if ($174) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;

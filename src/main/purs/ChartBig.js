@@ -74,7 +74,7 @@ exports.createChart = function(ref) {
             borderWidth: 2,
             data: values.memPoints,
             fill: false,
-            label: "Memory Usage",
+            label: "Heap Memory Usage",
             lineTension: 0,
             pointBackgroundColor: '#00d6b4',
             pointBorderColor: 'rgba(255,255,255,0)',
@@ -107,7 +107,7 @@ exports.createChart = function(ref) {
                 switch (datasetIndex) {
                   case 0: return datasetLabel + item.yLabel + "%"
                   case 1: return datasetLabel + data.datasets[1].actLabels[item.index]
-                  case 2: return datasetLabel + item.yLabel + " GB"
+                  case 2: return datasetLabel + item.yLabel + " MB"
                 }
               },
             },
@@ -142,8 +142,8 @@ exports.createChart = function(ref) {
               },
               ticks: {
                 fontColor: "#9a9a9a",
-                stepSize: 0.5,
-                callback: function(value) { return value+" GB" },
+                //stepSize: 0.5,
+                callback: function(value) { return value+" MB" },
               },
               gridLines: {
                 drawOnChartArea: false,
