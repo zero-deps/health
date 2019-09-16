@@ -10,12 +10,14 @@ type ErrorInfo =
   , stacktrace :: Array String
   , toptrace :: String
   , time :: String
-  , addr :: String
+  , host :: String
+  , ip :: String
   , key :: String -- for React
   }
 
 type UpdateData =
-  { addr :: String
+  { host :: String
+  , ip :: String
   , time :: String
   , metrics :: Maybe MetricsUpdate
   , measure :: Maybe MeasureUpdate
@@ -54,7 +56,8 @@ type MeasureUpdate =
   }
 
 type NodeInfo =
-  { addr :: String
+  { host :: String
+  , ip :: String
   , lastUpdate :: String
   , version :: Maybe String
   , cpuPoints :: Array NumPoint

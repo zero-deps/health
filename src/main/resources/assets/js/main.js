@@ -899,10 +899,16 @@ var PS = {};
   var div$prime = div([  ]);        
   var canvas = mkDOM(false)("canvas");
   var button = mkDOM(false)("button");
+  var br = function (props) {
+      return mkDOM(false)("br")(props)([  ]);
+  };
+  var br$prime = br([  ]);    
   var a = mkDOM(false)("a");
   exports["mkDOM"] = mkDOM;
   exports["text"] = text;
   exports["a"] = a;
+  exports["br"] = br;
+  exports["br'"] = br$prime;
   exports["button"] = button;
   exports["canvas"] = canvas;
   exports["div"] = div;
@@ -4318,7 +4324,7 @@ var PS = {};
               var nocause = v1.err.toptrace === "--";
               return React_DOM["tr'"](Data_Semigroup.append(Data_Semigroup.semigroupArray)((function () {
                   if (v1.showAddr) {
-                      return [ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.err.addr) ]) ];
+                      return [ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v1.err.host), React_DOM["br'"], React_DOM.text(v1.err.ip) ]) ];
                   };
                   return [  ];
               })())(Data_Semigroup.append(Data_Semigroup.semigroupArray)([ React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.text(v2) ]), React_DOM.td([ DomOps.cn("align-top"), React_DOM_Props.style({
@@ -5713,21 +5719,23 @@ var PS = {};
               var v = React.getProps($$this)();
               return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h4([ DomOps.cn("card-title") ])([ React_DOM.text("Nodes") ]), React_DOM.input([ React_DOM_Props["_type"]("search"), DomOps.cn("form-control"), React_DOM_Props.placeholder("Filter nodes"), React_DOM_Props.value(v.searchText), DomOps.onChangeValue(function (v1) {
                   return v.search(v1);
-              }) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Address") ]), React_DOM["th'"]([ React_DOM.text("Last Update") ]) ]) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(function (x) {
+              }) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Host") ]), React_DOM["th'"]([ React_DOM.text("IP") ]), React_DOM["th'"]([ React_DOM.text("Last Update") ]) ]) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.tr([ React_DOM_Props.onClick(function (v1) {
-                      return v.openNode(x.addr);
+                      return v.openNode(x.host);
                   }), React_DOM_Props.style({
                       cursor: "zoom-in"
                   }) ])([ React_DOM.td([ React_DOM_Props.style({
                       fontFamily: "Fira Code"
-                  }) ])([ React_DOM.text(x.addr) ]), React_DOM.td([ React_DOM_Props.style({
+                  }) ])([ React_DOM.text(x.host) ]), React_DOM.td([ React_DOM_Props.style({
+                      fontFamily: "Fira Code"
+                  }) ])([ React_DOM.text(x.ip) ]), React_DOM.td([ React_DOM_Props.style({
                       fontFamily: "Fira Code"
                   }) ])([ React_DOM.text(x.lastUpdate) ]), React_DOM.td([  ])([ React_DOM.a([ React_DOM_Props.href(""), DomOps.onClickEff(function __do() {
                       var v1 = Web_HTML.window();
                       var v2 = Web_HTML_Window.confirm("Delete statistics of this node?")(v1)();
                       if (v2) {
                           return WsOps.sendB(v.ws)(Pull.encodePull(new Pull.NodeRemove({
-                              addr: x.addr
+                              addr: x.host
                           })))();
                       };
                       return Data_Unit.unit;
@@ -6048,50 +6056,50 @@ var PS = {};
   var Data_Either = $PS["Data.Either"];
   var Data_Maybe = $PS["Data.Maybe"];
   var Proto_Decode = $PS["Proto.Decode"];                
-  var MetricStat = (function () {
-      function MetricStat(value0) {
+  var Metric = (function () {
+      function Metric(value0) {
           this.value0 = value0;
       };
-      MetricStat.create = function (value0) {
-          return new MetricStat(value0);
+      Metric.create = function (value0) {
+          return new Metric(value0);
       };
-      return MetricStat;
+      return Metric;
   })();
-  var MeasureStat = (function () {
-      function MeasureStat(value0) {
+  var Measure = (function () {
+      function Measure(value0) {
           this.value0 = value0;
       };
-      MeasureStat.create = function (value0) {
-          return new MeasureStat(value0);
+      Measure.create = function (value0) {
+          return new Measure(value0);
       };
-      return MeasureStat;
+      return Measure;
   })();
-  var ErrorStat = (function () {
-      function ErrorStat(value0) {
+  var $$Error = (function () {
+      function $$Error(value0) {
           this.value0 = value0;
       };
-      ErrorStat.create = function (value0) {
-          return new ErrorStat(value0);
+      $$Error.create = function (value0) {
+          return new $$Error(value0);
       };
-      return ErrorStat;
+      return $$Error;
   })();
-  var ActionStat = (function () {
-      function ActionStat(value0) {
+  var Action = (function () {
+      function Action(value0) {
           this.value0 = value0;
       };
-      ActionStat.create = function (value0) {
-          return new ActionStat(value0);
+      Action.create = function (value0) {
+          return new Action(value0);
       };
-      return ActionStat;
+      return Action;
   })();
-  var StatPush = (function () {
-      function StatPush(value0) {
+  var StatMsg = (function () {
+      function StatMsg(value0) {
           this.value0 = value0;
       };
-      StatPush.create = function (value0) {
-          return new StatPush(value0);
+      StatMsg.create = function (value0) {
+          return new StatMsg(value0);
       };
-      return StatPush;
+      return StatMsg;
   })();
   var NodeRemoveOk = (function () {
       function NodeRemoveOk(value0) {
@@ -6111,6 +6119,129 @@ var PS = {};
       };
       return NodeRemoveErr;
   })();
+  var decodeStatMeta = function (_xs_) {
+      return function (pos0) {
+          var decode = function ($copy_end) {
+              return function ($copy_acc) {
+                  return function ($copy_pos1) {
+                      var $tco_var_end = $copy_end;
+                      var $tco_var_acc = $copy_acc;
+                      var $tco_done = false;
+                      var $tco_result;
+                      function $tco_loop(end, acc, pos1) {
+                          var $127 = pos1 < end;
+                          if ($127) {
+                              var v = Proto_Decode.uint32(_xs_)(pos1);
+                              if (v instanceof Data_Either.Left) {
+                                  $tco_done = true;
+                                  return new Data_Either.Left(v.value0);
+                              };
+                              if (v instanceof Data_Either.Right) {
+                                  var v1 = v.value0.val >>> 3;
+                                  if (v1 === 1) {
+                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
+                                      if (v2 instanceof Data_Either.Left) {
+                                          $tco_done = true;
+                                          return new Data_Either.Left(v2.value0);
+                                      };
+                                      if (v2 instanceof Data_Either.Right) {
+                                          $tco_var_end = end;
+                                          $tco_var_acc = {
+                                              time: new Data_Maybe.Just(v2.value0.val),
+                                              host: acc.host,
+                                              ip: acc.ip
+                                          };
+                                          $copy_pos1 = v2.value0.pos;
+                                          return;
+                                      };
+                                      throw new Error("Failed pattern match at Push (line 305, column 17 - line 308, column 62): " + [ v2.constructor.name ]);
+                                  };
+                                  if (v1 === 2) {
+                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
+                                      if (v2 instanceof Data_Either.Left) {
+                                          $tco_done = true;
+                                          return new Data_Either.Left(v2.value0);
+                                      };
+                                      if (v2 instanceof Data_Either.Right) {
+                                          $tco_var_end = end;
+                                          $tco_var_acc = {
+                                              time: acc.time,
+                                              host: new Data_Maybe.Just(v2.value0.val),
+                                              ip: acc.ip
+                                          };
+                                          $copy_pos1 = v2.value0.pos;
+                                          return;
+                                      };
+                                      throw new Error("Failed pattern match at Push (line 310, column 17 - line 313, column 62): " + [ v2.constructor.name ]);
+                                  };
+                                  if (v1 === 3) {
+                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
+                                      if (v2 instanceof Data_Either.Left) {
+                                          $tco_done = true;
+                                          return new Data_Either.Left(v2.value0);
+                                      };
+                                      if (v2 instanceof Data_Either.Right) {
+                                          $tco_var_end = end;
+                                          $tco_var_acc = {
+                                              time: acc.time,
+                                              host: acc.host,
+                                              ip: new Data_Maybe.Just(v2.value0.val)
+                                          };
+                                          $copy_pos1 = v2.value0.pos;
+                                          return;
+                                      };
+                                      throw new Error("Failed pattern match at Push (line 315, column 17 - line 318, column 60): " + [ v2.constructor.name ]);
+                                  };
+                                  var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
+                                  if (v2 instanceof Data_Either.Left) {
+                                      $tco_done = true;
+                                      return new Data_Either.Left(v2.value0);
+                                  };
+                                  if (v2 instanceof Data_Either.Right) {
+                                      $tco_var_end = end;
+                                      $tco_var_acc = acc;
+                                      $copy_pos1 = v2.value0.pos;
+                                      return;
+                                  };
+                                  throw new Error("Failed pattern match at Push (line 320, column 17 - line 323, column 40): " + [ v2.constructor.name ]);
+                              };
+                              throw new Error("Failed pattern match at Push (line 300, column 9 - line 323, column 40): " + [ v.constructor.name ]);
+                          };
+                          $tco_done = true;
+                          return Control_Applicative.pure(Data_Either.applicativeEither)({
+                              pos: pos1,
+                              val: acc
+                          });
+                      };
+                      while (!$tco_done) {
+                          $tco_result = $tco_loop($tco_var_end, $tco_var_acc, $copy_pos1);
+                      };
+                      return $tco_result;
+                  };
+              };
+          };
+          return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.uint32(_xs_)(pos0))(function (v) {
+              var end = v.pos + v.val | 0;
+              return Control_Bind.bind(Data_Either.bindEither)(decode(end)({
+                  time: Data_Maybe.Nothing.value,
+                  host: Data_Maybe.Nothing.value,
+                  ip: Data_Maybe.Nothing.value
+              })(v.pos))(function (v1) {
+                  if (v1.val.time instanceof Data_Maybe.Just && (v1.val.host instanceof Data_Maybe.Just && v1.val.ip instanceof Data_Maybe.Just)) {
+                      return Control_Applicative.pure(Data_Either.applicativeEither)({
+                          pos: v1.pos,
+                          val: {
+                              time: v1.val.time.value0,
+                              host: v1.val.host.value0,
+                              ip: v1.val.ip.value0
+                          }
+                      });
+                  };
+                  return Data_Either.Left.create(new Proto_Decode.MissingFields("StatMeta"));
+              });
+          });
+      };
+  };
   var decodeNodeRemoveOk = function (_xs_) {
       return function (pos0) {
           var decode = function ($copy_end) {
@@ -6121,8 +6252,8 @@ var PS = {};
                       var $tco_done = false;
                       var $tco_result;
                       function $tco_loop(end, acc, pos1) {
-                          var $130 = pos1 < end;
-                          if ($130) {
+                          var $166 = pos1 < end;
+                          if ($166) {
                               var v = Proto_Decode.uint32(_xs_)(pos1);
                               if (v instanceof Data_Either.Left) {
                                   $tco_done = true;
@@ -6144,7 +6275,7 @@ var PS = {};
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 338, column 17 - line 341, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 343, column 17 - line 346, column 62): " + [ v2.constructor.name ]);
                                   };
                                   var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
                                   if (v2 instanceof Data_Either.Left) {
@@ -6157,9 +6288,9 @@ var PS = {};
                                       $copy_pos1 = v2.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 343, column 17 - line 346, column 40): " + [ v2.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 348, column 17 - line 351, column 40): " + [ v2.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 333, column 9 - line 346, column 40): " + [ v.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 338, column 9 - line 351, column 40): " + [ v.constructor.name ]);
                           };
                           $tco_done = true;
                           return Control_Applicative.pure(Data_Either.applicativeEither)({
@@ -6202,8 +6333,8 @@ var PS = {};
                       var $tco_done = false;
                       var $tco_result;
                       function $tco_loop(end, acc, pos1) {
-                          var $155 = pos1 < end;
-                          if ($155) {
+                          var $191 = pos1 < end;
+                          if ($191) {
                               var v = Proto_Decode.uint32(_xs_)(pos1);
                               if (v instanceof Data_Either.Left) {
                                   $tco_done = true;
@@ -6226,7 +6357,7 @@ var PS = {};
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 366, column 17 - line 369, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 371, column 17 - line 374, column 62): " + [ v2.constructor.name ]);
                                   };
                                   if (v1 === 2) {
                                       var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
@@ -6243,7 +6374,7 @@ var PS = {};
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 371, column 17 - line 374, column 61): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 376, column 17 - line 379, column 61): " + [ v2.constructor.name ]);
                                   };
                                   var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
                                   if (v2 instanceof Data_Either.Left) {
@@ -6256,9 +6387,9 @@ var PS = {};
                                       $copy_pos1 = v2.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 376, column 17 - line 379, column 40): " + [ v2.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 381, column 17 - line 384, column 40): " + [ v2.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 361, column 9 - line 379, column 40): " + [ v.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 366, column 9 - line 384, column 40): " + [ v.constructor.name ]);
                           };
                           $tco_done = true;
                           return Control_Applicative.pure(Data_Either.applicativeEither)({
@@ -6293,7 +6424,7 @@ var PS = {};
           });
       };
   };
-  var decodeMetricStat = function (_xs_) {
+  var decodeMetric = function (_xs_) {
       return function (pos0) {
           var decode = function ($copy_end) {
               return function ($copy_acc) {
@@ -6303,8 +6434,8 @@ var PS = {};
                       var $tco_done = false;
                       var $tco_result;
                       function $tco_loop(end, acc, pos1) {
-                          var $187 = pos1 < end;
-                          if ($187) {
+                          var $223 = pos1 < end;
+                          if ($223) {
                               var v = Proto_Decode.uint32(_xs_)(pos1);
                               if (v instanceof Data_Either.Left) {
                                   $tco_done = true;
@@ -6322,14 +6453,12 @@ var PS = {};
                                           $tco_var_end = end;
                                           $tco_var_acc = {
                                               name: new Data_Maybe.Just(v2.value0.val),
-                                              value: acc.value,
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              value: acc.value
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 166, column 17 - line 169, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 173, column 17 - line 176, column 62): " + [ v2.constructor.name ]);
                                   };
                                   if (v1 === 2) {
                                       var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
@@ -6341,52 +6470,12 @@ var PS = {};
                                           $tco_var_end = end;
                                           $tco_var_acc = {
                                               name: acc.name,
-                                              value: new Data_Maybe.Just(v2.value0.val),
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              value: new Data_Maybe.Just(v2.value0.val)
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 171, column 17 - line 174, column 63): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 3) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              name: acc.name,
-                                              value: acc.value,
-                                              time: new Data_Maybe.Just(v2.value0.val),
-                                              addr: acc.addr
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 176, column 17 - line 179, column 62): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 4) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              name: acc.name,
-                                              value: acc.value,
-                                              time: acc.time,
-                                              addr: new Data_Maybe.Just(v2.value0.val)
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 181, column 17 - line 184, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 178, column 17 - line 181, column 63): " + [ v2.constructor.name ]);
                                   };
                                   var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
                                   if (v2 instanceof Data_Either.Left) {
@@ -6399,9 +6488,9 @@ var PS = {};
                                       $copy_pos1 = v2.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 186, column 17 - line 189, column 40): " + [ v2.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 183, column 17 - line 186, column 40): " + [ v2.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 161, column 9 - line 189, column 40): " + [ v.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 168, column 9 - line 186, column 40): " + [ v.constructor.name ]);
                           };
                           $tco_done = true;
                           return Control_Applicative.pure(Data_Either.applicativeEither)({
@@ -6420,27 +6509,23 @@ var PS = {};
               var end = v.pos + v.val | 0;
               return Control_Bind.bind(Data_Either.bindEither)(decode(end)({
                   name: Data_Maybe.Nothing.value,
-                  value: Data_Maybe.Nothing.value,
-                  time: Data_Maybe.Nothing.value,
-                  addr: Data_Maybe.Nothing.value
+                  value: Data_Maybe.Nothing.value
               })(v.pos))(function (v1) {
-                  if (v1.val.name instanceof Data_Maybe.Just && (v1.val.value instanceof Data_Maybe.Just && (v1.val.time instanceof Data_Maybe.Just && v1.val.addr instanceof Data_Maybe.Just))) {
+                  if (v1.val.name instanceof Data_Maybe.Just && v1.val.value instanceof Data_Maybe.Just) {
                       return Control_Applicative.pure(Data_Either.applicativeEither)({
                           pos: v1.pos,
                           val: {
                               name: v1.val.name.value0,
-                              value: v1.val.value.value0,
-                              time: v1.val.time.value0,
-                              addr: v1.val.addr.value0
+                              value: v1.val.value.value0
                           }
                       });
                   };
-                  return Data_Either.Left.create(new Proto_Decode.MissingFields("MetricStat"));
+                  return Data_Either.Left.create(new Proto_Decode.MissingFields("Metric"));
               });
           });
       };
   };
-  var decodeMeasureStat = function (_xs_) {
+  var decodeMeasure = function (_xs_) {
       return function (pos0) {
           var decode = function ($copy_end) {
               return function ($copy_acc) {
@@ -6450,8 +6535,8 @@ var PS = {};
                       var $tco_done = false;
                       var $tco_result;
                       function $tco_loop(end, acc, pos1) {
-                          var $233 = pos1 < end;
-                          if ($233) {
+                          var $255 = pos1 < end;
+                          if ($255) {
                               var v = Proto_Decode.uint32(_xs_)(pos1);
                               if (v instanceof Data_Either.Left) {
                                   $tco_done = true;
@@ -6469,14 +6554,12 @@ var PS = {};
                                           $tco_var_end = end;
                                           $tco_var_acc = {
                                               name: new Data_Maybe.Just(v2.value0.val),
-                                              value: acc.value,
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              value: acc.value
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 209, column 17 - line 212, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 206, column 17 - line 209, column 62): " + [ v2.constructor.name ]);
                                   };
                                   if (v1 === 2) {
                                       var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
@@ -6488,52 +6571,12 @@ var PS = {};
                                           $tco_var_end = end;
                                           $tco_var_acc = {
                                               name: acc.name,
-                                              value: new Data_Maybe.Just(v2.value0.val),
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              value: new Data_Maybe.Just(v2.value0.val)
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 214, column 17 - line 217, column 63): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 3) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              name: acc.name,
-                                              value: acc.value,
-                                              time: new Data_Maybe.Just(v2.value0.val),
-                                              addr: acc.addr
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 219, column 17 - line 222, column 62): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 4) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              name: acc.name,
-                                              value: acc.value,
-                                              time: acc.time,
-                                              addr: new Data_Maybe.Just(v2.value0.val)
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 224, column 17 - line 227, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 211, column 17 - line 214, column 63): " + [ v2.constructor.name ]);
                                   };
                                   var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
                                   if (v2 instanceof Data_Either.Left) {
@@ -6546,9 +6589,9 @@ var PS = {};
                                       $copy_pos1 = v2.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 229, column 17 - line 232, column 40): " + [ v2.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 216, column 17 - line 219, column 40): " + [ v2.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 204, column 9 - line 232, column 40): " + [ v.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 201, column 9 - line 219, column 40): " + [ v.constructor.name ]);
                           };
                           $tco_done = true;
                           return Control_Applicative.pure(Data_Either.applicativeEither)({
@@ -6567,27 +6610,23 @@ var PS = {};
               var end = v.pos + v.val | 0;
               return Control_Bind.bind(Data_Either.bindEither)(decode(end)({
                   name: Data_Maybe.Nothing.value,
-                  value: Data_Maybe.Nothing.value,
-                  time: Data_Maybe.Nothing.value,
-                  addr: Data_Maybe.Nothing.value
+                  value: Data_Maybe.Nothing.value
               })(v.pos))(function (v1) {
-                  if (v1.val.name instanceof Data_Maybe.Just && (v1.val.value instanceof Data_Maybe.Just && (v1.val.time instanceof Data_Maybe.Just && v1.val.addr instanceof Data_Maybe.Just))) {
+                  if (v1.val.name instanceof Data_Maybe.Just && v1.val.value instanceof Data_Maybe.Just) {
                       return Control_Applicative.pure(Data_Either.applicativeEither)({
                           pos: v1.pos,
                           val: {
                               name: v1.val.name.value0,
-                              value: v1.val.value.value0,
-                              time: v1.val.time.value0,
-                              addr: v1.val.addr.value0
+                              value: v1.val.value.value0
                           }
                       });
                   };
-                  return Data_Either.Left.create(new Proto_Decode.MissingFields("MeasureStat"));
+                  return Data_Either.Left.create(new Proto_Decode.MissingFields("Measure"));
               });
           });
       };
   };
-  var decodeErrorStat = function (_xs_) {
+  var decodeError = function (_xs_) {
       return function (pos0) {
           var decode = function ($copy_end) {
               return function ($copy_acc) {
@@ -6597,8 +6636,8 @@ var PS = {};
                       var $tco_done = false;
                       var $tco_result;
                       function $tco_loop(end, acc, pos1) {
-                          var $279 = pos1 < end;
-                          if ($279) {
+                          var $287 = pos1 < end;
+                          if ($287) {
                               var v = Proto_Decode.uint32(_xs_)(pos1);
                               if (v instanceof Data_Either.Left) {
                                   $tco_done = true;
@@ -6617,14 +6656,12 @@ var PS = {};
                                           $tco_var_acc = {
                                               exception: new Data_Maybe.Just(v2.value0.val),
                                               stacktrace: acc.stacktrace,
-                                              toptrace: acc.toptrace,
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              toptrace: acc.toptrace
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 252, column 17 - line 255, column 67): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 239, column 17 - line 242, column 67): " + [ v2.constructor.name ]);
                                   };
                                   if (v1 === 2) {
                                       var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
@@ -6637,14 +6674,12 @@ var PS = {};
                                           $tco_var_acc = {
                                               exception: acc.exception,
                                               stacktrace: new Data_Maybe.Just(v2.value0.val),
-                                              toptrace: acc.toptrace,
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              toptrace: acc.toptrace
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 257, column 17 - line 260, column 68): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 244, column 17 - line 247, column 68): " + [ v2.constructor.name ]);
                                   };
                                   if (v1 === 3) {
                                       var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
@@ -6657,54 +6692,12 @@ var PS = {};
                                           $tco_var_acc = {
                                               exception: acc.exception,
                                               stacktrace: acc.stacktrace,
-                                              toptrace: new Data_Maybe.Just(v2.value0.val),
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              toptrace: new Data_Maybe.Just(v2.value0.val)
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 262, column 17 - line 265, column 66): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 4) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              exception: acc.exception,
-                                              stacktrace: acc.stacktrace,
-                                              toptrace: acc.toptrace,
-                                              time: new Data_Maybe.Just(v2.value0.val),
-                                              addr: acc.addr
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 267, column 17 - line 270, column 62): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 5) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              exception: acc.exception,
-                                              stacktrace: acc.stacktrace,
-                                              toptrace: acc.toptrace,
-                                              time: acc.time,
-                                              addr: new Data_Maybe.Just(v2.value0.val)
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 272, column 17 - line 275, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 249, column 17 - line 252, column 66): " + [ v2.constructor.name ]);
                                   };
                                   var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
                                   if (v2 instanceof Data_Either.Left) {
@@ -6717,9 +6710,9 @@ var PS = {};
                                       $copy_pos1 = v2.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 277, column 17 - line 280, column 40): " + [ v2.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 254, column 17 - line 257, column 40): " + [ v2.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 247, column 9 - line 280, column 40): " + [ v.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 234, column 9 - line 257, column 40): " + [ v.constructor.name ]);
                           };
                           $tco_done = true;
                           return Control_Applicative.pure(Data_Either.applicativeEither)({
@@ -6739,28 +6732,24 @@ var PS = {};
               return Control_Bind.bind(Data_Either.bindEither)(decode(end)({
                   exception: Data_Maybe.Nothing.value,
                   stacktrace: Data_Maybe.Nothing.value,
-                  toptrace: Data_Maybe.Nothing.value,
-                  time: Data_Maybe.Nothing.value,
-                  addr: Data_Maybe.Nothing.value
+                  toptrace: Data_Maybe.Nothing.value
               })(v.pos))(function (v1) {
-                  if (v1.val.exception instanceof Data_Maybe.Just && (v1.val.stacktrace instanceof Data_Maybe.Just && (v1.val.toptrace instanceof Data_Maybe.Just && (v1.val.time instanceof Data_Maybe.Just && v1.val.addr instanceof Data_Maybe.Just)))) {
+                  if (v1.val.exception instanceof Data_Maybe.Just && (v1.val.stacktrace instanceof Data_Maybe.Just && v1.val.toptrace instanceof Data_Maybe.Just)) {
                       return Control_Applicative.pure(Data_Either.applicativeEither)({
                           pos: v1.pos,
                           val: {
                               exception: v1.val.exception.value0,
                               stacktrace: v1.val.stacktrace.value0,
-                              toptrace: v1.val.toptrace.value0,
-                              time: v1.val.time.value0,
-                              addr: v1.val.addr.value0
+                              toptrace: v1.val.toptrace.value0
                           }
                       });
                   };
-                  return Data_Either.Left.create(new Proto_Decode.MissingFields("ErrorStat"));
+                  return Data_Either.Left.create(new Proto_Decode.MissingFields("Error"));
               });
           });
       };
   };
-  var decodeActionStat = function (_xs_) {
+  var decodeAction = function (_xs_) {
       return function (pos0) {
           var decode = function ($copy_end) {
               return function ($copy_acc) {
@@ -6770,8 +6759,8 @@ var PS = {};
                       var $tco_done = false;
                       var $tco_result;
                       function $tco_loop(end, acc, pos1) {
-                          var $332 = pos1 < end;
-                          if ($332) {
+                          var $326 = pos1 < end;
+                          if ($326) {
                               var v = Proto_Decode.uint32(_xs_)(pos1);
                               if (v instanceof Data_Either.Left) {
                                   $tco_done = true;
@@ -6788,50 +6777,12 @@ var PS = {};
                                       if (v2 instanceof Data_Either.Right) {
                                           $tco_var_end = end;
                                           $tco_var_acc = {
-                                              action: new Data_Maybe.Just(v2.value0.val),
-                                              time: acc.time,
-                                              addr: acc.addr
+                                              action: new Data_Maybe.Just(v2.value0.val)
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 300, column 17 - line 303, column 64): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 4) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              action: acc.action,
-                                              time: new Data_Maybe.Just(v2.value0.val),
-                                              addr: acc.addr
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 305, column 17 - line 308, column 62): " + [ v2.constructor.name ]);
-                                  };
-                                  if (v1 === 5) {
-                                      var v2 = Proto_Decode.string(_xs_)(v.value0.pos);
-                                      if (v2 instanceof Data_Either.Left) {
-                                          $tco_done = true;
-                                          return new Data_Either.Left(v2.value0);
-                                      };
-                                      if (v2 instanceof Data_Either.Right) {
-                                          $tco_var_end = end;
-                                          $tco_var_acc = {
-                                              action: acc.action,
-                                              time: acc.time,
-                                              addr: new Data_Maybe.Just(v2.value0.val)
-                                          };
-                                          $copy_pos1 = v2.value0.pos;
-                                          return;
-                                      };
-                                      throw new Error("Failed pattern match at Push (line 310, column 17 - line 313, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 277, column 17 - line 280, column 64): " + [ v2.constructor.name ]);
                                   };
                                   var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
                                   if (v2 instanceof Data_Either.Left) {
@@ -6844,9 +6795,9 @@ var PS = {};
                                       $copy_pos1 = v2.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 315, column 17 - line 318, column 40): " + [ v2.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 282, column 17 - line 285, column 40): " + [ v2.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 295, column 9 - line 318, column 40): " + [ v.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 272, column 9 - line 285, column 40): " + [ v.constructor.name ]);
                           };
                           $tco_done = true;
                           return Control_Applicative.pure(Data_Either.applicativeEither)({
@@ -6864,26 +6815,22 @@ var PS = {};
           return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.uint32(_xs_)(pos0))(function (v) {
               var end = v.pos + v.val | 0;
               return Control_Bind.bind(Data_Either.bindEither)(decode(end)({
-                  action: Data_Maybe.Nothing.value,
-                  time: Data_Maybe.Nothing.value,
-                  addr: Data_Maybe.Nothing.value
+                  action: Data_Maybe.Nothing.value
               })(v.pos))(function (v1) {
-                  if (v1.val.action instanceof Data_Maybe.Just && (v1.val.time instanceof Data_Maybe.Just && v1.val.addr instanceof Data_Maybe.Just)) {
+                  if (v1.val.action instanceof Data_Maybe.Just) {
                       return Control_Applicative.pure(Data_Either.applicativeEither)({
                           pos: v1.pos,
                           val: {
-                              action: v1.val.action.value0,
-                              time: v1.val.time.value0,
-                              addr: v1.val.addr.value0
+                              action: v1.val.action.value0
                           }
                       });
                   };
-                  return Data_Either.Left.create(new Proto_Decode.MissingFields("ActionStat"));
+                  return Data_Either.Left.create(new Proto_Decode.MissingFields("Action"));
               });
           });
       };
   };
-  var decodeStatMsg = function (_xs_) {
+  var decodeStat = function (_xs_) {
       return function (pos0) {
           var decode = function ($copy_end) {
               return function ($copy_v) {
@@ -6902,60 +6849,60 @@ var PS = {};
                               if (v1 instanceof Data_Either.Right) {
                                   var v2 = v1.value0.val >>> 3;
                                   if (v2 === 1) {
-                                      var v3 = decodeMetricStat(_xs_)(v1.value0.pos);
+                                      var v3 = decodeMetric(_xs_)(v1.value0.pos);
                                       if (v3 instanceof Data_Either.Left) {
                                           $tco_done = true;
                                           return new Data_Either.Left(v3.value0);
                                       };
                                       if (v3 instanceof Data_Either.Right) {
                                           $tco_var_end = end;
-                                          $tco_var_v = Data_Maybe.Just.create(new MetricStat(v3.value0.val));
+                                          $tco_var_v = Data_Maybe.Just.create(new Metric(v3.value0.val));
                                           $copy_pos1 = v3.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 122, column 15 - line 125, column 58): " + [ v3.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 129, column 15 - line 132, column 54): " + [ v3.constructor.name ]);
                                   };
                                   if (v2 === 2) {
-                                      var v3 = decodeMeasureStat(_xs_)(v1.value0.pos);
+                                      var v3 = decodeMeasure(_xs_)(v1.value0.pos);
                                       if (v3 instanceof Data_Either.Left) {
                                           $tco_done = true;
                                           return new Data_Either.Left(v3.value0);
                                       };
                                       if (v3 instanceof Data_Either.Right) {
                                           $tco_var_end = end;
-                                          $tco_var_v = Data_Maybe.Just.create(new MeasureStat(v3.value0.val));
+                                          $tco_var_v = Data_Maybe.Just.create(new Measure(v3.value0.val));
                                           $copy_pos1 = v3.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 127, column 15 - line 130, column 59): " + [ v3.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 134, column 15 - line 137, column 55): " + [ v3.constructor.name ]);
                                   };
                                   if (v2 === 3) {
-                                      var v3 = decodeErrorStat(_xs_)(v1.value0.pos);
+                                      var v3 = decodeError(_xs_)(v1.value0.pos);
                                       if (v3 instanceof Data_Either.Left) {
                                           $tco_done = true;
                                           return new Data_Either.Left(v3.value0);
                                       };
                                       if (v3 instanceof Data_Either.Right) {
                                           $tco_var_end = end;
-                                          $tco_var_v = Data_Maybe.Just.create(new ErrorStat(v3.value0.val));
+                                          $tco_var_v = Data_Maybe.Just.create(new $$Error(v3.value0.val));
                                           $copy_pos1 = v3.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 132, column 15 - line 135, column 57): " + [ v3.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 139, column 15 - line 142, column 53): " + [ v3.constructor.name ]);
                                   };
                                   if (v2 === 4) {
-                                      var v3 = decodeActionStat(_xs_)(v1.value0.pos);
+                                      var v3 = decodeAction(_xs_)(v1.value0.pos);
                                       if (v3 instanceof Data_Either.Left) {
                                           $tco_done = true;
                                           return new Data_Either.Left(v3.value0);
                                       };
                                       if (v3 instanceof Data_Either.Right) {
                                           $tco_var_end = end;
-                                          $tco_var_v = Data_Maybe.Just.create(new ActionStat(v3.value0.val));
+                                          $tco_var_v = Data_Maybe.Just.create(new Action(v3.value0.val));
                                           $copy_pos1 = v3.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 137, column 15 - line 140, column 58): " + [ v3.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 144, column 15 - line 147, column 54): " + [ v3.constructor.name ]);
                                   };
                                   var v3 = Proto_Decode.skipType(_xs_)(v1.value0.pos)(v1.value0.val & 7);
                                   if (v3 instanceof Data_Either.Left) {
@@ -6968,9 +6915,9 @@ var PS = {};
                                       $copy_pos1 = v3.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 142, column 15 - line 145, column 38): " + [ v3.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 149, column 15 - line 152, column 38): " + [ v3.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 117, column 7 - line 145, column 38): " + [ v1.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 124, column 7 - line 152, column 38): " + [ v1.constructor.name ]);
                           };
                           if (v instanceof Data_Maybe.Just) {
                               $tco_done = true;
@@ -6981,9 +6928,9 @@ var PS = {};
                           };
                           if (v instanceof Data_Maybe.Nothing) {
                               $tco_done = true;
-                              return Data_Either.Left.create(new Proto_Decode.MissingFields("StatMsg"));
+                              return Data_Either.Left.create(new Proto_Decode.MissingFields("Stat"));
                           };
-                          throw new Error("Failed pattern match at Push (line 115, column 5 - line 115, column 67): " + [ end.constructor.name, v.constructor.name, pos1.constructor.name ]);
+                          throw new Error("Failed pattern match at Push (line 122, column 5 - line 122, column 61): " + [ end.constructor.name, v.constructor.name, pos1.constructor.name ]);
                       };
                       while (!$tco_done) {
                           $tco_result = $tco_loop($tco_var_end, $tco_var_v, $copy_pos1);
@@ -6998,7 +6945,7 @@ var PS = {};
           });
       };
   };
-  var decodeStatPush = function (_xs_) {
+  var decodeStatMsg = function (_xs_) {
       return function (pos0) {
           var decode = function ($copy_end) {
               return function ($copy_acc) {
@@ -7008,8 +6955,8 @@ var PS = {};
                       var $tco_done = false;
                       var $tco_result;
                       function $tco_loop(end, acc, pos1) {
-                          var $408 = pos1 < end;
-                          if ($408) {
+                          var $388 = pos1 < end;
+                          if ($388) {
                               var v = Proto_Decode.uint32(_xs_)(pos1);
                               if (v instanceof Data_Either.Left) {
                                   $tco_done = true;
@@ -7018,7 +6965,7 @@ var PS = {};
                               if (v instanceof Data_Either.Right) {
                                   var v1 = v.value0.val >>> 3;
                                   if (v1 === 1) {
-                                      var v2 = decodeStatMsg(_xs_)(v.value0.pos);
+                                      var v2 = decodeStat(_xs_)(v.value0.pos);
                                       if (v2 instanceof Data_Either.Left) {
                                           $tco_done = true;
                                           return new Data_Either.Left(v2.value0);
@@ -7026,12 +6973,30 @@ var PS = {};
                                       if (v2 instanceof Data_Either.Right) {
                                           $tco_var_end = end;
                                           $tco_var_acc = {
-                                              stat: new Data_Maybe.Just(v2.value0.val)
+                                              stat: new Data_Maybe.Just(v2.value0.val),
+                                              meta: acc.meta
                                           };
                                           $copy_pos1 = v2.value0.pos;
                                           return;
                                       };
-                                      throw new Error("Failed pattern match at Push (line 98, column 17 - line 101, column 62): " + [ v2.constructor.name ]);
+                                      throw new Error("Failed pattern match at Push (line 100, column 17 - line 103, column 62): " + [ v2.constructor.name ]);
+                                  };
+                                  if (v1 === 2) {
+                                      var v2 = decodeStatMeta(_xs_)(v.value0.pos);
+                                      if (v2 instanceof Data_Either.Left) {
+                                          $tco_done = true;
+                                          return new Data_Either.Left(v2.value0);
+                                      };
+                                      if (v2 instanceof Data_Either.Right) {
+                                          $tco_var_end = end;
+                                          $tco_var_acc = {
+                                              stat: acc.stat,
+                                              meta: new Data_Maybe.Just(v2.value0.val)
+                                          };
+                                          $copy_pos1 = v2.value0.pos;
+                                          return;
+                                      };
+                                      throw new Error("Failed pattern match at Push (line 105, column 17 - line 108, column 62): " + [ v2.constructor.name ]);
                                   };
                                   var v2 = Proto_Decode.skipType(_xs_)(v.value0.pos)(v.value0.val & 7);
                                   if (v2 instanceof Data_Either.Left) {
@@ -7044,9 +7009,9 @@ var PS = {};
                                       $copy_pos1 = v2.value0.pos;
                                       return;
                                   };
-                                  throw new Error("Failed pattern match at Push (line 103, column 17 - line 106, column 40): " + [ v2.constructor.name ]);
+                                  throw new Error("Failed pattern match at Push (line 110, column 17 - line 113, column 40): " + [ v2.constructor.name ]);
                               };
-                              throw new Error("Failed pattern match at Push (line 93, column 9 - line 106, column 40): " + [ v.constructor.name ]);
+                              throw new Error("Failed pattern match at Push (line 95, column 9 - line 113, column 40): " + [ v.constructor.name ]);
                           };
                           $tco_done = true;
                           return Control_Applicative.pure(Data_Either.applicativeEither)({
@@ -7064,17 +7029,19 @@ var PS = {};
           return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.uint32(_xs_)(pos0))(function (v) {
               var end = v.pos + v.val | 0;
               return Control_Bind.bind(Data_Either.bindEither)(decode(end)({
-                  stat: Data_Maybe.Nothing.value
+                  stat: Data_Maybe.Nothing.value,
+                  meta: Data_Maybe.Nothing.value
               })(v.pos))(function (v1) {
-                  if (v1.val.stat instanceof Data_Maybe.Just) {
+                  if (v1.val.stat instanceof Data_Maybe.Just && v1.val.meta instanceof Data_Maybe.Just) {
                       return Control_Applicative.pure(Data_Either.applicativeEither)({
                           pos: v1.pos,
                           val: {
-                              stat: v1.val.stat.value0
+                              stat: v1.val.stat.value0,
+                              meta: v1.val.meta.value0
                           }
                       });
                   };
-                  return Data_Either.Left.create(new Proto_Decode.MissingFields("StatPush"));
+                  return Data_Either.Left.create(new Proto_Decode.MissingFields("StatMsg"));
               });
           });
       };
@@ -7083,10 +7050,10 @@ var PS = {};
       return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.uint32(_xs_)(0))(function (v) {
           var v1 = v.val >>> 3;
           if (v1 === 1) {
-              return Control_Bind.bind(Data_Either.bindEither)(decodeStatPush(_xs_)(v.pos))(function (v2) {
+              return Control_Bind.bind(Data_Either.bindEither)(decodeStatMsg(_xs_)(v.pos))(function (v2) {
                   return Control_Applicative.pure(Data_Either.applicativeEither)({
                       pos: v2.pos,
-                      val: new StatPush(v2.val)
+                      val: new StatMsg(v2.val)
                   });
               });
           };
@@ -7109,20 +7076,21 @@ var PS = {};
           return Data_Either.Left.create(new Proto_Decode.BadType(v1));
       });
   };
-  exports["StatPush"] = StatPush;
+  exports["StatMsg"] = StatMsg;
   exports["NodeRemoveOk"] = NodeRemoveOk;
   exports["NodeRemoveErr"] = NodeRemoveErr;
-  exports["MetricStat"] = MetricStat;
-  exports["MeasureStat"] = MeasureStat;
-  exports["ErrorStat"] = ErrorStat;
-  exports["ActionStat"] = ActionStat;
+  exports["Metric"] = Metric;
+  exports["Measure"] = Measure;
+  exports["Error"] = $$Error;
+  exports["Action"] = Action;
   exports["decodePush"] = decodePush;
-  exports["decodeStatPush"] = decodeStatPush;
   exports["decodeStatMsg"] = decodeStatMsg;
-  exports["decodeMetricStat"] = decodeMetricStat;
-  exports["decodeMeasureStat"] = decodeMeasureStat;
-  exports["decodeErrorStat"] = decodeErrorStat;
-  exports["decodeActionStat"] = decodeActionStat;
+  exports["decodeStat"] = decodeStat;
+  exports["decodeMetric"] = decodeMetric;
+  exports["decodeMeasure"] = decodeMeasure;
+  exports["decodeError"] = decodeError;
+  exports["decodeAction"] = decodeAction;
+  exports["decodeStatMeta"] = decodeStatMeta;
   exports["decodeNodeRemoveOk"] = decodeNodeRemoveOk;
   exports["decodeNodeRemoveErr"] = decodeNodeRemoveErr;
 })(PS);
@@ -7306,7 +7274,7 @@ var PS = {};
                       };
                   });
               };
-              throw new Error("Failed pattern match at Main (line 187, column 7 - line 187, column 34): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 188, column 7 - line 188, column 34): " + [ v.constructor.name ]);
           };
           var filterNodes = function (v) {
               return function (nodes) {
@@ -7314,7 +7282,7 @@ var PS = {};
                       return nodes;
                   };
                   return Data_Array.filter(function (node) {
-                      return Data_String_CodeUnits.contains(v)(Data_String_Common.toLower(node.addr));
+                      return Data_String_CodeUnits.contains(v)(Data_String_Common.toLower(node.host)) || Data_String_CodeUnits.contains(v)(Data_String_Common.toLower(node.ip));
                   })(nodes);
               };
           };
@@ -7340,12 +7308,12 @@ var PS = {};
                   return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement(React.reactPropFields()())(Nodes_1.reactClass)({
                       nodes: filterNodes(v.searchText)(Data_Array.fromFoldable(Data_Map_Internal.foldableMap)(v.nodes)),
                       ws: v.ws,
-                      openNode: function (addr) {
+                      openNode: function (host) {
                           return React.modifyState($$this)(function (v1) {
                               return {
                                   menu: v1.menu,
                                   nodes: v1.nodes,
-                                  node: new Data_Maybe.Just(addr),
+                                  node: new Data_Maybe.Just(host),
                                   errors: v1.errors,
                                   ws: v1.ws,
                                   leftMenu: v1.leftMenu,
@@ -7491,7 +7459,7 @@ var PS = {};
                           if (cpu_mem instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 283, column 16 - line 290, column 34): " + [ cpu_mem.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 288, column 16 - line 295, column 34): " + [ cpu_mem.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v2) {
                           return v2.used;
@@ -7530,7 +7498,7 @@ var PS = {};
                           if (v2 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 296, column 15 - line 303, column 34): " + [ v2.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 301, column 15 - line 308, column 34): " + [ v2.constructor.name ]);
                       })();
                       var v3 = (function () {
                           var v3 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v4) {
@@ -7552,7 +7520,7 @@ var PS = {};
                           if (v3 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 305, column 15 - line 311, column 34): " + [ v3.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 310, column 15 - line 316, column 34): " + [ v3.constructor.name ]);
                       })();
                       var v4 = (function () {
                           var v4 = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v5) {
@@ -7580,7 +7548,7 @@ var PS = {};
                           if (v4 instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 313, column 16 - line 322, column 34): " + [ v4.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 318, column 16 - line 327, column 34): " + [ v4.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
                           return [ {
@@ -7684,7 +7652,7 @@ var PS = {};
                       var errs = Data_Maybe.maybe([  ])(Data_Array.singleton)(a.err);
                       var v5 = React.getState($$this)();
                       var node$prime = (function () {
-                          var v6 = Data_Map_Internal.lookup(Data_Ord.ordString)(a.addr)(v5.nodes);
+                          var v6 = Data_Map_Internal.lookup(Data_Ord.ordString)(a.host)(v5.nodes);
                           if (v6 instanceof Data_Maybe.Just) {
                               var cpuPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v6.value0.cpuPoints)(cpuPoints);
                               var memPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v6.value0.memPoints)(memPoints);
@@ -7766,12 +7734,14 @@ var PS = {};
                                   staticGenYear_points: staticGenYear_points$prime,
                                   staticGen_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(staticGen_thirdQ)(v6.value0.staticGen_thirdQ),
                                   kvsSizeYearPoints: kvsSizeYearPoints$prime,
-                                  addr: v6.value0.addr
+                                  host: v6.value0.host,
+                                  ip: v6.value0.ip
                               };
                           };
                           if (v6 instanceof Data_Maybe.Nothing) {
                               return {
-                                  addr: a.addr,
+                                  host: a.host,
+                                  ip: a.ip,
                                   lastUpdate: v,
                                   version: version,
                                   cpuPoints: cpuPoints,
@@ -7806,12 +7776,12 @@ var PS = {};
                                   kvsSizeYearPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(kvsSizeYearPoint)
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 346, column 21 - line 444, column 18): " + [ v6.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 351, column 21 - line 450, column 18): " + [ v6.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
                               menu: s$prime.menu,
-                              nodes: Data_Map_Internal.insert(Data_Ord.ordString)(node$prime.addr)(node$prime)(s$prime.nodes),
+                              nodes: Data_Map_Internal.insert(Data_Ord.ordString)(node$prime.host)(node$prime)(s$prime.nodes),
                               node: s$prime.node,
                               errors: s$prime.errors,
                               ws: s$prime.ws,
@@ -7839,11 +7809,11 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 446, column 9 - line 448, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 452, column 9 - line 454, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var v = Push.decodePush(bytes);
-              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatPush && v.value0.val.value0.stat instanceof Push.MetricStat)) {
+              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push.Metric)) {
                   var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
                       var $139 = v.value0.val.value0.stat.value0.name === "cpu_mem";
                       if ($139) {
@@ -7901,8 +7871,9 @@ var PS = {};
                       return Data_Maybe.Nothing.value;
                   })();
                   return updateWith({
-                      addr: v.value0.val.value0.stat.value0.addr,
-                      time: v.value0.val.value0.stat.value0.time,
+                      host: v.value0.val.value0.meta.host,
+                      ip: v.value0.val.value0.meta.ip,
+                      time: v.value0.val.value0.meta.time,
                       metrics: new Data_Maybe.Just({
                           cpu_mem: cpu_mem,
                           cpu_hour: cpu_hour,
@@ -7918,123 +7889,124 @@ var PS = {};
                       action: Data_Maybe.Nothing.value
                   });
               };
-              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatPush && v.value0.val.value0.stat instanceof Push.MeasureStat)) {
+              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push.Measure)) {
                   var value$prime = Global.readInt(10)(v.value0.val.value0.stat.value0.value);
                   var searchTs = (function () {
-                      var $156 = v.value0.val.value0.stat.value0.name === "search.ts";
-                      if ($156) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var searchTs_thirdQ = (function () {
-                      var $157 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
-                      if ($157) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var searchWc = (function () {
-                      var $158 = v.value0.val.value0.stat.value0.name === "search.wc";
+                      var $158 = v.value0.val.value0.stat.value0.name === "search.ts";
                       if ($158) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var searchWc_thirdQ = (function () {
-                      var $159 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                  var searchTs_thirdQ = (function () {
+                      var $159 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
                       if ($159) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticCreate = (function () {
-                      var $160 = v.value0.val.value0.stat.value0.name === "static.create";
+                  var searchWc = (function () {
+                      var $160 = v.value0.val.value0.stat.value0.name === "search.wc";
                       if ($160) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticCreate_thirdQ = (function () {
-                      var $161 = v.value0.val.value0.stat.value0.name === "static.create.thirdQ";
+                  var searchWc_thirdQ = (function () {
+                      var $161 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
                       if ($161) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticCreate_year = (function () {
-                      var $162 = v.value0.val.value0.stat.value0.name === "static.create.year";
+                  var staticCreate = (function () {
+                      var $162 = v.value0.val.value0.stat.value0.name === "static.create";
                       if ($162) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen = (function () {
-                      var $163 = v.value0.val.value0.stat.value0.name === "static.gen";
+                  var staticCreate_thirdQ = (function () {
+                      var $163 = v.value0.val.value0.stat.value0.name === "static.create.thirdQ";
                       if ($163) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen_thirdQ = (function () {
-                      var $164 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
+                  var staticCreate_year = (function () {
+                      var $164 = v.value0.val.value0.stat.value0.name === "static.create.year";
                       if ($164) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen_year = (function () {
-                      var $165 = v.value0.val.value0.stat.value0.name === "static.gen.year";
+                  var staticGen = (function () {
+                      var $165 = v.value0.val.value0.stat.value0.name === "static.gen";
                       if ($165) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexTs = (function () {
-                      var $166 = v.value0.val.value0.stat.value0.name === "reindex.ts";
+                  var staticGen_thirdQ = (function () {
+                      var $166 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
                       if ($166) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexTs_thirdQ = (function () {
-                      var $167 = v.value0.val.value0.stat.value0.name === "reindex.ts.thirdQ";
+                  var staticGen_year = (function () {
+                      var $167 = v.value0.val.value0.stat.value0.name === "static.gen.year";
                       if ($167) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexWc = (function () {
-                      var $168 = v.value0.val.value0.stat.value0.name === "reindex.wc";
+                  var reindexTs = (function () {
+                      var $168 = v.value0.val.value0.stat.value0.name === "reindex.ts";
                       if ($168) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexWc_thirdQ = (function () {
-                      var $169 = v.value0.val.value0.stat.value0.name === "reindex.wc.thirdQ";
+                  var reindexTs_thirdQ = (function () {
+                      var $169 = v.value0.val.value0.stat.value0.name === "reindex.ts.thirdQ";
                       if ($169) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexFiles = (function () {
-                      var $170 = v.value0.val.value0.stat.value0.name === "reindex.files";
+                  var reindexWc = (function () {
+                      var $170 = v.value0.val.value0.stat.value0.name === "reindex.wc";
                       if ($170) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexFiles_thirdQ = (function () {
-                      var $171 = v.value0.val.value0.stat.value0.name === "reindex.files.thirdQ";
+                  var reindexWc_thirdQ = (function () {
+                      var $171 = v.value0.val.value0.stat.value0.name === "reindex.wc.thirdQ";
                       if ($171) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
+                  var reindexFiles = (function () {
+                      var $172 = v.value0.val.value0.stat.value0.name === "reindex.files";
+                      if ($172) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })();
+                  var reindexFiles_thirdQ = (function () {
+                      var $173 = v.value0.val.value0.stat.value0.name === "reindex.files.thirdQ";
+                      if ($173) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })();
                   return updateWith({
-                      addr: v.value0.val.value0.stat.value0.addr,
-                      time: v.value0.val.value0.stat.value0.time,
+                      host: v.value0.val.value0.meta.host,
+                      ip: v.value0.val.value0.meta.ip,
+                      time: v.value0.val.value0.meta.time,
                       metrics: Data_Maybe.Nothing.value,
                       measure: new Data_Maybe.Just({
                           searchTs: searchTs,
@@ -8058,31 +8030,34 @@ var PS = {};
                       action: Data_Maybe.Nothing.value
                   });
               };
-              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatPush && v.value0.val.value0.stat instanceof Push.ErrorStat)) {
+              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push["Error"])) {
                   var exception = Data_String_Common.split("~")(v.value0.val.value0.stat.value0.exception);
                   var stacktrace = Data_String_Common.split("~")(v.value0.val.value0.stat.value0.stacktrace);
-                  var key = v.value0.val.value0.stat.value0.addr + v.value0.val.value0.stat.value0.time;
+                  var key = v.value0.val.value0.meta.host + v.value0.val.value0.meta.time;
                   var err = {
                       exception: exception,
                       stacktrace: stacktrace,
                       toptrace: v.value0.val.value0.stat.value0.toptrace,
-                      time: v.value0.val.value0.stat.value0.time,
-                      addr: v.value0.val.value0.stat.value0.addr,
+                      time: v.value0.val.value0.meta.time,
+                      host: v.value0.val.value0.meta.host,
+                      ip: v.value0.val.value0.meta.ip,
                       key: key
                   };
                   return updateWith({
-                      addr: v.value0.val.value0.stat.value0.addr,
-                      time: v.value0.val.value0.stat.value0.time,
+                      host: v.value0.val.value0.meta.host,
+                      ip: v.value0.val.value0.meta.ip,
+                      time: v.value0.val.value0.meta.time,
                       metrics: Data_Maybe.Nothing.value,
                       measure: Data_Maybe.Nothing.value,
                       err: new Data_Maybe.Just(err),
                       action: Data_Maybe.Nothing.value
                   });
               };
-              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatPush && v.value0.val.value0.stat instanceof Push.ActionStat)) {
+              if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push.Action)) {
                   return updateWith({
-                      addr: v.value0.val.value0.stat.value0.addr,
-                      time: v.value0.val.value0.stat.value0.time,
+                      host: v.value0.val.value0.meta.host,
+                      ip: v.value0.val.value0.meta.ip,
+                      time: v.value0.val.value0.meta.time,
                       metrics: Data_Maybe.Nothing.value,
                       measure: Data_Maybe.Nothing.value,
                       err: Data_Maybe.Nothing.value,

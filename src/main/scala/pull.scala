@@ -1,6 +1,5 @@
 package 
 package stats
-package route
 
 import zd.proto.api.{MessageCodec, N}
 import zd.proto.macrosapi.{caseCodecAuto, sealedTraitCodecAuto}

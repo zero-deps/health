@@ -53,23 +53,25 @@ reactClass = component "Nodes" \this -> do
                 [ table [ cn "table tablesorter" ]
                   [ thead [ cn "text-primary" ]
                     [ tr'
-                      [ th' [ text "Address" ]
+                      [ th' [ text "Host" ]
+                      , th' [ text "IP" ]
                       , th' [ text "Last Update" ]
                       ]
                     ]
                   , tbody' $ map (\x ->
                       tr [ onClick \_ -> 
-                           props.openNode x.addr
+                           props.openNode x.host
                          , style { cursor: "zoom-in" }
                          ]
-                      [ td [ style { fontFamily: "Fira Code" } ] [ text x.addr ]
+                      [ td [ style { fontFamily: "Fira Code" } ] [ text x.host ]
+                      , td [ style { fontFamily: "Fira Code" } ] [ text x.ip ]
                       , td [ style { fontFamily: "Fira Code" } ] [ text x.lastUpdate ]
                       , td [ ] 
                         [ a [ href ""
                             , onClickEff $ do
                                 w <- window
                                 res <- confirm "Delete statistics of this node?" w
-                                if res then WsOps.sendB props.ws $ encodePull $ NodeRemove {addr: x.addr}
+                                if res then WsOps.sendB props.ws $ encodePull $ NodeRemove {addr: x.host}
                                 else pure unit
                             ]
                           [ i [ cn "tim-icons icon-trash-simple" ] [] ] 

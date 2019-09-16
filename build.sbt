@@ -2,7 +2,7 @@ val akkaVersion = "2.5.23"
 val frontierVersion = "2.0.2"
 val gsVersion = "1.5.1"
 val kvsVersion = "4.6.3"
-val protoVersion = "1.3.2"
+val protoVersion = "1.3.3"
 
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := "2.13.0"

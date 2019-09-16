@@ -22,7 +22,7 @@ import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/), (/=), (<>), (==), (>), (<), (>=), (>>=))
+import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/), (/=), (<>), (==), (>), (<), (>=), (>>=), (||))
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
@@ -31,7 +31,7 @@ import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
 import Data.ArrayBuffer.Types (Uint8Array)
-import Push (Push(StatPush, NodeRemoveOk), StatMsg(MetricStat, MeasureStat, ErrorStat, ActionStat), decodePush)
+import Push (Push(StatMsg, NodeRemoveOk), Stat(Metric, Measure, Error, Action), decodePush)
 
 type State = 
   { menu :: Menu
@@ -163,8 +163,8 @@ reactClass = component "Main" \this -> do
       menuIcon Errors = "icon-alert-circle-exc"
 
       menuContent :: State -> Effect ReactElement
-      menuContent { menu: Nodes, node: Just addr, nodes: nodes } =
-        case lookup addr nodes of
+      menuContent { menu: Nodes, node: Just host, nodes: nodes } =
+        case lookup host nodes of
           Just node -> pure $ createLeafElement NodeCom.reactClass node
           Nothing -> map (\_ -> createLeafElement dummy {}) $ error "bad node"
         where
@@ -173,7 +173,7 @@ reactClass = component "Main" \this -> do
       menuContent { menu: Nodes, nodes: nodes, ws, searchText } =
         pure $ createLeafElement NodesCom.reactClass 
                { nodes: filterNodes searchText $ fromFoldable nodes
-               , ws, openNode: \addr -> modifyState this _{ node = Just addr }
+               , ws, openNode: \host -> modifyState this _{ node = Just host }
                , searchText
                , search: \v -> modifyState this _{ searchText=v }
                }
@@ -182,7 +182,8 @@ reactClass = component "Main" \this -> do
 
       filterNodes :: String -> Array NodeInfo -> Array NodeInfo
       filterNodes v nodes | String.length v < 3 = nodes
-      filterNodes v nodes = filter (\node -> contains (Pattern v) $ toLower node.addr) nodes
+      filterNodes v nodes = 
+        filter (\node -> contains (Pattern v) (toLower node.host) || contains (Pattern v) (toLower node.ip)) nodes
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
@@ -200,7 +201,7 @@ reactClass = component "Main" \this -> do
     onMsg :: ReactThis Props State -> Uint8Array -> Effect Unit
     onMsg this bytes = do
       case decodePush bytes of
-        Right { val: StatPush { stat: MetricStat { name, value, time, addr }}} -> do
+        Right { val: StatMsg { stat: Metric { name, value}, meta: { time, host, ip }}} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
           let cpu_hour = if name == "cpu.hour" then Just value else Nothing
           let uptime = if name == "uptime" then Just value else Nothing
@@ -210,14 +211,15 @@ reactClass = component "Main" \this -> do
           let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
           let kvsSize_year = if name == "kvs.size.year" then Just value else Nothing
           updateWith
-            { addr: addr
+            { host: host
+            , ip: ip
             , time: time
             , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, kvsSize_year }
             , measure: Nothing
             , err: Nothing
             , action: Nothing
             }
-        Right { val: StatPush { stat: MeasureStat { name, value, time, addr }}} -> do
+        Right { val: StatMsg { stat: Measure { name, value}, meta: { time, host, ip }}} -> do
           let value' = readInt 10 value
           let searchTs = if name == "search.ts" then Just value else Nothing
           let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
@@ -236,28 +238,31 @@ reactClass = component "Main" \this -> do
           let reindexFiles = if name == "reindex.files" then Just value else Nothing
           let reindexFiles_thirdQ = if name == "reindex.files.thirdQ" then Just value else Nothing
           updateWith
-            { addr: addr
+            { host: host
+            , ip: ip
             , time: time
             , metrics: Nothing
             , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticCreate, staticCreate_thirdQ, staticCreate_year, staticGen, staticGen_thirdQ, staticGen_year, reindexTs, reindexTs_thirdQ, reindexWc, reindexWc_thirdQ, reindexFiles, reindexFiles_thirdQ }
             , err: Nothing
             , action: Nothing
             }
-        Right { val: StatPush { stat: ErrorStat { exception: exception', stacktrace: stacktrace', toptrace, time, addr }}} -> do
+        Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace', toptrace}, meta: { time, host, ip }}} -> do
           let exception = split (Pattern "~") exception'
           let stacktrace = split (Pattern "~") stacktrace'
-          let key = addr<>time
-          let err = { exception, stacktrace, toptrace, time, addr, key }
+          let key = host<>time
+          let err = { exception, stacktrace, toptrace, time, host, ip, key }
           updateWith
-            { addr: addr
+            { host: host
+            , ip: ip
             , time: time
             , metrics: Nothing
             , measure: Nothing
             , err: Just err
             , action: Nothing
             }
-        Right { val: StatPush { stat: ActionStat { action, time, addr }}} -> updateWith
-          { addr: addr
+        Right { val: StatMsg { stat: Action { action }, meta: { time, host, ip }}} -> updateWith
+          { host: host
+          , ip: ip
           , time: time
           , metrics: Nothing
           , measure: Nothing
@@ -343,7 +348,7 @@ reactClass = component "Main" \this -> do
         let errs = maybe [] singleton a.err
         
         s <- getState this
-        let node' = case lookup a.addr s.nodes of
+        let node' = case lookup a.host s.nodes of
               Just node -> do
                 let cpuPoints' = node.cpuPoints <> cpuPoints
                 let memPoints' = node.memPoints <> memPoints
@@ -408,7 +413,8 @@ reactClass = component "Main" \this -> do
                   , kvsSizeYearPoints = kvsSizeYearPoints'
                   }
               Nothing ->
-                { addr: a.addr
+                { host: a.host
+                , ip: a.ip
                 , lastUpdate: dt
                 , version: version
                 , cpuPoints: cpuPoints
@@ -442,7 +448,7 @@ reactClass = component "Main" \this -> do
                 , staticGen_thirdQ: staticGen_thirdQ
                 , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
                 }
-        modifyState this \s' -> s' { nodes = Map.insert node'.addr node' s'.nodes }
+        modifyState this \s' -> s' { nodes = Map.insert node'.host node' s'.nodes }
         case a.err of
           Just err -> modifyState this \s' -> s' { errors = err : (take 99 s'.errors) }
           Nothing -> pure unit
