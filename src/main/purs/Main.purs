@@ -22,7 +22,7 @@ import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/), (/=), (<>), (==), (>), (<), (>=), (>>=), (||))
+import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (<), (>=), (>>=), (||))
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
@@ -286,17 +286,18 @@ reactClass = component "Main" \this -> do
         let kvsSizeYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.kvsSize_year
         
         mem <- case cpu_mem of
-          Just ([ _, free', total' ]) -> do
+          Just ([ _, free', total', heap' ]) -> do
             let free = readInt 10 free'
             let total = readInt 10 total'
             let used = total - free
-            pure $ Just { used, free, total }
+            let heap = readInt 10 heap'
+            pure $ Just { used, free, total, heap }
           Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
           Nothing -> pure Nothing
         let memUsed = map _.used mem
         let memFree = map _.free mem
         let memTotal = map _.total mem
-        let memPoints = fromMaybe [] $ map (\b -> [{ t: time', y: b.used / 1000.0 }]) mem
+        let memPoints = fromMaybe [] $ map (\b -> [{ t: time', y: b.heap }]) mem
         
         fs <- case a.metrics >>= _.fs of
           Just ([ usable', total' ]) -> do

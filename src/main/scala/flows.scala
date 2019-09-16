@@ -77,7 +77,7 @@ object Flows {
             } yield ()
           }
           value.split('~') match {
-            case Array(cpu, _, _) =>
+            case Array(cpu, _, _, _) =>
               { // hour
                 val i = ((time.toLong / 1000 / 60) % 60) / 3 // [0, 19]
                 val now = System.currentTimeMillis
