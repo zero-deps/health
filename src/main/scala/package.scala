@@ -8,34 +8,11 @@ import scala.collection.immutable.Queue
 import java.time.{LocalDateTime, ZoneId, Instant}
 
 import zd.proto.api.{N, MessageCodec, encode, decode}
-import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums, sealedTraitCodecAuto}
+import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums}
 import zd.kvs
 import zd.gs.z._
 
 package object stats {
-  sealed trait StatMsg
-  @N(1) final case class MetricStat
-    ( @N(1) name: String
-    , @N(2) value: String
-    , @N(3) time: String
-    , @N(4) addr: String) extends StatMsg
-  @N(2) final case class MeasureStat
-    ( @N(1) name: String
-    , @N(2) value: String
-    , @N(3) time: String
-    , @N(4) addr: String) extends StatMsg
-  @N(3) final case class ErrorStat
-    ( @N(1) exception: String
-    , @N(2) stacktrace: String
-    , @N(3) toptrace: String
-    , @N(4) time: String
-    , @N(5) addr: String
-    ) extends StatMsg
-  @N(4) final case class ActionStat
-    ( @N(1) action: String
-    , @N(4) time: String
-    , @N(5) addr: String 
-    ) extends StatMsg
 
   def now_ms(): String = System.currentTimeMillis.toString
 
@@ -45,15 +22,8 @@ package object stats {
     , @N(3) prev: String
     , @N(4) data: String
     , @N(5) time: String
-    , @N(6) addr: String) extends kvs.en.En
-
-  implicit val StatMsgCodec: MessageCodec[StatMsg] = {
-    implicit val MetricStatCodec: MessageCodec[MetricStat] = caseCodecAuto[MetricStat]
-    implicit val MeasureStatCodec: MessageCodec[MeasureStat] = caseCodecAuto[MeasureStat]
-    implicit val ErrorStatCodec: MessageCodec[ErrorStat] = caseCodecAuto[ErrorStat]
-    implicit val ActionStatCodec: MessageCodec[ActionStat] = caseCodecAuto[ActionStat]
-    sealedTraitCodecAuto[StatMsg]
-  }
+    , @N(6) host: String
+    , @N(7) ip: String) extends kvs.en.En
 
   implicit object FdHandler extends kvs.en.FdHandler {
 
@@ -75,14 +45,14 @@ package object stats {
     protected def update(en: StatEn, id: String, prev: String): StatEn = en.copy(id=id, prev=prev)
   }
 
-  class MsgSource(sourceFeeder: ActorRef) extends GraphStage[SourceShape[StatMsg]] {
-    val out: Outlet[StatMsg] = Outlet("MessageSource")
-    override val shape: SourceShape[StatMsg] = SourceShape(out)
+  class MsgSource(sourceFeeder: ActorRef) extends GraphStage[SourceShape[Push]] {
+    val out: Outlet[Push] = Outlet("MessageSource")
+    override val shape: SourceShape[Push] = SourceShape(out)
     override def createLogic(inheritedAttributes: Attributes): GraphStageLogic = {
       new GraphStageLogic(shape) with StageLogging {
-        var messages: Queue[StatMsg] = Queue()
+        var messages: Queue[Push] = Queue()
         lazy val self: StageActor = getStageActor({
-          case (_, msg: StatMsg) =>
+          case (_, msg: Push) =>
             log.debug("received msg, queueing: {} ", msg)
             messages = messages.enqueue(msg)
             pump()
@@ -98,7 +68,7 @@ package object stats {
           if (isAvailable(out) && messages.nonEmpty) {
             log.debug("ready to dequeue")
             messages.dequeue match {
-              case (msg: StatMsg, newQueue: Queue[StatMsg]) =>
+              case (msg: Push, newQueue: Queue[Push]) =>
                 log.debug("got message from queue, pushing: {} ", msg)
                 push(out, msg)
                 messages = newQueue
@@ -111,7 +81,7 @@ package object stats {
         }
         private def onMessage(x: (ActorRef, Any)): Unit = {
           x match {
-            case (_, msg: StatMsg) =>
+            case (_, msg: Push) =>
               log.debug("received msg, queueing: {} ", msg)
               messages = messages.enqueue(msg)
               pump()

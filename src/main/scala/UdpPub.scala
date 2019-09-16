@@ -28,20 +28,23 @@ class UdpPub extends Actor with Stash with ActorLogging {
   def receive: Receive = {
     case _: Udp.Bound =>
       socket = sender.just
+
     case Udp.Received(data, remote) =>
-      val host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
-      Try(decode[ClientMsg](data.toArray)).foreach(
-        _ match {
-          case MetricMsg(name, value, port) => 
-            self ! MetricStat(name, value, now_ms(), addr=s"${host}:${port}")
-          case MeasureMsg(name, value, port) => 
-            self ! MeasureStat(name, value, now_ms(), addr=s"${host}:${port}")
-          case ErrorMsg(exception, stacktrace, toptrace, port) =>
-            self ! ErrorStat(exception, stacktrace, toptrace, now_ms(), addr=s"${host}:${port}")
-          case ActionMsg(action, port) =>
-            self ! ActionStat(action, now_ms(), addr=s"${host}:${port}")
-        }
-      )
+      for {
+        ip <- Try(remote.getAddress.toString.split("/")(1))
+        host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
+        msg <- Try(decode[ClientMsg](data.toArray))
+      } msg match {
+        case MetricMsg(name, value, port) => 
+          self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
+        case MeasureMsg(name, value, port) => 
+          self ! StatMsg(stat=Measure(name, value), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
+        case ErrorMsg(exception, stacktrace, toptrace, port) =>
+          self ! StatMsg(stat=Error(exception, stacktrace, toptrace), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
+        case ActionMsg(action, port) =>
+          self ! StatMsg(stat=Action(action), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
+      }
+
     case Udp.Unbound =>
       context.stop(self)
 
@@ -49,7 +52,7 @@ class UdpPub extends Actor with Stash with ActorLogging {
       log.debug("got stage actor for udp")
       unstashAll()
       stageActor = a.just
-    case msg: StatMsg =>
+    case msg: Push =>
       stageActor match {
         case Some(a) => a ! msg
         case None => stash()

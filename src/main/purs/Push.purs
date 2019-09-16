@@ -45,18 +45,20 @@ decodeStringString _xs_ pos0 = do
                     decode end acc pos3
       else pure { pos: pos1, val: acc }
 
-data Push = StatPush StatPush | NodeRemoveOk NodeRemoveOk | NodeRemoveErr NodeRemoveErr
-type StatPush = { stat :: StatMsg }
-type StatPush' = { stat :: Maybe StatMsg }
-data StatMsg = MetricStat MetricStat | MeasureStat MeasureStat | ErrorStat ErrorStat | ActionStat ActionStat
-type MetricStat = { name :: String, value :: String, time :: String, addr :: String }
-type MetricStat' = { name :: Maybe String, value :: Maybe String, time :: Maybe String, addr :: Maybe String }
-type MeasureStat = { name :: String, value :: String, time :: String, addr :: String }
-type MeasureStat' = { name :: Maybe String, value :: Maybe String, time :: Maybe String, addr :: Maybe String }
-type ErrorStat = { exception :: String, stacktrace :: String, toptrace :: String, time :: String, addr :: String }
-type ErrorStat' = { exception :: Maybe String, stacktrace :: Maybe String, toptrace :: Maybe String, time :: Maybe String, addr :: Maybe String }
-type ActionStat = { action :: String, time :: String, addr :: String }
-type ActionStat' = { action :: Maybe String, time :: Maybe String, addr :: Maybe String }
+data Push = StatMsg StatMsg | NodeRemoveOk NodeRemoveOk | NodeRemoveErr NodeRemoveErr
+type StatMsg = { stat :: Stat, meta :: StatMeta }
+type StatMsg' = { stat :: Maybe Stat, meta :: Maybe StatMeta }
+data Stat = Metric Metric | Measure Measure | Error Error | Action Action
+type Metric = { name :: String, value :: String }
+type Metric' = { name :: Maybe String, value :: Maybe String }
+type Measure = { name :: String, value :: String }
+type Measure' = { name :: Maybe String, value :: Maybe String }
+type Error = { exception :: String, stacktrace :: String, toptrace :: String }
+type Error' = { exception :: Maybe String, stacktrace :: Maybe String, toptrace :: Maybe String }
+type Action = { action :: String }
+type Action' = { action :: Maybe String }
+type StatMeta = { time :: String, host :: String, ip :: String }
+type StatMeta' = { time :: Maybe String, host :: Maybe String, ip :: Maybe String }
 type NodeRemoveOk = { addr :: String }
 type NodeRemoveOk' = { addr :: Maybe String }
 type NodeRemoveErr = { addr :: String, msg :: String }
@@ -67,8 +69,8 @@ decodePush _xs_ = do
   { pos: pos1, val: tag } <- Decode.uint32 _xs_ 0
   case tag `zshr` 3 of
     1 -> do
-      { pos: pos2, val } <- decodeStatPush _xs_ pos1
-      pure { pos: pos2, val: StatPush val }
+      { pos: pos2, val } <- decodeStatMsg _xs_ pos1
+      pure { pos: pos2, val: StatMsg val }
     10 -> do
       { pos: pos2, val } <- decodeNodeRemoveOk _xs_ pos1
       pure { pos: pos2, val: NodeRemoveOk val }
@@ -78,16 +80,16 @@ decodePush _xs_ = do
     i ->
       Left $ Decode.BadType i
 
-decodeStatPush :: Uint8Array -> Int -> Decode.Result StatPush
-decodeStatPush _xs_ pos0 = do
+decodeStatMsg :: Uint8Array -> Int -> Decode.Result StatMsg
+decodeStatMsg _xs_ pos0 = do
   { pos, val: msglen } <- Decode.uint32 _xs_ pos0
   let end = pos + msglen
-  { pos: pos1, val } <- decode end { stat: Nothing } pos
+  { pos: pos1, val } <- decode end { stat: Nothing, meta: Nothing } pos
   case val of
-    { stat: Just stat } -> pure { pos: pos1, val: { stat } }
-    _ -> Left $ Decode.MissingFields "StatPush"
+    { stat: Just stat, meta: Just meta } -> pure { pos: pos1, val: { stat, meta } }
+    _ -> Left $ Decode.MissingFields "StatMsg"
     where
-    decode :: Int -> StatPush' -> Int -> Decode.Result StatPush'
+    decode :: Int -> StatMsg' -> Int -> Decode.Result StatMsg'
     decode end acc pos1 =
       if pos1 < end then
         case Decode.uint32 _xs_ pos1 of
@@ -95,10 +97,15 @@ decodeStatPush _xs_ pos0 = do
           Right { pos: pos2, val: tag } ->
             case tag `zshr` 3 of
               1 ->
-                case decodeStatMsg _xs_ pos2 of
+                case decodeStat _xs_ pos2 of
                   Left x -> Left x
                   Right { pos: pos3, val } ->
                     decode end (acc { stat = Just val }) pos3
+              2 ->
+                case decodeStatMeta _xs_ pos2 of
+                  Left x -> Left x
+                  Right { pos: pos3, val } ->
+                    decode end (acc { meta = Just val }) pos3
               _ ->
                 case Decode.skipType _xs_ pos2 $ tag .&. 7 of
                   Left x -> Left x
@@ -106,56 +113,56 @@ decodeStatPush _xs_ pos0 = do
                     decode end acc pos3
       else pure { pos: pos1, val: acc }
 
-decodeStatMsg :: Uint8Array -> Int -> Decode.Result StatMsg
-decodeStatMsg _xs_ pos0 = do
+decodeStat :: Uint8Array -> Int -> Decode.Result Stat
+decodeStat _xs_ pos0 = do
   { pos, val: msglen } <- Decode.uint32 _xs_ pos0
   let end = pos + msglen
   decode end Nothing pos
     where
-    decode :: Int -> Maybe StatMsg -> Int -> Decode.Result StatMsg
+    decode :: Int -> Maybe Stat -> Int -> Decode.Result Stat
     decode end acc pos1 | pos1 < end =
       case Decode.uint32 _xs_ pos1 of
         Left x -> Left x
         Right { pos: pos2, val: tag } ->
           case tag `zshr` 3 of
             1 ->
-              case decodeMetricStat _xs_ pos2 of
+              case decodeMetric _xs_ pos2 of
                 Left x -> Left x
                 Right { pos: pos3, val } ->
-                  decode end (Just $ MetricStat val) pos3
+                  decode end (Just $ Metric val) pos3
             2 ->
-              case decodeMeasureStat _xs_ pos2 of
+              case decodeMeasure _xs_ pos2 of
                 Left x -> Left x
                 Right { pos: pos3, val } ->
-                  decode end (Just $ MeasureStat val) pos3
+                  decode end (Just $ Measure val) pos3
             3 ->
-              case decodeErrorStat _xs_ pos2 of
+              case decodeError _xs_ pos2 of
                 Left x -> Left x
                 Right { pos: pos3, val } ->
-                  decode end (Just $ ErrorStat val) pos3
+                  decode end (Just $ Error val) pos3
             4 ->
-              case decodeActionStat _xs_ pos2 of
+              case decodeAction _xs_ pos2 of
                 Left x -> Left x
                 Right { pos: pos3, val } ->
-                  decode end (Just $ ActionStat val) pos3
+                  decode end (Just $ Action val) pos3
             _ ->
               case Decode.skipType _xs_ pos2 $ tag .&. 7 of
                 Left x -> Left x
                 Right { pos: pos3 } ->
                   decode end acc pos3
     decode end (Just acc) pos1 = pure { pos: pos1, val: acc }
-    decode end acc@Nothing pos1 = Left $ Decode.MissingFields "StatMsg"
+    decode end acc@Nothing pos1 = Left $ Decode.MissingFields "Stat"
 
-decodeMetricStat :: Uint8Array -> Int -> Decode.Result MetricStat
-decodeMetricStat _xs_ pos0 = do
+decodeMetric :: Uint8Array -> Int -> Decode.Result Metric
+decodeMetric _xs_ pos0 = do
   { pos, val: msglen } <- Decode.uint32 _xs_ pos0
   let end = pos + msglen
-  { pos: pos1, val } <- decode end { name: Nothing, value: Nothing, time: Nothing, addr: Nothing } pos
+  { pos: pos1, val } <- decode end { name: Nothing, value: Nothing } pos
   case val of
-    { name: Just name, value: Just value, time: Just time, addr: Just addr } -> pure { pos: pos1, val: { name, value, time, addr } }
-    _ -> Left $ Decode.MissingFields "MetricStat"
+    { name: Just name, value: Just value } -> pure { pos: pos1, val: { name, value } }
+    _ -> Left $ Decode.MissingFields "Metric"
     where
-    decode :: Int -> MetricStat' -> Int -> Decode.Result MetricStat'
+    decode :: Int -> Metric' -> Int -> Decode.Result Metric'
     decode end acc pos1 =
       if pos1 < end then
         case Decode.uint32 _xs_ pos1 of
@@ -172,16 +179,6 @@ decodeMetricStat _xs_ pos0 = do
                   Left x -> Left x
                   Right { pos: pos3, val } ->
                     decode end (acc { value = Just val }) pos3
-              3 ->
-                case Decode.string _xs_ pos2 of
-                  Left x -> Left x
-                  Right { pos: pos3, val } ->
-                    decode end (acc { time = Just val }) pos3
-              4 ->
-                case Decode.string _xs_ pos2 of
-                  Left x -> Left x
-                  Right { pos: pos3, val } ->
-                    decode end (acc { addr = Just val }) pos3
               _ ->
                 case Decode.skipType _xs_ pos2 $ tag .&. 7 of
                   Left x -> Left x
@@ -189,16 +186,16 @@ decodeMetricStat _xs_ pos0 = do
                     decode end acc pos3
       else pure { pos: pos1, val: acc }
 
-decodeMeasureStat :: Uint8Array -> Int -> Decode.Result MeasureStat
-decodeMeasureStat _xs_ pos0 = do
+decodeMeasure :: Uint8Array -> Int -> Decode.Result Measure
+decodeMeasure _xs_ pos0 = do
   { pos, val: msglen } <- Decode.uint32 _xs_ pos0
   let end = pos + msglen
-  { pos: pos1, val } <- decode end { name: Nothing, value: Nothing, time: Nothing, addr: Nothing } pos
+  { pos: pos1, val } <- decode end { name: Nothing, value: Nothing } pos
   case val of
-    { name: Just name, value: Just value, time: Just time, addr: Just addr } -> pure { pos: pos1, val: { name, value, time, addr } }
-    _ -> Left $ Decode.MissingFields "MeasureStat"
+    { name: Just name, value: Just value } -> pure { pos: pos1, val: { name, value } }
+    _ -> Left $ Decode.MissingFields "Measure"
     where
-    decode :: Int -> MeasureStat' -> Int -> Decode.Result MeasureStat'
+    decode :: Int -> Measure' -> Int -> Decode.Result Measure'
     decode end acc pos1 =
       if pos1 < end then
         case Decode.uint32 _xs_ pos1 of
@@ -215,16 +212,6 @@ decodeMeasureStat _xs_ pos0 = do
                   Left x -> Left x
                   Right { pos: pos3, val } ->
                     decode end (acc { value = Just val }) pos3
-              3 ->
-                case Decode.string _xs_ pos2 of
-                  Left x -> Left x
-                  Right { pos: pos3, val } ->
-                    decode end (acc { time = Just val }) pos3
-              4 ->
-                case Decode.string _xs_ pos2 of
-                  Left x -> Left x
-                  Right { pos: pos3, val } ->
-                    decode end (acc { addr = Just val }) pos3
               _ ->
                 case Decode.skipType _xs_ pos2 $ tag .&. 7 of
                   Left x -> Left x
@@ -232,16 +219,16 @@ decodeMeasureStat _xs_ pos0 = do
                     decode end acc pos3
       else pure { pos: pos1, val: acc }
 
-decodeErrorStat :: Uint8Array -> Int -> Decode.Result ErrorStat
-decodeErrorStat _xs_ pos0 = do
+decodeError :: Uint8Array -> Int -> Decode.Result Error
+decodeError _xs_ pos0 = do
   { pos, val: msglen } <- Decode.uint32 _xs_ pos0
   let end = pos + msglen
-  { pos: pos1, val } <- decode end { exception: Nothing, stacktrace: Nothing, toptrace: Nothing, time: Nothing, addr: Nothing } pos
+  { pos: pos1, val } <- decode end { exception: Nothing, stacktrace: Nothing, toptrace: Nothing } pos
   case val of
-    { exception: Just exception, stacktrace: Just stacktrace, toptrace: Just toptrace, time: Just time, addr: Just addr } -> pure { pos: pos1, val: { exception, stacktrace, toptrace, time, addr } }
-    _ -> Left $ Decode.MissingFields "ErrorStat"
+    { exception: Just exception, stacktrace: Just stacktrace, toptrace: Just toptrace } -> pure { pos: pos1, val: { exception, stacktrace, toptrace } }
+    _ -> Left $ Decode.MissingFields "Error"
     where
-    decode :: Int -> ErrorStat' -> Int -> Decode.Result ErrorStat'
+    decode :: Int -> Error' -> Int -> Decode.Result Error'
     decode end acc pos1 =
       if pos1 < end then
         case Decode.uint32 _xs_ pos1 of
@@ -263,16 +250,6 @@ decodeErrorStat _xs_ pos0 = do
                   Left x -> Left x
                   Right { pos: pos3, val } ->
                     decode end (acc { toptrace = Just val }) pos3
-              4 ->
-                case Decode.string _xs_ pos2 of
-                  Left x -> Left x
-                  Right { pos: pos3, val } ->
-                    decode end (acc { time = Just val }) pos3
-              5 ->
-                case Decode.string _xs_ pos2 of
-                  Left x -> Left x
-                  Right { pos: pos3, val } ->
-                    decode end (acc { addr = Just val }) pos3
               _ ->
                 case Decode.skipType _xs_ pos2 $ tag .&. 7 of
                   Left x -> Left x
@@ -280,16 +257,16 @@ decodeErrorStat _xs_ pos0 = do
                     decode end acc pos3
       else pure { pos: pos1, val: acc }
 
-decodeActionStat :: Uint8Array -> Int -> Decode.Result ActionStat
-decodeActionStat _xs_ pos0 = do
+decodeAction :: Uint8Array -> Int -> Decode.Result Action
+decodeAction _xs_ pos0 = do
   { pos, val: msglen } <- Decode.uint32 _xs_ pos0
   let end = pos + msglen
-  { pos: pos1, val } <- decode end { action: Nothing, time: Nothing, addr: Nothing } pos
+  { pos: pos1, val } <- decode end { action: Nothing } pos
   case val of
-    { action: Just action, time: Just time, addr: Just addr } -> pure { pos: pos1, val: { action, time, addr } }
-    _ -> Left $ Decode.MissingFields "ActionStat"
+    { action: Just action } -> pure { pos: pos1, val: { action } }
+    _ -> Left $ Decode.MissingFields "Action"
     where
-    decode :: Int -> ActionStat' -> Int -> Decode.Result ActionStat'
+    decode :: Int -> Action' -> Int -> Decode.Result Action'
     decode end acc pos1 =
       if pos1 < end then
         case Decode.uint32 _xs_ pos1 of
@@ -301,16 +278,44 @@ decodeActionStat _xs_ pos0 = do
                   Left x -> Left x
                   Right { pos: pos3, val } ->
                     decode end (acc { action = Just val }) pos3
-              4 ->
+              _ ->
+                case Decode.skipType _xs_ pos2 $ tag .&. 7 of
+                  Left x -> Left x
+                  Right { pos: pos3 } ->
+                    decode end acc pos3
+      else pure { pos: pos1, val: acc }
+
+decodeStatMeta :: Uint8Array -> Int -> Decode.Result StatMeta
+decodeStatMeta _xs_ pos0 = do
+  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
+  let end = pos + msglen
+  { pos: pos1, val } <- decode end { time: Nothing, host: Nothing, ip: Nothing } pos
+  case val of
+    { time: Just time, host: Just host, ip: Just ip } -> pure { pos: pos1, val: { time, host, ip } }
+    _ -> Left $ Decode.MissingFields "StatMeta"
+    where
+    decode :: Int -> StatMeta' -> Int -> Decode.Result StatMeta'
+    decode end acc pos1 =
+      if pos1 < end then
+        case Decode.uint32 _xs_ pos1 of
+          Left x -> Left x
+          Right { pos: pos2, val: tag } ->
+            case tag `zshr` 3 of
+              1 ->
                 case Decode.string _xs_ pos2 of
                   Left x -> Left x
                   Right { pos: pos3, val } ->
                     decode end (acc { time = Just val }) pos3
-              5 ->
+              2 ->
                 case Decode.string _xs_ pos2 of
                   Left x -> Left x
                   Right { pos: pos3, val } ->
-                    decode end (acc { addr = Just val }) pos3
+                    decode end (acc { host = Just val }) pos3
+              3 ->
+                case Decode.string _xs_ pos2 of
+                  Left x -> Left x
+                  Right { pos: pos3, val } ->
+                    decode end (acc { ip = Just val }) pos3
               _ ->
                 case Decode.skipType _xs_ pos2 $ tag .&. 7 of
                   Left x -> Left x
