@@ -59,10 +59,10 @@ object Flows {
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
 
-      val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
+      val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props(kvs))))
       val logIn = Flow[Push].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save_metric = Flow[Push].collect{
-        case StatMsg(Metric("cpu_mem"| "kvs.size", _), _) =>
+        case StatMsg(Metric("cpu_mem"|"kvs.size"|"hostname", _), _) =>
         case StatMsg(Metric(name, value), StatMeta(time, host, ip)) =>
           kvs.put(StatEn(fid="metrics", id=s"${host}${name}", prev=zd.kvs.empty, s"${name}|${value}", time, host, ip))
       }
@@ -163,19 +163,25 @@ object Flows {
             _ <- kvs.el.put(s"errors.idx.${host}", i1)
           } yield ()
       }
+      val save_hostname = Flow[Push].collect{
+        case StatMsg(Metric("hostname", hostname), StatMeta(_, _, ip)) =>
+          println(s"hostname ${hostname} : ${ip}")
+          kvs.el.put(s"hostname_${ip}", hostname)
+      }
       def pub = Sink.foreach[Push]{ case msg =>
         system.log.debug(s"pub=${msg}")
         system.eventStream.publish(msg)
       }
-      val b1 = b.add(Broadcast[Push](7))
+      val b1 = b.add(Broadcast[Push](8))
 
       udppub ~> logIn ~> b1 ~> pub
-                         b1 ~> save_metric  ~> Sink.ignore
-                         b1 ~> save_cpumem  ~> Sink.ignore
-                         b1 ~> save_measure ~> Sink.ignore
-                         b1 ~> save_year_value   ~> Sink.ignore
-                         b1 ~> save_action  ~> Sink.ignore
-                         b1 ~> save_error   ~> Sink.ignore
+                         b1 ~> save_metric     ~> Sink.ignore
+                         b1 ~> save_cpumem     ~> Sink.ignore
+                         b1 ~> save_measure    ~> Sink.ignore
+                         b1 ~> save_year_value ~> Sink.ignore
+                         b1 ~> save_action     ~> Sink.ignore
+                         b1 ~> save_error      ~> Sink.ignore
+                         b1 ~> save_hostname   ~> Sink.ignore
 
       ClosedShape
     })
