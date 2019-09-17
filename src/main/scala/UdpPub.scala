@@ -7,12 +7,13 @@ import zd.proto.api.{decode}
 import .stats.client._
 import scala.util.Try
 import zd.gs.z._
+import zd.kvs.Kvs
 
 object UdpPub {
-  def props: Props = Props(new UdpPub)
+  def props(kvs: Kvs): Props = Props(new UdpPub(kvs))
 }
 
-class UdpPub extends Actor with Stash with ActorLogging {
+class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   import context.system
 
   val cfg = system.settings.config.getConfig("stats.server")
@@ -32,12 +33,13 @@ class UdpPub extends Actor with Stash with ActorLogging {
     case Udp.Received(data, remote) =>
       for {
         ip <- Try(remote.getAddress.toString.split("/")(1))
-        host = remote.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp")
+        hostname = remote.getHostName
+        host = (if (hostname == ip) kvs.el.get[String](s"hostname_${ip}").getOrElse(ip) else hostname).stripSuffix(".ee..corp").stripSuffix("..corp")
         msg <- Try(decode[ClientMsg](data.toArray))
       } msg match {
-        case MetricMsg(name, value, port) => 
+        case MetricMsg(name, value, port) =>
           self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
-        case MeasureMsg(name, value, port) => 
+        case MeasureMsg(name, value, port) =>
           self ! StatMsg(stat=Measure(name, value), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
         case ErrorMsg(exception, stacktrace, toptrace, port) =>
           self ! StatMsg(stat=Error(exception, stacktrace, toptrace), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
