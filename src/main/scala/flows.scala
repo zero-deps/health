@@ -62,7 +62,7 @@ object Flows {
       val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props(kvs))))
       val logIn = Flow[Push].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save_metric = Flow[Push].collect{
-        case StatMsg(Metric("cpu_mem"|"kvs.size"|"hostname", _), _) =>
+        case StatMsg(Metric("cpu_mem"|"kvs.size"|"hostname"|"feature", _), _) =>
         case StatMsg(Metric(name, value), StatMeta(time, host, ip)) =>
           kvs.put(StatEn(fid="metrics", id=s"${host}${name}", prev=zd.kvs.empty, s"${name}|${value}", time, host, ip))
       }
@@ -145,6 +145,21 @@ object Flows {
           val (v1, t1) = saveYearValue(name, value.toLong/1024/1024, time, host, ip)
           system.eventStream.publish(StatMsg(Metric(s"${name}.year", v1.toString), StatMeta(t1, host, ip)))
       }
+      val save_feature = Flow[Push].collect{
+        case StatMsg(Metric("feature", name), StatMeta(time, host, ip)) =>
+          val date = time.toLong.toLocalDataTime
+          val i = date.getMonthValue - 1
+          val now = LocalDateTime.now()
+          val last = kvs.el.get[String](s"feature.${name}.t.${host}${i}").map(_.toLong.toLocalDataTime).getOrElse(now)
+          val n =
+            if (date.getYear != last.getYear) 0
+            else kvs.el.get[String](s"feature.${name}.n.${host}${i}").map(_.toInt).getOrElse(0)
+          val n1 = n + 1
+          kvs.el.put(s"feature.${name}.t.${host}${i}", time)
+          kvs.el.put(s"feature.${name}.n.${host}${i}", n1.toString)
+          val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
+          kvs.put(StatEn(fid=s"feature", id=s"${host}${i}", prev=zd.kvs.empty, s"${name}~${n1}", time1, host, ip))
+      }
       val save_action = Flow[Push].collect{
         case StatMsg(Action(action), StatMeta(time, host, ip)) =>
           val i = kvs.el.get[String](s"action.live.idx.${host}").getOrElse("0")
@@ -165,14 +180,13 @@ object Flows {
       }
       val save_hostname = Flow[Push].collect{
         case StatMsg(Metric("hostname", hostname), StatMeta(_, _, ip)) =>
-          println(s"hostname ${hostname} : ${ip}")
           kvs.el.put(s"hostname_${ip}", hostname)
       }
       def pub = Sink.foreach[Push]{ case msg =>
         system.log.debug(s"pub=${msg}")
         system.eventStream.publish(msg)
       }
-      val b1 = b.add(Broadcast[Push](8))
+      val b1 = b.add(Broadcast[Push](9))
 
       udppub ~> logIn ~> b1 ~> pub
                          b1 ~> save_metric     ~> Sink.ignore
@@ -182,6 +196,7 @@ object Flows {
                          b1 ~> save_action     ~> Sink.ignore
                          b1 ~> save_error      ~> Sink.ignore
                          b1 ~> save_hostname   ~> Sink.ignore
+                         b1 ~> save_feature    ~> Sink.ignore
 
       ClosedShape
     })

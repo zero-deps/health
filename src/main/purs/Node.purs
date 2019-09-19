@@ -7,20 +7,25 @@ import BigChart as BigChart
 import CpuChart as CpuChart
 import YearChart as YearChart
 import MeasureChart as MeasureChart
+import Data.Int (fromNumber) as Int
 import Data.Maybe (Maybe, fromMaybe)
-import DomOps (cn)
+import Data.Map (lookup)
+import Data.Array (foldl)
+import DomOps (cn, onChangeValue)
 import Effect (Effect)
 import Errors as Errors
 import FormatOps (duration, formatNum)
-import Prelude (bind, map, pure, ($), (<>), (==))
-import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
-import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
-import React.DOM.Props (style, colSpan, onClick)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), ReindexChart(TsReindex, WcReindex, FilesReindex))
+import Prelude (bind, map, pure, ($), (<>), (==), show, (+))
+import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, forceUpdate, modifyState, modifyStateWithCallback)
+import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td, select, option)
+import React.DOM.Props (style, colSpan, onClick, value)
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), ReindexChart(TsReindex, WcReindex, FilesReindex), Feature, StaticChart(Creation, Generation))
 
 type State =
   { bigChartRange :: ChartRange
   , reindexChart :: ReindexChart
+  , staticChart :: StaticChart
+  , feature :: Feature
   }
 type Props = NodeInfo
 
@@ -28,7 +33,7 @@ reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
   p <- getProps this
   pure
-    { state: { bigChartRange: Live, reindexChart: TsReindex }
+    { state: { bigChartRange: Live, reindexChart: TsReindex, staticChart: Creation, feature: "disabled-users" }
     , render: render this
     }
   where
@@ -105,19 +110,25 @@ reactClass = component "Node" \this -> do
                   ]
                   , div [ cn "col-5 col-sm-6" ]
                   [ div [ cn "btn-group btn-group-toggle float-right" ]
-                    [ label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == TsReindex then " active" else "", onClick \_ -> modifyState this _{ reindexChart = TsReindex } ]
+                    [ label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == TsReindex then " active" else ""
+                            , onClick \_ -> modifyStateWithCallback this _{ reindexChart = TsReindex } (forceUpdate this)
+                            ]
                       [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
                         [ text "Traslations" ]
                       , span [ cn "d-block d-sm-none" ]
                         [ text "Ts" ]
                       ]
-                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == WcReindex then " active" else "", onClick \_ -> modifyState this _{ reindexChart = WcReindex } ]
+                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == WcReindex then " active" else ""
+                            , onClick \_ -> modifyStateWithCallback this _{ reindexChart = WcReindex } (forceUpdate this)
+                            ]
                       [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
                         [ text "Web Contents" ]
                       , span [ cn "d-block d-sm-none" ]
                         [ text "Ws" ]
                       ]
-                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == FilesReindex then " active" else "", onClick \_ -> modifyState this _{ reindexChart = FilesReindex } ]
+                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == FilesReindex then " active" else ""
+                            , onClick \_ -> modifyStateWithCallback this _{ reindexChart = FilesReindex } (forceUpdate this)
+                          ]
                       [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
                         [ text "Files" ]
                       , span [ cn "d-block d-sm-none" ]
@@ -128,14 +139,11 @@ reactClass = component "Node" \this -> do
                 ]
               ]
             , div [ cn "card-body" ]
-              [ div [ cn $ "chart-area" <> if s.reindexChart == TsReindex then "" else " d-none" ]
-                [ createLeafElement MeasureChart.reactClass { points: map _.y p.reindexTs_points, labels: map _.t p.reindexTs_points }
-                ]
-              , div [ cn $ "chart-area" <> if s.reindexChart == WcReindex then "" else " d-none" ]
-                [ createLeafElement MeasureChart.reactClass { points: map _.y p.reindexWc_points, labels: map _.t p.reindexWc_points }
-                ]
-              , div [ cn $ "chart-area" <> if s.reindexChart == FilesReindex then "" else " d-none" ]
-                [ createLeafElement MeasureChart.reactClass { points: map _.y p.reindexFiles_points, labels: map _.t p.reindexFiles_points }
+              [ div [ cn $ "chart-area" ]
+                [  createLeafElement MeasureChart.reactClass $ case s.reindexChart of
+                     TsReindex -> { points: map _.y p.reindexTs_points, labels: map _.t p.reindexTs_points }
+                     WcReindex -> { points: map _.y p.reindexWc_points, labels: map _.t p.reindexWc_points }
+                     FilesReindex -> { points: map _.y p.reindexFiles_points, labels: map _.t p.reindexFiles_points }
                 ]
               ]
             ]
@@ -145,30 +153,57 @@ reactClass = component "Node" \this -> do
         [ div [ cn "col-12" ]
           [ div [ cn "card card-chart" ]
             [ div [ cn "card-header" ]
-              [ h5 [ cn "card-category" ] [ text "Static: Creation" ]
+              [ div [ cn "row" ]
+                [ div [ cn "col-7 col-sm-6 text-left" ]
+                  [ h5 [ cn "card-category" ] [ text "Static" ] ]
+                  , div [ cn "col-5 col-sm-6" ]
+                  [ div [ cn "btn-group btn-group-toggle float-right" ]
+                    [ label [ cn $ "btn btn-sm btn-primary btn-simple" <> 
+                              if s.staticChart == Creation then " active" else ""
+                            , onClick \_ -> modifyStateWithCallback this _{ staticChart = Creation } (forceUpdate this)
+                            ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Creation" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "Cr" ]
+                      ]
+                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> 
+                              if s.staticChart == Generation then " active" else ""
+                            , onClick \_ -> modifyStateWithCallback this _{ staticChart = Generation } (forceUpdate this)
+                            ]
+                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
+                        [ text "Generation" ]
+                      , span [ cn "d-block d-sm-none" ]
+                        [ text "Gen" ]
+                      ]
+                    ]
+                  ]
+                ]
               ]
             , div [ cn "card-body" ]
               [ div [ cn "chart-area" ]
-                [ createLeafElement YearChart.reactClass { points: p.staticCreateYear_points, label: "ms" }
+                [ createLeafElement YearChart.reactClass $ case s.staticChart of
+                    Creation -> { points: p.staticCreateYear_points, label: "ms" }
+                    Generation -> { points: p.staticGenYear_points, label: "ms" }
                 ]
               ]
             ]
           ]
         ]
-      , div [cn "row"]
-        [ div [ cn "col-12" ]
-          [ div [ cn "card card-chart" ]
-            [ div [ cn "card-header" ]
-              [ h5 [ cn "card-category" ] [ text "Static: Generation" ]
-              ]
-            , div [ cn "card-body" ]
-              [ div [ cn "chart-area" ]
-                [ createLeafElement YearChart.reactClass { points: p.staticGenYear_points, label: "ms" }
-                ]
-              ]
-            ]
-          ]
-        ]
+      -- , div [cn "row"]
+      --   [ div [ cn "col-12" ]
+      --     [ div [ cn "card card-chart" ]
+      --       [ div [ cn "card-header" ]
+      --         [ h5 [ cn "card-category" ] [ text "Static: Generation" ]
+      --         ]
+      --       , div [ cn "card-body" ]
+      --         [ div [ cn "chart-area" ]
+      --           [ createLeafElement YearChart.reactClass { points: p.staticGenYear_points, label: "ms" }
+      --           ]
+      --         ]
+      --       ]
+      --     ]
+      --   ]
       , div [cn "row"]
         [ div [ cn "col-12" ]
           [ div [ cn "card card-chart" ]
@@ -178,6 +213,44 @@ reactClass = component "Node" \this -> do
             , div [ cn "card-body" ]
               [ div [ cn "chart-area" ]
                 [ createLeafElement YearChart.reactClass { points: p.kvsSizeYearPoints, label: "mb" }
+                ]
+              ]
+            ]
+          ]
+        ]
+      , div [cn "row"]
+        [ div [ cn "col-12" ]
+          [ div [ cn "card card-chart" ]
+            [ div [ cn "card-header" ]
+              [ div [ cn "row" ]
+                [ div [ cn "col-9 text-left" ]
+                  [ h5 [ cn "card-category" ]
+                    [ text "Feature usage" ]
+                  , h2 [ cn "card-title" ]
+                    [ text $ "Total: " <> (show $ fromMaybe 0 $ do
+                            xs <- lookup s.feature p.features
+                            Int.fromNumber $ foldl (\acc x -> acc + x.y) 0.0 xs)
+                    ]
+                  ]
+                  , div [ cn "col-3" ]
+                  [ div [ cn "input-group" ]
+                    [ select [ cn "custom-select"
+                             , onChangeValue \v -> modifyStateWithCallback this _{ feature = v } (forceUpdate this)
+                             , value s.feature
+                             ]
+                      [ option [ value "disabled-users" ] [ text "Disabled users"]
+                      , option [ value "wc-flow" ] [ text "Webcontents flow"]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            , div [ cn "card-body" ]
+              [ div [ cn "chart-area" ]
+                [ createLeafElement YearChart.reactClass 
+                  { points: fromMaybe [] $ lookup s.feature p.features
+                  , label: ""
+                  }
                 ]
               ]
             ]

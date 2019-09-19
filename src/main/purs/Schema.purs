@@ -2,8 +2,10 @@ module Schema where
 
 import Data.Maybe (Maybe)
 import Prelude (class Eq)
+import Data.Map (Map)
 
 type NodeAddr = String
+type Feature = String
 
 type ErrorInfo =
   { exception :: Array String
@@ -34,6 +36,7 @@ type MetricsUpdate =
   , fd :: Maybe (Array String)
   , thr :: Maybe (Array String)
   , kvsSize_year :: Maybe String
+  , feature :: Maybe String
   }
 
 type MeasureUpdate =
@@ -90,6 +93,7 @@ type NodeInfo =
   , staticGenYear_points :: Array NumPoint
   , staticGen_thirdQ :: Maybe String
   , kvsSizeYearPoints :: Array NumPoint
+  , features :: Map Feature (Array NumPoint)
   }
 
 data ChartRange = Live | Hour
@@ -97,6 +101,9 @@ derive instance eqChartRange :: Eq ChartRange
 
 data ReindexChart = TsReindex | WcReindex | FilesReindex
 derive instance eqReindexChart :: Eq ReindexChart
+
+data StaticChart = Creation | Generation
+derive instance eqStaticChart :: Eq StaticChart
 
 type FsInfo =
   { used :: Number

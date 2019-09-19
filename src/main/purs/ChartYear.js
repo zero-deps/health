@@ -81,6 +81,7 @@ exports.createChart = function(ref) {
                 fontColor: "#9a9a9a",
                 callback: function(value) { return value+" "+values.label },
                 min: 0,
+                suggestedMax: 5
               }
             }],
             xAxes: [{
