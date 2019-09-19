@@ -47,13 +47,14 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
           self ! StatMsg(Measure(name, value), StatMeta(time, host, ip))
         }
     }))
-    kvs.stream_unsafe[StatEn]("kvs.size.year").map(_.groupBy(_.host).foreach{ case (host, xs) =>
+    List("feature", "kvs.size.year").foreach(name =>
+      kvs.stream_unsafe[StatEn](name).map(_.groupBy(_.host).foreach{ case (host, xs) =>
         val xs1 = xs.toVector.sortBy(_.time.toLong)
         val min = LocalDateTime.now().minusYears(1)
         xs1.dropWhile(_.time.toLong.toLocalDataTime.isBefore(min)).foreach{ case StatEn(_,_,_,value, time, host, ip) =>
-          self ! StatMsg(Metric("kvs.size.year", value), StatMeta(time, host, ip))
+          self ! StatMsg(Metric(name, value), StatMeta(time, host, ip))
         }
-    })
+      }))
     kvs.stream_unsafe[StatEn]("action.live").map(_.sortBy(_.time).foreach{
       case StatEn(_,_,_,action,time,host,ip) =>
         self ! StatMsg(Action(action), StatMeta(time, host, ip))

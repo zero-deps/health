@@ -210,11 +210,12 @@ reactClass = component "Main" \this -> do
           let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
           let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
           let kvsSize_year = if name == "kvs.size.year" then Just value else Nothing
+          let feature = if name == "feature" then Just value else Nothing
           updateWith
             { host: host
             , ip: ip
             , time: time
-            , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, kvsSize_year }
+            , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, kvsSize_year, feature }
             , measure: Nothing
             , err: Nothing
             , action: Nothing
@@ -284,6 +285,11 @@ reactClass = component "Main" \this -> do
         let cpuPoints = fromMaybe [] $ map (\b -> [{ t: time', y: readInt 10 b }]) cpu
         let cpuHourPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.cpu_hour
         let kvsSizeYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.kvsSize_year
+        let featurePoint = do
+              v <- a.metrics >>= _.feature
+              case split (Pattern "~") v of
+                [ n, num ] -> Just { name: n, point: { t: time', y: readInt 10 num } }
+                _ -> Nothing
         
         mem <- case cpu_mem of
           Just ([ _, free', total', heap' ]) -> do
@@ -377,6 +383,14 @@ reactClass = component "Main" \this -> do
                 let reindexWc_points' = takeEnd 100 $ node.reindexWc_points <> reindexWc_points
                 let reindexFiles_points' = takeEnd 100 $ node.reindexFiles_points <> reindexFiles_points
 
+                let features' = maybe node.features
+                              (\x -> do
+                                let points' = case lookup x.name node.features of
+                                      Just points -> snoc points x.point
+                                      Nothing -> singleton x.point
+                                Map.insert x.name points' node.features
+                              ) featurePoint
+
                 let errs' = take 100 $ errs <> node.errs
 
                 node
@@ -412,6 +426,7 @@ reactClass = component "Main" \this -> do
                   , staticGenYear_points = staticGenYear_points'
                   , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
                   , kvsSizeYearPoints = kvsSizeYearPoints'
+                  , features = features'
                   }
               Nothing ->
                 { host: a.host
@@ -448,6 +463,7 @@ reactClass = component "Main" \this -> do
                 , staticGenYear_points: maybe [] singleton staticGenYearPoint
                 , staticGen_thirdQ: staticGen_thirdQ
                 , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
+                , features: maybe Map.empty (\x -> Map.singleton x.name $ singleton x.point ) featurePoint
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.host node' s'.nodes }
         case a.err of

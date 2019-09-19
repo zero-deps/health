@@ -67,7 +67,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val mem = ManagementFactory.getMemoryMXBean
 
     import sys.process._
-    Try("hostname".!!).foreach(x => metric("hostname", x.strip))
+    Try("hostname".!!).foreach(x => metric("hostname", x.stripMargin))
 
     val scheduler = system.scheduler
     object timeout {
