@@ -1,3 +1,5 @@
+ThisBuild / resolvers += Resolver.bintrayRepo("zero-deps", "maven")
+
 libraryDependencies += "org.slf4j" % "slf4j-nop" % "latest.integration"
 
 scalacOptions in Compile ++= Seq("-deprecation", "-feature")
