@@ -4875,9 +4875,14 @@ var PS = {};
         purpleBg.addColorStop(1, 'rgba(72,72,176,0.1)')
         purpleBg.addColorStop(0.4, 'rgba(72,72,176,0.0)')
         purpleBg.addColorStop(0, 'rgba(119,52,169,0)')
+
+        var now = new Date()
+        var min = new Date(now.getFullYear()-1, now.getMonth(), 15)
+        var max = new Date(now.getFullYear(), now.getMonth(), 15)
       
         return new Chart(ctx, {
-          type: 'line',
+          type: 'bar',
+          responsive: true,
           data: {
             datasets: [{
               backgroundColor: purpleBg,
@@ -4922,7 +4927,6 @@ var PS = {};
               yAxes: [{
                 id: 'left-y-axis',
                 position: 'left',
-                barPercentage: 1.6,
                 gridLines: {
                   drawBorder: false,
                   color: 'rgba(29,140,248,0.0)',
@@ -4932,16 +4936,18 @@ var PS = {};
                   fontColor: "#9a9a9a",
                   callback: function(value) { return value+" "+values.label },
                   min: 0,
-                  suggestedMax: 5
+                  suggestedMax: 5,
+                  beginAtZero: true
                 }
               }],
               xAxes: [{
                 type: 'time',
                 time: {
                   tooltipFormat: "MMM YYYY",
-                  unit: 'month'
+                  unit: 'month',
+                  min: min,
+                  max: max
                 },
-                barPercentage: 1.6,
                 gridLines: {
                   drawBorder: false,
                   color: 'rgba(225,78,202,0.1)',
