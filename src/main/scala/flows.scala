@@ -158,7 +158,7 @@ object Flows {
           kvs.el.put(s"feature.${name}.t.${host}${i}", time)
           kvs.el.put(s"feature.${name}.n.${host}${i}", n1.toString)
           val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
-          kvs.put(StatEn(fid=s"feature", id=s"${host}${i}", prev=zd.kvs.empty, s"${name}~${n1}", time1, host, ip))
+          kvs.put(StatEn(fid=s"feature", id=s"${host}${i}${name}", prev=zd.kvs.empty, s"${name}~${n1}", time1, host, ip))
       }
       val save_action = Flow[Push].collect{
         case StatMsg(Action(action), StatMeta(time, host, ip)) =>
