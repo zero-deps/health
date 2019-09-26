@@ -27,7 +27,7 @@ package object stats {
 
   implicit object FdHandler extends kvs.en.FdHandler {
 
-    implicit val fdCodec: MessageCodec[kvs.en.Fd] = caseCodecNums[kvs.en.Fd](Symbol("id")->1, Symbol("top")->2, Symbol("count")->3)
+    implicit val fdCodec: MessageCodec[kvs.en.Fd] = caseCodecNums[kvs.en.Fd]("id"->1, "top"->2, "count"->3)
 
     def pickle(e: kvs.en.Fd): kvs.Res[Array[Byte]] = encode[kvs.en.Fd](e).right
     def unpickle(a: Array[Byte]): kvs.Res[kvs.en.Fd] = decode[kvs.en.Fd](a).right

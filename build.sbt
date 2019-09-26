@@ -1,11 +1,11 @@
 val akkaVersion = "2.5.23"
 val frontierVersion = "2.0.2"
-val gsVersion = "1.5.1"
+val gsVersion = "1.5.2"
 val kvsVersion = "4.6.3"
-val protoVersion = "1.3.3"
+val protoVersion = "1.5.1"
 
 ThisBuild / organization := "com.."
-ThisBuild / scalaVersion := "2.13.0"
+ThisBuild / scalaVersion := "2.13.1"
 ThisBuild / version := zd.gs.git.GitOps.version
 ThisBuild / fork := true
 ThisBuild / cancelable in Global := true
