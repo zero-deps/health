@@ -1,8 +1,8 @@
-val akkaVersion = "2.5.23"
+val akkaVersion = "2.5.26"
 val frontierVersion = "2.0.2"
-val gsVersion = "1.5.2"
-val kvsVersion = "4.6.3"
-val protoVersion = "1.5.1"
+val gsVersion = "1.6.2"
+val kvsVersion = "4.9.1"
+val protoVersion = "1.7.0"
 
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := "2.13.1"
@@ -19,23 +19,24 @@ ThisBuild / scalacOptions in Compile ++= Vector(
   "-Xfatal-warnings",
   "-Ywarn-unused:imports",
 )
-ThisBuild / publishTo := Some(" Releases" at "http://nexus.mobile..com/nexus3/repository/releases")
+ThisBuild / publishTo := Some(" Releases" at "https://nexus.mobile..com/nexus3/repository/releases")
 ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.mobile..com", "", "")
 ThisBuild / publishArtifact := true
 ThisBuild / publishMavenStyle := true
 ThisBuild / isSnapshot := true
-ThisBuild / resolvers += " Releases" at "http://nexus.mobile..com/nexus3/repository/releases"
-ThisBuild / resolvers += Resolver.jcenterRepo
+ThisBuild / resolvers += " Releases" at "https://nexus.mobile..com/nexus3/repository/releases"
+ThisBuild / resolvers += "zd" at "https://nexus.mobile..com/nexus3/repository/zd"
 
 ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % gsVersion)
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % gsVersion
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-z" % gsVersion
 
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % protoVersion % Compile
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % protoVersion 
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % protoVersion
 
 ThisBuild / turbo := true
-ThisBuild / useCoursier := false
+ThisBuild / useCoursier := true
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}

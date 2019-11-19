@@ -1,0 +1,2 @@
+-Djavax.net.ssl.trustStore=nexus_trust
+-Djavax.net.ssl.trustStorePassword=changeit

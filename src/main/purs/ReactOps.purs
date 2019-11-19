@@ -1,6 +1,5 @@
 module ReactOps where
 
-import Prelude (Unit)
 import React.DOM.Props (Props, unsafeMkProps)
 
 foreign import data Ref :: Type
