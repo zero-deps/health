@@ -34,7 +34,7 @@ class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
       for {
         ip <- Try(remote.getAddress.toString.split("/")(1))
         hostname = remote.getHostName
-        host = (if (hostname == ip) kvs.el.get[String](s"hostname_${ip}").getOrElse(ip) else hostname).stripSuffix(".ee..corp").stripSuffix("..corp")
+        host = (if (hostname == ip) kvs.el.get[String](s"hostname_${ip}").toOption.flatten.getOrElse(ip) else hostname).stripSuffix(".ee..corp").stripSuffix("..corp")
         msg <- Try(decode[ClientMsg](data.toArray))
       } msg match {
         case MetricMsg(name, value, port) =>
