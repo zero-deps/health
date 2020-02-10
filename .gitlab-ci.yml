@@ -1,0 +1,96 @@
+stages:
+  - prerequisites
+  - package
+  - build
+
+variables:
+  BUILD_RPM_IMAGE: "$CI_REGISTRY/docker-service-images/-cms-build-rpm:5.0.0"
+  DOCKER_DIND_GIT_IMAGE: "$CI_REGISTRY/docker-service-images/docker-dind-git:1.0.1"
+  SBT_OPTS: "-Dsbt.global.base=.sbt/ -XX:MaxMetaspaceSize=350m -Dsbt.override.build.repos=true -Dfile.encoding=UTF8 -Xms1024m -Xmx2048m -Xss10M -Dhttp.nonProxyHosts=localhost|127.0.0.1|nexus.mobile..com -Dhttps.nonProxyHosts=localhost|127.0.0.1|nexus.mobile..com|ua--nexus01.ee..corp -Dsbt.override.build.repos=true -Dsbt.boot.credentials=.sbt_credentials -Dsbt.repository.config=.sbt_repositories"
+
+.default_refs: &default_refs
+  only:
+    refs:
+      - tags
+      - /^feature/.*$/
+      - /^release/.*$/
+      - /^master$/
+
+cache: {}
+
+prerequisites:
+  image: "$DOCKER_DIND_GIT_IMAGE"
+  stage: prerequisites
+  script:
+    - |-
+      git config --global core.abbrev 7
+      # Checking whether tag was pushed
+      if [ -z "$CI_COMMIT_TAG" ]; then
+        echo -e "Tag was not pushed. This is regular commit to branch"
+        git_last_tag=$(git describe --always --tags)
+        echo "GROUP_ID=core" >> .env
+        echo "git_commit_ref=$CI_COMMIT_REF_SLUG" >> .env
+        echo "git_last_tag=$git_last_tag" >> .env
+        echo "rpm_prefix=pt--portal-$CI_COMMIT_REF_SLUG-$git_last_tag" >> .env
+        echo "rpm_version=$CI_PIPELINE_ID" >> .env
+        echo "image_postfix=$git_last_tag.$CI_PIPELINE_ID" >> .env
+      else
+        echo -e "Tag was pushed"
+        git_last_tag=$(git describe --always --abbrev=0 --tags)
+        echo "GROUP_ID=core-releases" >> .env
+        echo "git_commit_ref=$CI_COMMIT_TAG" >> .env
+        echo "git_last_tag=$git_last_tag" >> .env
+        echo "rpm_prefix=pt--portal" >> .env
+        echo "rpm_version=$git_last_tag" >> .env
+        echo "image_postfix=$git_last_tag" >> .env
+      fi
+    - source .env
+    - echo "$GROUP_ID"
+    - echo "$git_commit_ref"
+    - echo "$git_last_tag"
+    - echo "$rpm_prefix"
+    - cat .sbt_repositories
+  artifacts:
+    paths:
+      - ".env"
+    expire_in: "24 hours"
+  <<: *default_refs
+
+package:
+  image: "$BUILD_RPM_IMAGE"
+  stage: package
+  before_script:
+    - source .env
+  script:
+    - sbt -Djavax.net.ssl.trustStore=nexus_trust -Djavax.net.ssl.trustStorePassword=changeit test universal:packageBin
+  dependencies:
+    - prerequisites
+  artifacts:
+    paths:
+      - "./target/universal"
+      - "Dockerfile"
+      - "hub2.spec"
+      - "portal.service"
+    expire_in: "24 hours"
+  <<: *default_refs
+
+build:image:
+  image: "$DOCKER_DIND_GIT_IMAGE"
+  stage: build
+  variables:
+    DOCKER_DRIVER: overlay2
+    GIT_STRATEGY: none
+  before_script:
+    - source .env
+  script:
+    - docker build
+      --build-arg "http_proxy=$http_proxy"
+      --build-arg "https_proxy=$https_proxy"
+      --build-arg "no_proxy=$no_proxy"
+      -t "$CI_PROJECT_PATH_SLUG:$image_postfix" -f Dockerfile .
+    - docker tag "$CI_PROJECT_PATH_SLUG:$image_postfix" "$NEXUS_DOCKER__CORE_REPO/$CI_PROJECT_PATH_SLUG:$image_postfix"
+    - docker login -u $NEXUS_DOCKER_REG_USER -p $NEXUS_DOCKER_REG_PASS $NEXUS_DOCKER__CORE_REPO
+    - docker push "$NEXUS_DOCKER__CORE_REPO/$CI_PROJECT_PATH_SLUG:$image_postfix"
+  dependencies:
+    - prerequisites
+    - package
