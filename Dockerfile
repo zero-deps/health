@@ -20,7 +20,7 @@ RUN mkdir -p /opt/local/apps/-web-platform/package /opt/local/apps/-web-platform
 
 COPY --chown=apps:apps ./target/universal/*zip /opt/local/apps/-web-platform/package
 
-RUN cd /opt/local/apps/-web-platform/package && unzip *.zip -d /opt/local/apps/-web-platform/package && rm *.zip && mv cms*/* . && rm -rf cms*  && mkdir -p /opt/local/apps/-web-platform/conf &&\
+RUN cd /opt/local/apps/-web-platform/package && unzip *.zip -d /opt/local/apps/-web-platform/package && rm *.zip && mv stats*/* . && rm -rf stats*  && mkdir -p /opt/local/apps/-web-platform/conf &&\
     mkdir -p /opt/local/apps/-web-platform/package/appdir/logs/ &&\
     ln -sf /proc/1/fd/1 /opt/local/apps/-web-platform/package/appdir/logs/wpl.log
 
