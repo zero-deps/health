@@ -28,28 +28,20 @@ prerequisites:
       if [ -z "$CI_COMMIT_TAG" ]; then
         echo -e "Tag was not pushed. This is regular commit to branch"
         git_last_tag=$(git describe --always --tags)
-        echo "GROUP_ID=core" >> .env
         echo "git_commit_ref=$CI_COMMIT_REF_SLUG" >> .env
         echo "git_last_tag=$git_last_tag" >> .env
-        echo "rpm_prefix=pt--portal-$CI_COMMIT_REF_SLUG-$git_last_tag" >> .env
-        echo "rpm_version=$CI_PIPELINE_ID" >> .env
         echo "image_postfix=$git_last_tag.$CI_PIPELINE_ID" >> .env
       else
         echo -e "Tag was pushed"
         git_last_tag=$(git describe --always --abbrev=0 --tags)
-        echo "GROUP_ID=core-releases" >> .env
         echo "git_commit_ref=$CI_COMMIT_TAG" >> .env
         echo "git_last_tag=$git_last_tag" >> .env
-        echo "rpm_prefix=pt--portal" >> .env
-        echo "rpm_version=$git_last_tag" >> .env
         echo "image_postfix=$git_last_tag" >> .env
       fi
     - source .env
-    - echo "$GROUP_ID"
     - echo "$git_commit_ref"
     - echo "$git_last_tag"
-    - echo "$rpm_prefix"
-    - cat .sbt_repositories
+    - echo "$image_postfix"
   artifacts:
     paths:
       - ".env"
