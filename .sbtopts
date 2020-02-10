@@ -1,2 +1,8 @@
+-J-XX:MaxMetaspaceSize=500m
+-J-Xss10m
+-Dsbt.override.build.repos=true
+-Dsbt.repository.config=.sbt_repositories
+-Dsbt.boot.credentials=.sbt_credentials
+-Dfile.encoding=UTF8
 -Djavax.net.ssl.trustStore=nexus_trust
 -Djavax.net.ssl.trustStorePassword=changeit

@@ -1,0 +1,17 @@
+[repositories]
+  local
+  local-boot: file:////${user.home}/.ivy2/, [organization]/[module]/[revision]/[type]s/[artifact](-[revision])(-[classifier]).[ext], bootOnly
+  zd: https://nexus.mobile..com/nexus3/repository/zd
+  jcenter-proxy: https://nexus.mobile..com/nexus3/repository/jcenter-proxy
+  maven-central-proxy: https://nexus.mobile..com/nexus3/repository/maven-central
+  typesafe-ivy-releases: https://nexus.mobile..com/nexus3/repository/ivy2-typesafe/, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly
+  sbt-ivy-snapshots: https://nexus.mobile..com/nexus3/repository/sbt-ivy-snapshots-proxy/, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext], bootOnly
+  sbt-ivy-releases: https://nexus.mobile..com/nexus3/repository/ivy2-sbt/, [organization]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]
+  maven2-proxy: https://nexus.mobile..com/nexus3/repository/maven2-proxy-repo
+  ivy-typesafe-proxy: https://nexus.mobile..com/nexus3/repository/ivy2-typesafe, [organization]/[module]/[revision]/[type]s/[artifact](-[classifier]).[ext]
+  nuxeo-proxy: https://nexus.mobile..com/nexus3/repository/nuxeo-proxy-repo
+  jboss-proxy: https://nexus.mobile..com/nexus3/repository/jboss-proxy-repo
+  thirdparty: https://nexus.mobile..com/nexus3/repository/thirdparty
+  releases: https://nexus.mobile..com/nexus3/repository/releases
+  sonatype-oss-releases-proxy: https://nexus.mobile..com/nexus3/repository/sonatype-oss-releases-proxy/
+  liferay: https://nexus.mobile..com/nexus3/repository/maven2-liferay/
