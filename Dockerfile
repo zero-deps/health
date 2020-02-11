@@ -23,5 +23,11 @@ COPY --chown=apps:apps ./target/universal/*zip /opt/local/apps/-web-platform/pac
 RUN cd /opt/local/apps/-web-platform/package && unzip *.zip -d /opt/local/apps/-web-platform/package && rm *.zip && mv stats*/* . && rm -rf stats*  && mkdir -p /opt/local/apps/-web-platform/conf &&\
     mkdir -p /opt/local/apps/-web-platform/package/appdir/logs/ &&\
     ln -sf /proc/1/fd/1 /opt/local/apps/-web-platform/package/appdir/logs/wpl.log
+    
+# For UI
+EXPOSE 8002
+
+# For receiving statistics from HUB2 nodes
+EXPOSE 50123/udp
 
 CMD /opt/local/apps/-web-platform/package/bin/stats -Dconfig.file=/opt/local/apps/-web-platform/conf/app.conf
