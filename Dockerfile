@@ -24,4 +24,4 @@ RUN cd /opt/local/apps/-web-platform/package && unzip *.zip -d /opt/local/apps/-
     mkdir -p /opt/local/apps/-web-platform/package/appdir/logs/ &&\
     ln -sf /proc/1/fd/1 /opt/local/apps/-web-platform/package/appdir/logs/wpl.log
 
-CMD /opt/local/apps/-web-platform/package/bin/run -Dconfig.file=/opt/local/apps/-web-platform/conf/app.conf
+CMD /opt/local/apps/-web-platform/package/bin/stats -Dconfig.file=/opt/local/apps/-web-platform/conf/app.conf
