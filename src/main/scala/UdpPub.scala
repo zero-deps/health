@@ -5,7 +5,6 @@ import akka.io.{IO, Udp}
 import java.net.InetSocketAddress
 import zd.proto.api.{decode}
 import .stats.client._
-import scala.util.Try
 import zd.gs.z._
 import zd.kvs.Kvs
 
@@ -31,20 +30,32 @@ class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
       socket = sender.just
 
     case Udp.Received(data, remote) =>
-      for {
-        ip <- Try(remote.getAddress.toString.split("/")(1))
-        hostname = remote.getHostName
-        host = (if (hostname == ip) kvs.el.get[String](s"hostname_${ip}").toOption.flatten.getOrElse(ip) else hostname).stripSuffix(".ee..corp").stripSuffix("..corp")
-        msg <- Try(decode[ClientMsg](data.toArray))
-      } msg match {
-        case MetricMsg(name, value, port) =>
-          self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
-        case MeasureMsg(name, value, port) =>
-          self ! StatMsg(stat=Measure(name, value), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
-        case ErrorMsg(exception, stacktrace, toptrace, port) =>
-          self ! StatMsg(stat=Error(exception, stacktrace, toptrace), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
-        case ActionMsg(action, port) =>
-          self ! StatMsg(stat=Action(action), meta=StatMeta(now_ms(), s"${host}:${port}", ip))
+      decode[ClientMsg](data.toArray) match {
+        case MetricMsg(name, value, _, Some(hostname), Some(ipaddr)) =>
+          self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), hostname, ipaddr))
+        case MeasureMsg(name, value, _, Some(hostname), Some(ipaddr)) =>
+          self ! StatMsg(stat=Measure(name, value), meta=StatMeta(now_ms(), hostname, ipaddr))
+        case ErrorMsg(exception, stacktrace, toptrace, _, Some(hostname), Some(ipaddr)) =>
+          self ! StatMsg(stat=Error(exception, stacktrace, toptrace), meta=StatMeta(now_ms(), hostname, ipaddr))
+        case ActionMsg(action, _, Some(hostname), Some(ipaddr)) =>
+          self ! StatMsg(stat=Action(action), meta=StatMeta(now_ms(), hostname, ipaddr))
+
+        case MetricMsg(name, value, _, _, _) => // legacy
+          val ipaddr = Option(remote.getAddress).map(_.getHostAddress).getOrElse("").stripSuffix(".ee..corp").stripSuffix("..corp")
+          val hostname = Option(remote.getAddress).map(_.getHostName).getOrElse("")
+          self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), hostname, ipaddr))
+        case MeasureMsg(name, value, _, _, _) => // legacy
+          val ipaddr = Option(remote.getAddress).map(_.getHostAddress).getOrElse("").stripSuffix(".ee..corp").stripSuffix("..corp")
+          val hostname = Option(remote.getAddress).map(_.getHostName).getOrElse("")
+          self ! StatMsg(stat=Measure(name, value), meta=StatMeta(now_ms(), hostname, ipaddr))
+        case ErrorMsg(exception, stacktrace, toptrace, _, _, _) => // legacy
+          val ipaddr = Option(remote.getAddress).map(_.getHostAddress).getOrElse("").stripSuffix(".ee..corp").stripSuffix("..corp")
+          val hostname = Option(remote.getAddress).map(_.getHostName).getOrElse("")
+          self ! StatMsg(stat=Error(exception, stacktrace, toptrace), meta=StatMeta(now_ms(), hostname, ipaddr))
+        case ActionMsg(action, _, _, _) => // legacy
+          val ipaddr = Option(remote.getAddress).map(_.getHostAddress).getOrElse("").stripSuffix(".ee..corp").stripSuffix("..corp")
+          val hostname = Option(remote.getAddress).map(_.getHostName).getOrElse("")
+          self ! StatMsg(stat=Action(action), meta=StatMeta(now_ms(), hostname, ipaddr))
       }
 
     case Udp.Unbound =>

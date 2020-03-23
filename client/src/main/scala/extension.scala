@@ -24,12 +24,9 @@ class Stats(implicit system: ActorSystem) extends Extension {
 
   private val client: Option[ActorRef] =
     if (enabled) {
-      val remote = (
-        cfg.getString("stats.client.remote.host"),
-        cfg.getInt("stats.client.remote.port"),
-      )
-      val localPort = cfg.getString("akka.remote.netty.tcp.port")
-      Some(system.actorOf(Client.props(remote, localPort)))
+      val remoteHost = cfg.getString("stats.client.remote.host")
+      val remotePort = cfg.getInt("stats.client.remote.port")
+      Some(system.actorOf(Client.props(remoteHost, remotePort)))
     } else None
 
   private def send(m: Stat): Unit = {
@@ -65,9 +62,6 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val gc = ManagementFactory.getGarbageCollectorMXBeans
     val thr = ManagementFactory.getThreadMXBean
     val mem = ManagementFactory.getMemoryMXBean
-
-    import sys.process._
-    Try("hostname".!!).foreach(x => metric("hostname", x.stripMargin))
 
     val scheduler = system.scheduler
     object timeout {
@@ -107,13 +101,13 @@ class Stats(implicit system: ActorSystem) extends Extension {
       case os: com.sun.management.OperatingSystemMXBean =>
         scheduler.schedule(1 second, timeout.cpu_mem) {
           // CPU load (percentage)
-          val cpu = os.getSystemCpuLoad match {
+          val cpu = os.getCpuLoad match {
             case x if x < 0 => "" // not available
             case x => (100*x).toInt.toString
           }
           // Memory (Mbytes)
-          val free = os.getFreePhysicalMemorySize
-          val total = os.getTotalPhysicalMemorySize
+          val free = os.getFreeMemorySize
+          val total = os.getTotalMemorySize
           val heapMem = mem.getHeapMemoryUsage.getUsed
           metric("cpu_mem", s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}~${heapMem/i"1'000'000"}")
         }
