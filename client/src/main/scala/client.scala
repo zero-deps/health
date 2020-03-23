@@ -1,15 +1,15 @@
 package .stats.client
 
-import java.net.InetSocketAddress
 import akka.actor.{Actor, ActorRef, ActorLogging, Props}
 import akka.io.{IO, Udp}
 import akka.util.ByteString
-import zd.proto.api.{encode}
+import java.net.{InetSocketAddress, InetAddress}
+import zd.gs.z._
+import zd.proto.api.encode
 
 object Client {
-  def props(remote: (String, Int), localPort: String): Props = {
-    val isa = { val (host, port) = remote; new InetSocketAddress(host, port) }
-    Props(new Client(isa, localPort))
+  def props(remoteHost: String, remotePort: Int): Props = {
+    Props(new Client(new InetSocketAddress(remoteHost, remotePort)))
   }
 
   sealed trait Stat
@@ -19,7 +19,7 @@ object Client {
   final case class ActionStat(action: String) extends Stat
 }
 
-class Client(remote: InetSocketAddress, localPort: String) extends Actor with ActorLogging {
+class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
   import context.system
   import .stats.client.Client._
   IO(Udp) ! Udp.SimpleSender
@@ -33,18 +33,20 @@ class Client(remote: InetSocketAddress, localPort: String) extends Actor with Ac
   }
 
   def ready(udp: ActorRef): Receive = {
-
     case MetricStat(name, value) =>
-      send(udp)(MetricMsg(name, value, localPort))
+      val ia = InetAddress.getLocalHost
+      send(udp)(MetricMsg(name, value, None, ia.getHostName.just, ia.getHostAddress.just))
     
     case MeasureStat(name, value) =>
-      send(udp)(MeasureMsg(name, value.toString, localPort))
+      val ia = InetAddress.getLocalHost
+      send(udp)(MeasureMsg(name, value.toString, None, ia.getHostName.just, ia.getHostAddress.just))
     
     case ErrorStat(exception, stacktrace, toptrace) =>
-      send(udp)(ErrorMsg(exception, stacktrace, toptrace, localPort))
+      val ia = InetAddress.getLocalHost
+      send(udp)(ErrorMsg(exception, stacktrace, toptrace, None, ia.getHostName.just, ia.getHostAddress.just))
     
     case ActionStat(action) =>
-      send(udp)(ActionMsg(action, localPort))
-
+      val ia = InetAddress.getLocalHost
+      send(udp)(ActionMsg(action, None, ia.getHostName.just, ia.getHostAddress.just))
   }
 }

@@ -10,7 +10,7 @@ ThisBuild / version := zd.gs.git.GitOps.version
 ThisBuild / fork := true
 ThisBuild / cancelable in Global := true
 ThisBuild / scalacOptions in Compile ++= Vector(
-  "-target:jvm-1.8",
+  "-target:jvm-12",
   "-feature",
   "-unchecked",
   "-deprecation",
@@ -91,6 +91,6 @@ lazy val client = project.in(file("client")).settings(
   libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akkaVersion,
 )
 
-lazy val prjs = project.in(file("prjs")).settings(
+lazy val gen = project.in(file("gen")).settings(
   libraryDependencies += "io.github.zero-deps" %% "proto-purs" % protoVersion,
 ).dependsOn(stats)
