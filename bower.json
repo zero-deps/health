@@ -1,6 +1,6 @@
 {
   "name": "purs",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "dependencies": {
     "purescript-react": "*",
     "purescript-react-dom": "*",

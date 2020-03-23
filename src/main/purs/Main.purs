@@ -4,14 +4,13 @@ module Main
 
 import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
+import Data.ArrayBuffer.Types (Uint8Array)
 import Data.Either (Either(Right))
 import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
-import Data.String (Pattern(Pattern), split, contains)
-import Data.String.Common (toLower)
-import Data.String.CodePoints (length) as String
+import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import DomOps (cn)
 import DomOps as DomOps
@@ -22,7 +21,8 @@ import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (<), (>=), (>>=), (||))
+import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=))
+import Push (Push(StatMsg, NodeRemoveOk), Stat(Metric, Measure, Error, Action), decodePush)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
@@ -30,8 +30,6 @@ import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
-import Data.ArrayBuffer.Types (Uint8Array)
-import Push (Push(StatMsg, NodeRemoveOk), Stat(Metric, Measure, Error, Action), decodePush)
 
 type State = 
   { menu :: Menu
@@ -42,7 +40,6 @@ type State =
   , leftMenu :: Boolean
   , notifications :: Boolean
   , topMenu :: Boolean
-  , searchText :: String
   }
 type Props =
   { menu :: Array Menu
@@ -77,7 +74,6 @@ reactClass = component "Main" \this -> do
       , leftMenu: false
       , notifications: false
       , topMenu: false
-      , searchText: ""
       }
     , render: render this
     , componentDidMount: do
@@ -170,20 +166,14 @@ reactClass = component "Main" \this -> do
         where
         dummy :: ReactClass {}
         dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
-      menuContent { menu: Nodes, nodes: nodes, ws, searchText } =
+      menuContent { menu: Nodes, nodes: nodes, ws } =
         pure $ createLeafElement NodesCom.reactClass 
-               { nodes: filterNodes searchText $ fromFoldable nodes
-               , ws, openNode: \host -> modifyState this _{ node = Just host }
-               , searchText
-               , search: \v -> modifyState this _{ searchText=v }
-               }
+                { nodes: fromFoldable nodes
+                , ws
+                , openNode: \host -> modifyState this _{ node = Just host }
+                }
       menuContent { menu: Errors, errors: errors } =
         pure $ createLeafElement ErrorsCom.reactClass { errors: errors, showAddr: true }
-
-      filterNodes :: String -> Array NodeInfo -> Array NodeInfo
-      filterNodes v nodes | String.length v < 3 = nodes
-      filterNodes v nodes = 
-        filter (\node -> contains (Pattern v) (toLower node.host) || contains (Pattern v) (toLower node.ip)) nodes
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
