@@ -22,7 +22,7 @@ dateTime ms' = do
   let hours = datePart $ getUTCHours d
   let minutes = datePart $ getUTCMinutes d
   let seconds = datePart $ getUTCSeconds d
-  pure $ day<>"."<>month<>"."<>year<>" "<>hours<>":"<>minutes<>":"<>seconds
+  pure $ year<>"."<>month<>"."<>day<>" "<>hours<>":"<>minutes<>":"<>seconds
 
 datePart :: Number -> String
 datePart num =

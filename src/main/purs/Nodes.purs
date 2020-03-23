@@ -53,14 +53,14 @@ reactClass = component "Nodes" \this -> do
             [ div [ cn "card-header" ]
               [ h4 [ cn "card-title" ]
                 [ text "Nodes" ]
-              , div []
+              , div [ cn "form-inline" ]
                 [ button  [ _type "button"
                           , cn $ "btn btn-primary" <> if state.active then " active" else ""
                           , onClick \_ -> modifyState this \s -> s { active = not s.active }
                           ]
                   [ text "Active" ]
                 , input [ _type "search"
-                        , cn "form-control"
+                        , cn "form-control ml-2"
                         , placeholder "Filter nodes"
                         , value state.filter
                         , onChangeValue \v -> modifyState this _{ filter = v }
@@ -112,4 +112,4 @@ activeNodes :: Boolean -> Array NodeInfo -> Array NodeInfo
 activeNodes false xs = xs
 activeNodes true xs =
   let prefix = fromMaybe "" $ maximum $ map (fromMaybe "" <<< (\x -> x !! 0) <<< split (Pattern " ") <<< _.lastUpdate) xs
-  in filter (startsWith prefix <<< _.lastUpdate) xs
+  in map (\x -> x { lastUpdate = fromMaybe x.lastUpdate $ (split (Pattern " ") x.lastUpdate) !! 1 }) $ filter (startsWith prefix <<< _.lastUpdate) xs
