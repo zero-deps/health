@@ -1,4 +1,4 @@
-FROM openjdk:13.0.2-jdk-oraclelinux7
+FROM openjdk:14-jdk-oraclelinux7
 
 MAINTAINER " PO" .po@.com
 
