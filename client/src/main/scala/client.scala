@@ -35,18 +35,18 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
   def ready(udp: ActorRef): Receive = {
     case MetricStat(name, value) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(MetricMsg(name, value, None, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(MetricMsg(name, value, None, ia.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp").just, ia.getHostAddress.just))
     
     case MeasureStat(name, value) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(MeasureMsg(name, value.toString, None, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(MeasureMsg(name, value.toString, None, ia.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp").just, ia.getHostAddress.just))
     
     case ErrorStat(exception, stacktrace, toptrace) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(ErrorMsg(exception, stacktrace, toptrace, None, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(ErrorMsg(exception, stacktrace, toptrace, None, ia.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp").just, ia.getHostAddress.just))
     
     case ActionStat(action) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(ActionMsg(action, None, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(ActionMsg(action, None, ia.getHostName.stripSuffix(".ee..corp").stripSuffix("..corp").just, ia.getHostAddress.just))
   }
 }
