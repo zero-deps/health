@@ -32,20 +32,20 @@ class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
     case Udp.Received(data, remote) =>
       decode[ClientMsg](data.toArray) match {
         case MetricMsg(name, value, hostname1, ipaddr1) =>
-          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
-          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
           self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), hostname, ipaddr))
         case MeasureMsg(name, value, hostname1, ipaddr1) =>
-          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
-          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
           self ! StatMsg(stat=Measure(name, value), meta=StatMeta(now_ms(), hostname, ipaddr))
         case ErrorMsg(exception, stacktrace, toptrace, hostname1, ipaddr1) =>
-          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
-          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
           self ! StatMsg(stat=Error(exception, stacktrace, toptrace), meta=StatMeta(now_ms(), hostname, ipaddr))
         case ActionMsg(action, hostname1, ipaddr1) =>
-          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
-          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val hostname = hostname1.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
+          val ipaddr = ipaddr1.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
           self ! StatMsg(stat=Action(action), meta=StatMeta(now_ms(), hostname, ipaddr))
       }
 
