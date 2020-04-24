@@ -23,7 +23,6 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
     })
     List(("search.ts", 5)
        , ("search.wc", 5)
-       , ("static.create", 5)
        , ("static.gen", 5)
        , ("reindex.ts", 100)
        , ("reindex.wc", 100)
@@ -39,7 +38,7 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
         )
       })
     }
-    List("static.create.year", "static.gen.year").foreach(name =>
+    List("static.gen.year").foreach(name =>
       kvs.all[StatEn](name).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.groupBy(_.host).foreach{ case (host, xs) =>
         val xs1 = xs.toVector.sortBy(_.time.toLong)
         val min = LocalDateTime.now().minusYears(1)

@@ -5,7 +5,7 @@ val kvsVersion = "4.9.1"
 val protoVersion = "1.7.0"
 
 ThisBuild / organization := "com.."
-ThisBuild / scalaVersion := "2.13.1"
+ThisBuild / scalaVersion := "2.13.2"
 ThisBuild / version := zd.gs.git.GitOps.version
 ThisBuild / fork := true
 ThisBuild / cancelable in Global := true

@@ -55,7 +55,7 @@ reactClass = component "Nodes" \this -> do
                 [ text "Nodes" ]
               , div [ cn "form-inline" ]
                 [ button  [ _type "button"
-                          , cn $ "btn btn-primary" <> if state.active then " active" else ""
+                          , cn $ "btn" <> if state.active then " btn-primary" else " btn-outline-primary"
                           , onClick \_ -> modifyState this \s -> s { active = not s.active }
                           ]
                   [ text "Active" ]

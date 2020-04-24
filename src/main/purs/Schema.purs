@@ -44,9 +44,6 @@ type MeasureUpdate =
   , searchTs_thirdQ :: Maybe String
   , searchWc :: Maybe String
   , searchWc_thirdQ :: Maybe String
-  , staticCreate :: Maybe String
-  , staticCreate_thirdQ :: Maybe String
-  , staticCreate_year :: Maybe String
   , staticGen :: Maybe String
   , staticGen_thirdQ :: Maybe String
   , staticGen_year :: Maybe String
@@ -76,24 +73,22 @@ type NodeInfo =
   , fd :: Maybe FdInfo
   , thr :: Maybe ThrInfo
   , errs :: Array ErrorInfo
-  , searchTs_points :: Array {t::String,y::Number}
+  , searchTs_points :: Array { t :: String, y :: Number }
   , searchTs_thirdQ :: Maybe String
-  , searchWc_points :: Array {t::String,y::Number}
+  , searchWc_points :: Array { t :: String, y :: Number }
   , searchWc_thirdQ :: Maybe String
-  , reindexTs_points :: Array {t::String,y::Number}
+  , reindexTs_points :: Array { t :: String, y :: Number }
   , reindexTs_thirdQ :: Maybe String
-  , reindexWc_points :: Array {t::String,y::Number}
+  , reindexWc_points :: Array { t :: String, y :: Number }
   , reindexWc_thirdQ :: Maybe String
-  , reindexFiles_points :: Array {t::String,y::Number}
+  , reindexFiles_points :: Array { t :: String, y :: Number }
   , reindexFiles_thirdQ :: Maybe String
-  , staticCreate_points :: Array {t::String,y::Number}
-  , staticCreateYear_points :: Array NumPoint
-  , staticCreate_thirdQ :: Maybe String
-  , staticGen_points :: Array {t::String,y::Number}
+  , staticGen_points :: Array { t :: String, y :: Number }
   , staticGenYear_points :: Array NumPoint
   , staticGen_thirdQ :: Maybe String
   , kvsSizeYearPoints :: Array NumPoint
   , features :: Map Feature (Array NumPoint)
+  , importLog :: Array { t :: String, msg :: String }
   }
 
 data ChartRange = Live | Hour
@@ -101,9 +96,6 @@ derive instance eqChartRange :: Eq ChartRange
 
 data ReindexChart = TsReindex | WcReindex | FilesReindex
 derive instance eqReindexChart :: Eq ReindexChart
-
-data StaticChart = Creation | Generation
-derive instance eqStaticChart :: Eq StaticChart
 
 type FsInfo =
   { used :: Number

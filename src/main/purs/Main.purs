@@ -30,6 +30,7 @@ import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
+import Ext.String (startsWith)
 
 type State = 
   { menu :: Menu
@@ -216,9 +217,6 @@ reactClass = component "Main" \this -> do
           let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
           let searchWc = if name == "search.wc" then Just value else Nothing
           let searchWc_thirdQ = if name == "search.wc.thirdQ" then Just value else Nothing
-          let staticCreate = if name == "static.create" then Just value else Nothing
-          let staticCreate_thirdQ = if name == "static.create.thirdQ" then Just value else Nothing
-          let staticCreate_year = if name == "static.create.year" then Just value else Nothing
           let staticGen = if name == "static.gen" then Just value else Nothing
           let staticGen_thirdQ = if name == "static.gen.thirdQ" then Just value else Nothing
           let staticGen_year = if name == "static.gen.year" then Just value else Nothing
@@ -233,7 +231,7 @@ reactClass = component "Main" \this -> do
             , ip: ip
             , time: time
             , metrics: Nothing
-            , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticCreate, staticCreate_thirdQ, staticCreate_year, staticGen, staticGen_thirdQ, staticGen_year, reindexTs, reindexTs_thirdQ, reindexWc, reindexWc_thirdQ, reindexFiles, reindexFiles_thirdQ }
+            , measure: Just { searchTs, searchTs_thirdQ, searchWc, searchWc_thirdQ, staticGen, staticGen_thirdQ, staticGen_year, reindexTs, reindexTs_thirdQ, reindexWc, reindexWc_thirdQ, reindexFiles, reindexFiles_thirdQ }
             , err: Nothing
             , action: Nothing
             }
@@ -323,17 +321,14 @@ reactClass = component "Main" \this -> do
           Just xs -> map (\_ -> Nothing) (error $ "bad format="<>show xs)
           Nothing -> pure Nothing
 
-        let action = fromMaybe [] $ map (\b -> [{ t: time', label: b }]) a.action
+        let action = fromMaybe [] $ map (\label -> [{ t: time', label }]) a.action
 
         let searchTs_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.searchTs
         let searchTs_thirdQ = a.measure >>= _.searchTs_thirdQ
         let searchWc_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.searchWc
         let searchWc_thirdQ = a.measure >>= _.searchWc_thirdQ
-        let staticCreate_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.staticCreate
-        let staticCreate_thirdQ = a.measure >>= _.staticCreate_thirdQ
         let staticGen_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.staticGen
         let staticGen_thirdQ = a.measure >>= _.staticGen_thirdQ
-        let staticCreateYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.measure >>= _.staticCreate_year
         let staticGenYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.measure >>= _.staticGen_year
         let reindexTs_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.reindexTs
         let reindexTs_thirdQ = a.measure >>= _.reindexTs_thirdQ
@@ -363,10 +358,8 @@ reactClass = component "Main" \this -> do
 
                 let searchTs_points' = takeEnd 5 $ node.searchTs_points <> searchTs_points
                 let searchWc_points' = takeEnd 5 $ node.searchWc_points <> searchWc_points
-                let staticCreate_points' = takeEnd 5 $ node.staticCreate_points <> staticCreate_points
                 let staticGen_points' = takeEnd 5 $ node.staticGen_points <> staticGen_points
 
-                let staticCreateYear_points' = maybe node.staticCreateYear_points (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 365.0*24.0*3600.0*1000.0) node.staticCreateYear_points) x) staticCreateYearPoint
                 let staticGenYear_points' = maybe node.staticGenYear_points (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 365.0*24.0*3600.0*1000.0) node.staticGenYear_points) x) staticGenYearPoint
                 
                 let reindexTs_points' = takeEnd 100 $ node.reindexTs_points <> reindexTs_points
@@ -382,6 +375,10 @@ reactClass = component "Main" \this -> do
                               ) featurePoint
 
                 let errs' = take 100 $ errs <> node.errs
+
+                let importLog = case a.action of
+                                  Just msg | startsWith "import" msg -> { t: dt, msg } : (take 99 node.importLog)
+                                  _ -> node.importLog
 
                 node
                   { lastUpdate = dt
@@ -409,14 +406,12 @@ reactClass = component "Main" \this -> do
                   , reindexWc_thirdQ = reindexWc_thirdQ <|> node.reindexWc_thirdQ
                   , reindexFiles_points = reindexFiles_points'
                   , reindexFiles_thirdQ = reindexFiles_thirdQ <|> node.reindexFiles_thirdQ
-                  , staticCreate_points = staticCreate_points'
-                  , staticCreateYear_points = staticCreateYear_points'
-                  , staticCreate_thirdQ = staticCreate_thirdQ <|> node.staticCreate_thirdQ
                   , staticGen_points = staticGen_points'
                   , staticGenYear_points = staticGenYear_points'
                   , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
                   , kvsSizeYearPoints = kvsSizeYearPoints'
                   , features = features'
+                  , importLog = importLog
                   }
               Nothing ->
                 { host: a.host
@@ -446,14 +441,12 @@ reactClass = component "Main" \this -> do
                 , reindexWc_thirdQ: reindexWc_thirdQ
                 , reindexFiles_points: reindexFiles_points
                 , reindexFiles_thirdQ: reindexFiles_thirdQ
-                , staticCreate_points: staticCreate_points
-                , staticCreateYear_points: maybe [] singleton staticCreateYearPoint
-                , staticCreate_thirdQ: staticCreate_thirdQ
                 , staticGen_points: staticGen_points
                 , staticGenYear_points: maybe [] singleton staticGenYearPoint
                 , staticGen_thirdQ: staticGen_thirdQ
                 , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
                 , features: maybe Map.empty (\x -> Map.singleton x.name $ singleton x.point ) featurePoint
+                , importLog: []
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.host node' s'.nodes }
         case a.err of

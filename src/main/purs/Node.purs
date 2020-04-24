@@ -19,12 +19,11 @@ import Prelude (bind, map, pure, ($), (<>), (==), show, (+))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, forceUpdate, modifyState, modifyStateWithCallback)
 import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td, select, option)
 import React.DOM.Props (style, colSpan, onClick, value)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), ReindexChart(TsReindex, WcReindex, FilesReindex), Feature, StaticChart(Creation, Generation))
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), ReindexChart(TsReindex, WcReindex, FilesReindex), Feature)
 
 type State =
   { bigChartRange :: ChartRange
   , reindexChart :: ReindexChart
-  , staticChart :: StaticChart
   , feature :: Feature
   }
 type Props = NodeInfo
@@ -33,7 +32,7 @@ reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
   p <- getProps this
   pure
-    { state: { bigChartRange: Live, reindexChart: TsReindex, staticChart: Creation, feature: "disabled-users" }
+    { state: { bigChartRange: Live, reindexChart: TsReindex, feature: "disabled-users" }
     , render: render this
     }
   where
@@ -88,7 +87,6 @@ reactClass = component "Node" \this -> do
       , div [ cn "row" ]
         [ barChart "Translations: Search" p.searchTs_thirdQ p.searchTs_points
         , barChart "Web Contents: Search" p.searchWc_thirdQ p.searchWc_points
-        , barChart "Static: Creation" p.staticCreate_thirdQ p.staticCreate_points
         , barChart "Static: Generation" p.staticGen_thirdQ p.staticGen_points
         ]
       , let thirdQ = case s.reindexChart of
@@ -140,7 +138,7 @@ reactClass = component "Node" \this -> do
               ]
             , div [ cn "card-body" ]
               [ div [ cn $ "chart-area" ]
-                [  createLeafElement MeasureChart.reactClass $ case s.reindexChart of
+                [ createLeafElement MeasureChart.reactClass $ case s.reindexChart of
                      TsReindex -> { points: map _.y p.reindexTs_points, labels: map _.t p.reindexTs_points }
                      WcReindex -> { points: map _.y p.reindexWc_points, labels: map _.t p.reindexWc_points }
                      FilesReindex -> { points: map _.y p.reindexFiles_points, labels: map _.t p.reindexFiles_points }
@@ -149,62 +147,31 @@ reactClass = component "Node" \this -> do
             ]
           ]
         ]
-      , div [cn "row"]
+      , div [cn "row" ]
         [ div [ cn "col-12" ]
           [ div [ cn "card card-chart" ]
             [ div [ cn "card-header" ]
-              [ div [ cn "row" ]
-                [ div [ cn "col-7 col-sm-6 text-left" ]
-                  [ h5 [ cn "card-category" ] [ text "Static" ] ]
-                  , div [ cn "col-5 col-sm-6" ]
-                  [ div [ cn "btn-group btn-group-toggle float-right" ]
-                    [ label [ cn $ "btn btn-sm btn-primary btn-simple" <> 
-                              if s.staticChart == Creation then " active" else ""
-                            , onClick \_ -> modifyStateWithCallback this _{ staticChart = Creation } (forceUpdate this)
-                            ]
-                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
-                        [ text "Creation" ]
-                      , span [ cn "d-block d-sm-none" ]
-                        [ text "Cr" ]
-                      ]
-                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> 
-                              if s.staticChart == Generation then " active" else ""
-                            , onClick \_ -> modifyStateWithCallback this _{ staticChart = Generation } (forceUpdate this)
-                            ]
-                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
-                        [ text "Generation" ]
-                      , span [ cn "d-block d-sm-none" ]
-                        [ text "Gen" ]
-                      ]
-                    ]
-                  ]
-                ]
-              ]
+              [ h5 [ cn "card-category" ] [ text "Static: Generation" ] ]
             , div [ cn "card-body" ]
               [ div [ cn "chart-area" ]
-                [ createLeafElement YearChart.reactClass $ case s.staticChart of
-                    Creation -> { points: p.staticCreateYear_points, label: "ms" }
-                    Generation -> { points: p.staticGenYear_points, label: "ms" }
-                ]
+                [ createLeafElement YearChart.reactClass { points: p.staticGenYear_points, label: "ms" } ]
               ]
             ]
           ]
         ]
-      , div [cn "row"]
+      , div [cn "row" ]
         [ div [ cn "col-12" ]
           [ div [ cn "card card-chart" ]
             [ div [ cn "card-header" ]
-              [ h5 [ cn "card-category" ] [ text "Kvs size" ]
-              ]
+              [ h5 [ cn "card-category" ] [ text "KVS size" ] ]
             , div [ cn "card-body" ]
               [ div [ cn "chart-area" ]
-                [ createLeafElement YearChart.reactClass { points: p.kvsSizeYearPoints, label: "mb" }
-                ]
+                [ createLeafElement YearChart.reactClass { points: p.kvsSizeYearPoints, label: "mb" } ]
               ]
             ]
           ]
         ]
-      , div [cn "row"]
+      , div [cn "row" ]
         [ div [ cn "col-12" ]
           [ div [ cn "card card-chart" ]
             [ div [ cn "card-header" ]
@@ -250,6 +217,7 @@ reactClass = component "Node" \this -> do
         [ fromMaybe (div' []) (map thrCard p.thr)
         , othCard p
         ]
+      , div [ cn "row" ] [ importCard p ]
       , createLeafElement Errors.reactClass { errors: p.errs, showAddr: false }
       ]
   barChart :: String -> Maybe String -> Array {t::String,y::Number} -> ReactElement
@@ -279,7 +247,7 @@ reactClass = component "Node" \this -> do
           [ h4 [ cn "card-title" ]
             [ text title ]
           ]
-        , div [ cn "card-body" ]
+        , div [ cn "card-body", style {  } ]
           [ div [ cn "table-responsive" ]
             [ table [ cn "table tablesorter" ]
               [ thead [ cn "text-primary" ]
@@ -288,6 +256,23 @@ reactClass = component "Node" \this -> do
               ]
             ]
           ]
+        ]
+      ]
+  importCard :: NodeInfo -> ReactElement
+  importCard { importLog } =
+    div [ cn "col-lg-6 col-md-12" ]
+      [ div [ cn "card" ]
+        [ div [ cn "card-header" ]
+          [ h4 [ cn "card-title" ]
+            [ text "Import" ]
+          ]
+        , div [ cn "card-body", style { maxHeight: "10rem", overflow: "scroll" } ]
+          [ table [ cn "table mb-0" ]
+            [ tbody' $ map (\x ->
+                tr' [ td [ style { fontFamily: "Fira Code" } ] [ text x.t ], td' [ text x.msg ] ]) importLog
+            ]
+          ]
+        , div [ cn "card-footer text-muted" ] [ text "This section shows progress of import of archive. Use it for debugging purpose." ]
         ]
       ]
   othCard :: NodeInfo -> ReactElement
