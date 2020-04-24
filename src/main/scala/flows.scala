@@ -138,7 +138,7 @@ object Flows {
         (v1, time1)
       }
       val save_year_value = Flow[Push].collect{
-        case StatMsg(Measure(name@("static.create" | "static.gen"), value), StatMeta(time, host, ip)) =>
+        case StatMsg(Measure(name@("static.gen"), value), StatMeta(time, host, ip)) =>
           val (v1, t1) = saveYearValue(name, value.toLong, time, host, ip)
           system.eventStream.publish(StatMsg(Measure(s"${name}.year", v1.toString), StatMeta(t1, host, ip)))
         case StatMsg(Metric(name@"kvs.size", value), StatMeta(time, host, ip)) =>

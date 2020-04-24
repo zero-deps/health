@@ -11,7 +11,7 @@ object StatsApp extends App {
 
   val ws = WsExtension(system)
   val kvs = Kvs(system)
-  val stats = client.StatsExtension(system)
+  // val stats = client.StatsExtension(system)
 
   // import scala.concurrent.duration._
   // import system.dispatcher

@@ -27,12 +27,8 @@ class Stats(implicit system: ActorSystem) extends Extension {
     system.actorOf(Client.props(remoteHost, remotePort))
   }
 
-  private def send(m: Stat): Unit = {
-    client ! m
-  }
-
   def metric(name: String, value: String): Unit = {
-    send(MetricStat(name, value))
+    client ! MetricStat(name, value)
   }
 
   def measure[R](name: String)(block: => R): R = {
@@ -44,16 +40,16 @@ class Stats(implicit system: ActorSystem) extends Extension {
   }
 
   def measure(name: String, ns: Long): Unit = {
-    send(MeasureStat(name, Math.max(1,ns/i"1'000'000")))
+    client ! MeasureStat(name, Math.max(1, ns/i"1'000'000"))
   }
 
   def action(action: String): Unit = {
-    send(ActionStat(action))
+    client ! ActionStat(action)
     cpu_mem().foreach(metric("cpu_mem", _))
   }
 
   def error(exception: String, stacktrace: String, toptrace: String): Unit = {
-    send(ErrorStat(exception, stacktrace, toptrace))
+    client ! ErrorStat(exception, stacktrace, toptrace)
   }
 
   val gc = ManagementFactory.getGarbageCollectorMXBeans
@@ -108,7 +104,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
                 case data: CompositeData => 
                   val info = Info.from(data)
                   if (info.getGcAction == "end of minor GC") ()
-                  else send(ActionStat(s"${info.getGcAction} in ${info.getGcInfo.getDuration} ms"))
+                  else client ! ActionStat(s"${info.getGcAction} in ${info.getGcInfo.getDuration} ms")
                 case _ =>
               }
             } else ()
