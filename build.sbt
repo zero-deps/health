@@ -40,6 +40,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
+  skip in publish := true,
   libraryDependencies += "com.." %% "ftier" % frontierVersion,
   libraryDependencies += "io.github.zero-deps" %% "kvs-core" % kvsVersion,
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
@@ -90,5 +91,6 @@ lazy val client = project.in(file("client")).settings(
 )
 
 lazy val gen = project.in(file("gen")).settings(
+  skip in publish := true,
   libraryDependencies += "io.github.zero-deps" %% "proto-purs" % protoVersion,
 ).dependsOn(stats)
