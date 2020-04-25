@@ -7,7 +7,7 @@ import javax.management.{NotificationBroadcaster, NotificationListener, Notifica
 import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
-import zd.gs.meta.Literals
+import zero.ext._, int._
 
 object StatsExtension extends ExtensionId[Stats] with ExtensionIdProvider {
   override def createExtension(system: ExtendedActorSystem): Stats = new Stats()(system)

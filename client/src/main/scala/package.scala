@@ -2,8 +2,7 @@ package .stats
 
 import com.sun.management.{OperatingSystemMXBean, UnixOperatingSystemMXBean}
 import java.lang.management.{ManagementFactory}
-import zd.gs.meta.Literals
-import zd.gs.z._
+import zero.ext._, int._, option._
 import zd.proto.api.MessageCodec
 import zd.proto.macrosapi.{caseCodecAuto, sealedTraitCodecAuto}
 
@@ -21,8 +20,8 @@ package object client {
         val total = os.getTotalMemorySize
         val mem = ManagementFactory.getMemoryMXBean
         val heapMem = mem.getHeapMemoryUsage.getUsed
-        s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}~${heapMem/i"1'000'000"}".just
-      case _ => Nothing
+        s"${cpu}~${free/i"1'000'000"}~${total/i"1'000'000"}~${heapMem/i"1'000'000"}".some
+      case _ => none
     }
   }
 
@@ -32,8 +31,8 @@ package object client {
         // File descriptor count
         val open = os.getOpenFileDescriptorCount
         val max = os.getMaxFileDescriptorCount
-        s"${open}~${max}".just
-      case _ => Nothing
+        s"${open}~${max}".some
+      case _ => none
     }
   }
 

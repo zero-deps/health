@@ -10,7 +10,7 @@ import java.time.{LocalDateTime, ZoneId, Instant}
 import zd.proto.api.{N, MessageCodec, encode, decode}
 import zd.proto.macrosapi.{caseCodecAuto, caseCodecNums}
 import zd.kvs
-import zd.gs.z._
+import zero.ext._, either._
 
 package object stats {
 

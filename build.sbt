@@ -1,16 +1,15 @@
-val akkaVersion = "2.5.26"
+val akkaVersion = "2.5.31"
 val frontierVersion = "2.0.2"
-val gsVersion = "1.6.2"
-val kvsVersion = "4.9.1"
-val protoVersion = "1.7.0"
+val extVersion = "2.0.0"
+val kvsVersion = "4.10.0"
+val protoVersion = "1.7.1"
 
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := "2.13.2"
-ThisBuild / version := zd.gs.git.GitOps.version
+ThisBuild / version := zero.ext.git.version
 ThisBuild / fork := true
 ThisBuild / cancelable in Global := true
 ThisBuild / scalacOptions in Compile ++= Vector(
-  "-target:jvm-12",
   "-feature",
   "-unchecked",
   "-deprecation",
@@ -28,9 +27,8 @@ ThisBuild / isSnapshot := true
 ThisBuild / resolvers += " Releases" at "https://nexus.mobile..com/nexus3/repository/releases"
 ThisBuild / resolvers += "zd" at "https://nexus.mobile..com/nexus3/repository/zd"
 
-ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "gs-plug" % gsVersion)
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-meta" % gsVersion
-ThisBuild / libraryDependencies += "io.github.zero-deps" %% "gs-z" % gsVersion
+ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "ext-plug" % extVersion)
+ThisBuild / libraryDependencies += "io.github.zero-deps" %% "ext" % extVersion
 
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-macros" % protoVersion % Compile
 ThisBuild / libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % protoVersion
@@ -43,7 +41,7 @@ import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
   libraryDependencies += "com.." %% "ftier" % frontierVersion,
-  libraryDependencies += "io.github.zero-deps" %% "kvs" % kvsVersion,
+  libraryDependencies += "io.github.zero-deps" %% "kvs-core" % kvsVersion,
   mainClass in (Compile, run) := Some(".stats.StatsApp"),
   deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
