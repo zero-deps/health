@@ -4,7 +4,7 @@ import akka.actor.{Actor, ActorRef, ActorLogging, Props}
 import akka.io.{IO, Udp}
 import akka.util.ByteString
 import java.net.{InetSocketAddress, InetAddress}
-import zd.gs.z._
+import zero.ext._, option._
 import zd.proto.api.encode
 
 object Client {
@@ -35,18 +35,18 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
   def ready(udp: ActorRef): Receive = {
     case MetricStat(name, value) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(MetricMsg(name, value, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(MetricMsg(name, value, ia.getHostName.some, ia.getHostAddress.some))
     
     case MeasureStat(name, value) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(MeasureMsg(name, value.toString, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(MeasureMsg(name, value.toString, ia.getHostName.some, ia.getHostAddress.some))
     
     case ErrorStat(exception, stacktrace, toptrace) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(ErrorMsg(exception, stacktrace, toptrace, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(ErrorMsg(exception, stacktrace, toptrace, ia.getHostName.some, ia.getHostAddress.some))
     
     case ActionStat(action) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(ActionMsg(action, ia.getHostName.just, ia.getHostAddress.just))
+      send(udp)(ActionMsg(action, ia.getHostName.some, ia.getHostAddress.some))
   }
 }

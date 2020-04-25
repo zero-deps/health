@@ -5,7 +5,7 @@ import akka.io.{IO, Udp}
 import java.net.InetSocketAddress
 import zd.proto.api.{decode}
 import .stats.client._
-import zd.gs.z._
+import zero.ext._, option._
 import zd.kvs.Kvs
 
 object UdpPub {
@@ -30,7 +30,7 @@ class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
 
   def receive: Receive = {
     case _: Udp.Bound =>
-      socket = sender.just
+      socket = sender.some
 
     case Udp.Received(data, remote) =>
       decode[ClientMsg](data.toArray) match {
@@ -50,7 +50,7 @@ class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
     case a: ActorRef =>
       log.debug("got stage actor for udp")
       unstashAll()
-      stageActor = a.just
+      stageActor = a.some
     case msg: Push =>
       stageActor match {
         case Some(a) => a ! msg
