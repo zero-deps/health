@@ -112,30 +112,30 @@ class Stats(implicit system: ActorSystem) extends Extension {
         }, null, null)
       case _ => log.error(s"gc=${gc.getClass.getName} is not a NotificationBroadcaster")
     }
+  }
 
-    // FS (Mbytes)
-    FileSystems.getDefault.getRootDirectories.asScala.toList.headOption match {
-      case Some(root) =>
-        Try(Files.getFileStore(root)) match {
-          case Success(store) =>
-            def usable = Try(store.getUsableSpace)
-            def total = Try(store.getTotalSpace)
-            scheduler.schedule(1 second, timeout.fs) {
-              (usable, total) match {
-                case (Success(usable), Success(total)) =>
-                  metric("fs./", s"${usable/i"1'000'000"}~${total/i"1'000'000"}")
-                case _ => log.error("can't get disk usage")
-              }
+  // FS (Mbytes)
+  FileSystems.getDefault.getRootDirectories.asScala.toList.headOption match {
+    case Some(root) =>
+      Try(Files.getFileStore(root)) match {
+        case Success(store) =>
+          def usable = Try(store.getUsableSpace)
+          def total = Try(store.getTotalSpace)
+          scheduler.schedule(1 second, timeout.fs) {
+            (usable, total) match {
+              case (Success(usable), Success(total)) =>
+                metric("fs./", s"${usable/i"1'000'000"}~${total/i"1'000'000"}")
+              case _ => log.error("can't get disk usage")
             }
-          case Failure(t) => log.error("can't get file store", t)
-        }
-      case None => log.error("no root directory (impossible)")
-    }
+          }
+        case Failure(t) => log.error("can't get file store", t)
+      }
+    case None => log.error("no root directory (impossible)")
+  }
 
-    scheduler.schedule(1 second, timeout.kvs) {
-      val size = getFolderSize(new java.io.File(cfg.getString("ring.leveldb.dir")))
-      metric("kvs.size", size.toString)
-    }
+  scheduler.schedule(1 second, timeout.kvs) {
+    val size = getFolderSize(new java.io.File(cfg.getString("ring.leveldb.dir")))
+    metric("kvs.size", size.toString)
   }
 
   def getFolderSize(f: java.io.File): Long = {
