@@ -42,8 +42,14 @@ object Flows {
   def wsHandler(system: ActorSystem, kvs: Kvs) =
     Flow[Pull].collect {
       case NodeRemove(addr) =>
-        val res = LazyList("cpu_mem.live","cpu.hour","search.ts.latest","search.wc.latest","static.create.latest","static.gen.latest","reindex.ts.latest","reindex.wc.latest","reindex.files.latest","static.create.year","static.gen.year","kvs.size.year","action.live","metrics","errors").
-          flatMap(kvs.all[StatEn](_).map(_.takeWhile(_.isRight).flatMap(_.toOption)).getOrElse(LazyList.empty)).
+        val res = LazyList(
+          "cpu_mem.live", "cpu.hour",
+          "search.ts.latest", "search.wc.latest", "search.fs.latest",
+          "static.create.latest", "static.gen.latest",
+          "reindex.ts.latest", "reindex.wc.latest", "reindex.files.latest", "reindex.all.latest",
+          "static.create.year", "static.gen.year",
+          "kvs.size.year", "action.live", "metrics", "errors"
+        ).flatMap(kvs.all[StatEn](_).map(_.takeWhile(_.isRight).flatMap(_.toOption)).getOrElse(LazyList.empty)).
           filter(_.host == addr).
           map(en => kvs.remove[StatEn](en.fid, en.id)).
           foldLeft[Either[zd.kvs.Err, Unit]](Right(())) {
@@ -101,7 +107,7 @@ object Flows {
       val save_measure = Flow[Push].collect{
         case StatMsg(Measure(name, value), StatMeta(time, host, ip)) =>
           val limit = name match {
-            case _ if name.startsWith("reindex") => 100
+            case "reindex.all" => 100
             case _ => 20
           }
           val i = kvs.el.get[String](s"${name}.latest.idx.${host}").toOption.flatten.getOrElse("0")

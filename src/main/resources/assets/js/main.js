@@ -4121,15 +4121,15 @@ var PS = {};
   var Global = $PS["Global"];                
   var duration = function (sec) {
       var sec$prime = Data_Int.floor(Global.readInt(10)(sec));
-      var $0 = sec$prime >= 3600;
-      if ($0) {
+      var $1 = sec$prime >= 3600;
+      if ($1) {
           return {
               value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(3600)),
               unit: "hour"
           };
       };
-      var $1 = sec$prime >= 60;
-      if ($1) {
+      var $2 = sec$prime >= 60;
+      if ($2) {
           return {
               value: Data_Show.show(Data_Show.showInt)(Data_EuclideanRing.div(Data_EuclideanRing.euclideanRingInt)(sec$prime)(60)),
               unit: "min"
@@ -4140,15 +4140,23 @@ var PS = {};
           unit: "sec"
       };
   };
-  var datePart = function (num) {
-      var str = Data_Show.show(Data_Show.showInt)(Data_Int.floor(num));
-      var $2 = Data_String_CodePoints.length(str) < 2;
-      if ($2) {
-          return "0" + str;
+  var milliseconds = function (ms) {
+      var v = Global.readInt(10)(ms);
+      if (v < 100000.0) {
+          return $foreign.formatNum(v) + " ms";
       };
-      return str;
+      var y = duration(ms);
+      return y.value + (" " + y.unit);
   };
   var dateTime = function (ms$prime) {
+      var datePart = function (num) {
+          var str = Data_Show.show(Data_Show.showInt)(Data_Int.floor(num));
+          var $4 = Data_String_CodePoints.length(str) < 2;
+          if ($4) {
+              return "0" + str;
+          };
+          return str;
+      };
       return function __do() {
           var timezone = Control_Bind.bind(Effect.bindEffect)(Data_JSDate.now)(Data_JSDate.getTimezoneOffset)();
           var ms = ms$prime - timezone * 60.0 * 1000.0;
@@ -4164,6 +4172,7 @@ var PS = {};
   };
   exports["dateTime"] = dateTime;
   exports["duration"] = duration;
+  exports["milliseconds"] = milliseconds;
   exports["formatNum"] = $foreign.formatNum;
 })(PS);
 (function($PS) {
@@ -4406,195 +4415,11 @@ var PS = {};
   exports["renderForeignError"] = renderForeignError;
   exports["unsafeReadTagged"] = unsafeReadTagged;
 })(PS);
-(function(exports) {
-  "use strict"
-
-  exports.destroyChart = function(chart) {
-    return function() {
-      chart.destroy()
-    }
-  }
-
-  exports.updateChart = function(chart) {
-    return function(values) {
-      return function() {
-        chart.config.data.datasets[0].data = values.points
-        chart.config.data.datasets[0].customLabels = values.labels
-        chart.update()
-      }
-    }
-  }
-
-  exports.createChart = function(ref) {
-    return function(values) {
-      return function() {
-        const ctx = ref.current.getContext('2d')
-
-        const gradientStroke = ctx.createLinearGradient(0, 230, 0, 50);
-        gradientStroke.addColorStop(1, 'rgba(29,140,248,0.2)');
-        gradientStroke.addColorStop(0.4, 'rgba(29,140,248,0.0)');
-        gradientStroke.addColorStop(0, 'rgba(29,140,248,0)'); //blue colors
-
-        return new Chart(ctx, {
-          type: 'line',
-          responsive: true,
-          legend: {
-            display: false
-          },
-          data: {
-            labels: values.points.map(function() { return '' }),
-            datasets: [{
-              fill: true,
-              borderColor: '#1f8ef1',
-              borderWidth: 2,
-              borderDash: [],
-              borderDashOffset: 0.0,
-              data: values.points,
-              customLabels: values.labels,
-              pointBackgroundColor: '#1f8ef1',
-              pointBorderColor: 'rgba(255,255,255,0)',
-              pointBorderWidth: 20,
-              pointHoverBackgroundColor: '#1f8ef1',
-              pointHoverBorderWidth: 15,
-              pointHoverRadius: 4,
-              pointRadius: 4,
-            }]
-          },
-          options: {
-            maintainAspectRatio: false,
-            legend: {
-              display: false
-            },
-            tooltips: {
-              backgroundColor: '#f5f5f5',
-              titleFontColor: '#333',
-              bodyFontColor: '#666',
-              bodySpacing: 4,
-              xPadding: 12,
-              mode: "nearest",
-              intersect: 0,
-              position: "nearest",
-              callbacks: {
-                title: function(items, data) { return data.datasets[0].customLabels[items[0].index] },
-                label: function(item, data) { return item.yLabel+" ms" },
-              },
-            },
-            responsive: true,
-            scales: {
-              yAxes: [{
-                id: 'left-y-axis',
-                position: 'left',
-                barPercentage: 1.6,
-                gridLines: {
-                  drawBorder: false,
-                  color: 'rgba(29,140,248,0.0)',
-                  zeroLineColor: "transparent",
-                },
-                ticks: {
-                  fontColor: "#9a9a9a",
-                  callback: function(value) { return value+" ms" },
-                  min: 0,
-                }
-              }],
-              xAxes: [{
-                display: false,
-              }]
-            }
-          }
-        })
-      }
-    }
-  }
-})(PS["MeasureChart"] = PS["MeasureChart"] || {});
-(function($PS) {
-  "use strict";
-  $PS["MeasureChart"] = $PS["MeasureChart"] || {};
-  var exports = $PS["MeasureChart"];
-  var $foreign = $PS["MeasureChart"];
-  var Control_Applicative = $PS["Control.Applicative"];
-  var Data_Maybe = $PS["Data.Maybe"];
-  var Effect = $PS["Effect"];
-  var Effect_Console = $PS["Effect.Console"];
-  var Effect_Ref = $PS["Effect.Ref"];
-  var React = $PS["React"];
-  var React_DOM = $PS["React.DOM"];
-  var ReactOps = $PS["ReactOps"];                
-  var reactClass = React.component()("MeasureChart")(function ($$this) {
-      return function __do() {
-          var props = React.getProps($$this)();
-          var chart = Effect_Ref["new"](Data_Maybe.Nothing.value)();
-          return {
-              state: {},
-              render: Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.canvas([ ReactOps["ref'"](ReactOps.createRef) ])([  ])),
-              componentDidMount: function __do() {
-                  var c = Effect_Ref.read(chart)();
-                  if (c instanceof Data_Maybe.Just) {
-                      return Effect_Console.error("chart already exists")();
-                  };
-                  if (c instanceof Data_Maybe.Nothing) {
-                      var c$prime = $foreign.createChart(ReactOps.createRef)(props)();
-                      return Effect_Ref.write(new Data_Maybe.Just(c$prime))(chart)();
-                  };
-                  throw new Error("Failed pattern match at MeasureChart (line 30, column 9 - line 34, column 36): " + [ c.constructor.name ]);
-              },
-              componentDidUpdate: function (p) {
-                  return function (v) {
-                      return function (v1) {
-                          return function __do() {
-                              var c = Effect_Ref.read(chart)();
-                              if (c instanceof Data_Maybe.Just) {
-                                  return $foreign.updateChart(c.value0)(p)();
-                              };
-                              if (c instanceof Data_Maybe.Nothing) {
-                                  return Effect_Console.error("chart doesn't exists")();
-                              };
-                              throw new Error("Failed pattern match at MeasureChart (line 37, column 9 - line 39, column 50): " + [ c.constructor.name ]);
-                          };
-                      };
-                  };
-              },
-              componentWillUnmount: function __do() {
-                  var c = Effect_Ref.read(chart)();
-                  if (c instanceof Data_Maybe.Just) {
-                      $foreign.destroyChart(c.value0)();
-                      return Effect_Ref.write(Data_Maybe.Nothing.value)(chart)();
-                  };
-                  if (c instanceof Data_Maybe.Nothing) {
-                      return Effect_Console.error("chart doesn't exists")();
-                  };
-                  throw new Error("Failed pattern match at MeasureChart (line 42, column 9 - line 46, column 50): " + [ c.constructor.name ]);
-              }
-          };
-      };
-  });
-  exports["reactClass"] = reactClass;
-})(PS);
 (function($PS) {
   "use strict";
   $PS["Schema"] = $PS["Schema"] || {};
   var exports = $PS["Schema"];
   var Data_Eq = $PS["Data.Eq"];                
-  var TsReindex = (function () {
-      function TsReindex() {
-
-      };
-      TsReindex.value = new TsReindex();
-      return TsReindex;
-  })();
-  var WcReindex = (function () {
-      function WcReindex() {
-
-      };
-      WcReindex.value = new WcReindex();
-      return WcReindex;
-  })();
-  var FilesReindex = (function () {
-      function FilesReindex() {
-
-      };
-      FilesReindex.value = new FilesReindex();
-      return FilesReindex;
-  })();
   var Live = (function () {
       function Live() {
 
@@ -4609,20 +4434,6 @@ var PS = {};
       Hour.value = new Hour();
       return Hour;
   })();
-  var eqReindexChart = new Data_Eq.Eq(function (x) {
-      return function (y) {
-          if (x instanceof TsReindex && y instanceof TsReindex) {
-              return true;
-          };
-          if (x instanceof WcReindex && y instanceof WcReindex) {
-              return true;
-          };
-          if (x instanceof FilesReindex && y instanceof FilesReindex) {
-              return true;
-          };
-          return false;
-      };
-  });
   var eqChartRange = new Data_Eq.Eq(function (x) {
       return function (y) {
           if (x instanceof Live && y instanceof Live) {
@@ -4636,11 +4447,7 @@ var PS = {};
   });
   exports["Live"] = Live;
   exports["Hour"] = Hour;
-  exports["TsReindex"] = TsReindex;
-  exports["WcReindex"] = WcReindex;
-  exports["FilesReindex"] = FilesReindex;
   exports["eqChartRange"] = eqChartRange;
-  exports["eqReindexChart"] = eqReindexChart;
 })(PS);
 (function(exports) {
   "use strict"
@@ -4840,7 +4647,6 @@ var PS = {};
   var DomOps = $PS["DomOps"];
   var Errors = $PS["Errors"];
   var FormatOps = $PS["FormatOps"];
-  var MeasureChart = $PS["MeasureChart"];
   var React = $PS["React"];
   var React_DOM = $PS["React.DOM"];
   var React_DOM_Props = $PS["React.DOM.Props"];
@@ -4916,9 +4722,7 @@ var PS = {};
       var barChart = function (title) {
           return function (thirdQ) {
               return function (values) {
-                  return React_DOM.div([ DomOps.cn("col-lg-3 col-md-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text(title) ]), React_DOM.h3([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-user-run text-info") ])([  ]), React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
-                      return v + " ms";
-                  })(thirdQ))) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(BarChart.reactClass)({
+                  return React_DOM.div([ DomOps.cn("col-lg-4 col-md-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text(title) ]), React_DOM.h3([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-user-run text-info") ])([  ]), React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.milliseconds)(thirdQ))) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(BarChart.reactClass)({
                       points: Data_Functor.map(Data_Functor.functorArray)(function (v) {
                           return v.y;
                       })(values),
@@ -4934,8 +4738,8 @@ var PS = {};
               var p = React.getProps($$this)();
               var s = React.getState($$this)();
               return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(p.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                  var $27 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
-                  if ($27) {
+                  var $13 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
+                  if ($13) {
                       return " active";
                   };
                   return "";
@@ -4943,13 +4747,12 @@ var PS = {};
                   return React.modifyState($$this)(function (v1) {
                       return {
                           bigChartRange: Schema.Live.value,
-                          reindexChart: v1.reindexChart,
                           feature: v1.feature
                       };
                   });
               }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                  var $28 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
-                  if ($28) {
+                  var $14 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
+                  if ($14) {
                       return " active";
                   };
                   return "";
@@ -4957,13 +4760,12 @@ var PS = {};
                   return React.modifyState($$this)(function (v1) {
                       return {
                           bigChartRange: Schema.Hour.value,
-                          reindexChart: v1.reindexChart,
                           feature: v1.feature
                       };
                   });
               }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area" + (function () {
-                  var $29 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
-                  if ($29) {
+                  var $15 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
+                  if ($15) {
                       return "";
                   };
                   return " d-none";
@@ -4980,104 +4782,14 @@ var PS = {};
                       return v.label;
                   })(p.actPoints)
               }) ]), React_DOM.div([ DomOps.cn("chart-area" + (function () {
-                  var $30 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
-                  if ($30) {
+                  var $16 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
+                  if ($16) {
                       return "";
                   };
                   return " d-none";
               })()) ])([ React.createLeafElement()(CpuChart.reactClass)({
                   cpuPoints: p.cpuHourPoints
-              }) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ barChart("Translations: Search")(p.searchTs_thirdQ)(p.searchTs_points), barChart("Web Contents: Search")(p.searchWc_thirdQ)(p.searchWc_points), barChart("Static: Generation")(p.staticGen_thirdQ)(p.staticGen_points) ]), (function () {
-                  var thirdQ = (function () {
-                      if (s.reindexChart instanceof Schema.TsReindex) {
-                          return p.reindexTs_thirdQ;
-                      };
-                      if (s.reindexChart instanceof Schema.WcReindex) {
-                          return p.reindexWc_thirdQ;
-                      };
-                      if (s.reindexChart instanceof Schema.FilesReindex) {
-                          return p.reindexFiles_thirdQ;
-                      };
-                      throw new Error("Failed pattern match at Node (line 92, column 22 - line 95, column 52): " + [ s.reindexChart.constructor.name ]);
-                  })();
-                  return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Reindex") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-user-run text-info") ])([  ]), React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
-                      return v + " ms";
-                  })(thirdQ))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                      var $32 = Data_Eq.eq(Schema.eqReindexChart)(s.reindexChart)(Schema.TsReindex.value);
-                      if ($32) {
-                          return " active";
-                      };
-                      return "";
-                  })()), React_DOM_Props.onClick(function (v) {
-                      return React.modifyStateWithCallback($$this)(function (v1) {
-                          return {
-                              bigChartRange: v1.bigChartRange,
-                              reindexChart: Schema.TsReindex.value,
-                              feature: v1.feature
-                          };
-                      })(React.forceUpdate($$this));
-                  }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Traslations") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("Ts") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                      var $33 = Data_Eq.eq(Schema.eqReindexChart)(s.reindexChart)(Schema.WcReindex.value);
-                      if ($33) {
-                          return " active";
-                      };
-                      return "";
-                  })()), React_DOM_Props.onClick(function (v) {
-                      return React.modifyStateWithCallback($$this)(function (v1) {
-                          return {
-                              bigChartRange: v1.bigChartRange,
-                              reindexChart: Schema.WcReindex.value,
-                              feature: v1.feature
-                          };
-                      })(React.forceUpdate($$this));
-                  }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Web Contents") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("Ws") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                      var $34 = Data_Eq.eq(Schema.eqReindexChart)(s.reindexChart)(Schema.FilesReindex.value);
-                      if ($34) {
-                          return " active";
-                      };
-                      return "";
-                  })()), React_DOM_Props.onClick(function (v) {
-                      return React.modifyStateWithCallback($$this)(function (v1) {
-                          return {
-                              bigChartRange: v1.bigChartRange,
-                              reindexChart: Schema.FilesReindex.value,
-                              feature: v1.feature
-                          };
-                      })(React.forceUpdate($$this));
-                  }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Files") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("Fs") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(MeasureChart.reactClass)((function () {
-                      if (s.reindexChart instanceof Schema.TsReindex) {
-                          return {
-                              points: Data_Functor.map(Data_Functor.functorArray)(function (v) {
-                                  return v.y;
-                              })(p.reindexTs_points),
-                              labels: Data_Functor.map(Data_Functor.functorArray)(function (v) {
-                                  return v.t;
-                              })(p.reindexTs_points)
-                          };
-                      };
-                      if (s.reindexChart instanceof Schema.WcReindex) {
-                          return {
-                              points: Data_Functor.map(Data_Functor.functorArray)(function (v) {
-                                  return v.y;
-                              })(p.reindexWc_points),
-                              labels: Data_Functor.map(Data_Functor.functorArray)(function (v) {
-                                  return v.t;
-                              })(p.reindexWc_points)
-                          };
-                      };
-                      if (s.reindexChart instanceof Schema.FilesReindex) {
-                          return {
-                              points: Data_Functor.map(Data_Functor.functorArray)(function (v) {
-                                  return v.y;
-                              })(p.reindexFiles_points),
-                              labels: Data_Functor.map(Data_Functor.functorArray)(function (v) {
-                                  return v.t;
-                              })(p.reindexFiles_points)
-                          };
-                      };
-                      throw new Error("Failed pattern match at Node (line 141, column 63 - line 144, column 118): " + [ s.reindexChart.constructor.name ]);
-                  })()) ]) ]) ]) ]) ]);
-              })(), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Static: Generation") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(YearChart.reactClass)({
+              }) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ barChart("Search: Translations")(p.searchTs_thirdQ)(p.searchTs_points), barChart("Search: Contents")(p.searchWc_thirdQ)(p.searchWc_points), barChart("Search: Files")(p.searchFs_thirdQ)(p.searchFs_points), barChart("Static: Generation")(p.staticGen_thirdQ)(p.staticGen_points), barChart("Reindex")(p.reindexAll_thirdQ)(p.reindexAll_points) ]), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Static: Generation") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(YearChart.reactClass)({
                   points: p.staticGenYear_points,
                   label: "ms"
               }) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("KVS size") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(YearChart.reactClass)({
@@ -5093,7 +4805,6 @@ var PS = {};
                   return React.modifyStateWithCallback($$this)(function (v1) {
                       return {
                           bigChartRange: v1.bigChartRange,
-                          reindexChart: v1.reindexChart,
                           feature: v
                       };
                   })(React.forceUpdate($$this));
@@ -5112,7 +4823,6 @@ var PS = {};
               return {
                   state: {
                       bigChartRange: Schema.Live.value,
-                      reindexChart: Schema.TsReindex.value,
                       feature: "disabled-users"
                   },
                   render: render($$this)
@@ -5673,12 +5383,10 @@ var PS = {};
                       memLast: x.memLast,
                       memPoints: x.memPoints,
                       memTotal: x.memTotal,
-                      reindexFiles_points: x.reindexFiles_points,
-                      reindexFiles_thirdQ: x.reindexFiles_thirdQ,
-                      reindexTs_points: x.reindexTs_points,
-                      reindexTs_thirdQ: x.reindexTs_thirdQ,
-                      reindexWc_points: x.reindexWc_points,
-                      reindexWc_thirdQ: x.reindexWc_thirdQ,
+                      reindexAll_points: x.reindexAll_points,
+                      reindexAll_thirdQ: x.reindexAll_thirdQ,
+                      searchFs_points: x.searchFs_points,
+                      searchFs_thirdQ: x.searchFs_thirdQ,
                       searchTs_points: x.searchTs_points,
                       searchTs_thirdQ: x.searchTs_thirdQ,
                       searchWc_points: x.searchWc_points,
@@ -7316,8 +7024,8 @@ var PS = {};
                   return "";
               })()) ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $80 = Data_Eq.eq(eqMenu)(x)(s.menu);
-                      if ($80) {
+                      var $78 = Data_Eq.eq(eqMenu)(x)(s.menu);
+                      if ($78) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -7432,7 +7140,7 @@ var PS = {};
                           if (cpu_mem instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 282, column 16 - line 290, column 34): " + [ cpu_mem.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 286, column 16 - line 294, column 34): " + [ cpu_mem.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
                           return v.used;
@@ -7471,7 +7179,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 296, column 15 - line 303, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 300, column 15 - line 307, column 34): " + [ v.constructor.name ]);
                       })();
                       var fd = (function () {
                           var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
@@ -7493,7 +7201,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 305, column 15 - line 311, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 309, column 15 - line 315, column 34): " + [ v.constructor.name ]);
                       })();
                       var thr = (function () {
                           var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
@@ -7521,7 +7229,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 313, column 16 - line 322, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 317, column 16 - line 326, column 34): " + [ v.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (label) {
                           return [ {
@@ -7551,6 +7259,17 @@ var PS = {};
                       var searchWc_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
                           return v.searchWc_thirdQ;
                       });
+                      var searchFs_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
+                          return [ {
+                              t: dt,
+                              y: Global.readInt(10)(y)
+                          } ];
+                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
+                          return v.searchFs;
+                      })));
+                      var searchFs_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
+                          return v.searchFs_thirdQ;
+                      });
                       var staticGen_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
                           return [ {
                               t: dt,
@@ -7570,38 +7289,16 @@ var PS = {};
                       })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
                           return v.staticGen_year;
                       }));
-                      var reindexTs_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
+                      var reindexAll_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
                           return [ {
                               t: dt,
                               y: Global.readInt(10)(y)
                           } ];
                       })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
-                          return v.reindexTs;
+                          return v.reindexAll;
                       })));
-                      var reindexTs_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
-                          return v.reindexTs_thirdQ;
-                      });
-                      var reindexWc_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
-                          return [ {
-                              t: dt,
-                              y: Global.readInt(10)(y)
-                          } ];
-                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
-                          return v.reindexWc;
-                      })));
-                      var reindexWc_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
-                          return v.reindexWc_thirdQ;
-                      });
-                      var reindexFiles_points = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (y) {
-                          return [ {
-                              t: dt,
-                              y: Global.readInt(10)(y)
-                          } ];
-                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
-                          return v.reindexFiles;
-                      })));
-                      var reindexFiles_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
-                          return v.reindexFiles_thirdQ;
+                      var reindexAll_thirdQ = Control_Bind.bind(Data_Maybe.bindMaybe)(a.measure)(function (v) {
+                          return v.reindexAll_thirdQ;
                       });
                       var errs = Data_Maybe.maybe([  ])(Data_Array.singleton)(a.err);
                       var s = React.getState($$this)();
@@ -7639,15 +7336,14 @@ var PS = {};
                               })(kvsSizeYearPoint);
                               var searchTs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.searchTs_points)(searchTs_points));
                               var searchWc_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.searchWc_points)(searchWc_points));
+                              var searchFs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.searchFs_points)(searchFs_points));
                               var staticGen_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.staticGen_points)(staticGen_points));
                               var staticGenYear_points$prime = Data_Maybe.maybe(v.value0.staticGenYear_points)(function (x) {
                                   return Data_Array.snoc(Data_Array.filter(function (y) {
                                       return y.t !== x.t && y.t >= x.t - 365.0 * 24.0 * 3600.0 * 1000.0;
                                   })(v.value0.staticGenYear_points))(x);
                               })(staticGenYearPoint);
-                              var reindexTs_points$prime = Data_Array.takeEnd(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.reindexTs_points)(reindexTs_points));
-                              var reindexWc_points$prime = Data_Array.takeEnd(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.reindexWc_points)(reindexWc_points));
-                              var reindexFiles_points$prime = Data_Array.takeEnd(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.reindexFiles_points)(reindexFiles_points));
+                              var reindexAll_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.reindexAll_points)(reindexAll_points));
                               var features$prime = Data_Maybe.maybe(v.value0.features)(function (x) {
                                   var points$prime = (function () {
                                       var v1 = Data_Map_Internal.lookup(Data_Ord.ordString)(x.name)(v.value0.features);
@@ -7657,7 +7353,7 @@ var PS = {};
                                       if (v1 instanceof Data_Maybe.Nothing) {
                                           return Data_Array.singleton(x.point);
                                       };
-                                      throw new Error("Failed pattern match at Main (line 371, column 47 - line 373, column 67): " + [ v1.constructor.name ]);
+                                      throw new Error("Failed pattern match at Main (line 372, column 47 - line 374, column 67): " + [ v1.constructor.name ]);
                                   })();
                                   return Data_Map_Internal.insert(Data_Ord.ordString)(x.name)(points$prime)(v.value0.features);
                               })(featurePoint);
@@ -7691,12 +7387,10 @@ var PS = {};
                                   searchTs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchTs_thirdQ)(v.value0.searchTs_thirdQ),
                                   searchWc_points: searchWc_points$prime,
                                   searchWc_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchWc_thirdQ)(v.value0.searchWc_thirdQ),
-                                  reindexTs_points: reindexTs_points$prime,
-                                  reindexTs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(reindexTs_thirdQ)(v.value0.reindexTs_thirdQ),
-                                  reindexWc_points: reindexWc_points$prime,
-                                  reindexWc_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(reindexWc_thirdQ)(v.value0.reindexWc_thirdQ),
-                                  reindexFiles_points: reindexFiles_points$prime,
-                                  reindexFiles_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(reindexFiles_thirdQ)(v.value0.reindexFiles_thirdQ),
+                                  searchFs_points: searchFs_points$prime,
+                                  searchFs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchFs_thirdQ)(v.value0.searchFs_thirdQ),
+                                  reindexAll_points: reindexAll_points$prime,
+                                  reindexAll_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(reindexAll_thirdQ)(v.value0.reindexAll_thirdQ),
                                   staticGen_points: staticGen_points$prime,
                                   staticGenYear_points: staticGenYear_points$prime,
                                   staticGen_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(staticGen_thirdQ)(v.value0.staticGen_thirdQ),
@@ -7730,12 +7424,10 @@ var PS = {};
                                   searchTs_thirdQ: searchTs_thirdQ,
                                   searchWc_points: searchWc_points,
                                   searchWc_thirdQ: searchWc_thirdQ,
-                                  reindexTs_points: reindexTs_points,
-                                  reindexTs_thirdQ: reindexTs_thirdQ,
-                                  reindexWc_points: reindexWc_points,
-                                  reindexWc_thirdQ: reindexWc_thirdQ,
-                                  reindexFiles_points: reindexFiles_points,
-                                  reindexFiles_thirdQ: reindexFiles_thirdQ,
+                                  searchFs_points: searchFs_points,
+                                  searchFs_thirdQ: searchFs_thirdQ,
+                                  reindexAll_points: reindexAll_points,
+                                  reindexAll_thirdQ: reindexAll_thirdQ,
                                   staticGen_points: staticGen_points,
                                   staticGenYear_points: Data_Maybe.maybe([  ])(Data_Array.singleton)(staticGenYearPoint),
                                   staticGen_thirdQ: staticGen_thirdQ,
@@ -7746,7 +7438,7 @@ var PS = {};
                                   importLog: [  ]
                               };
                           };
-                          throw new Error("Failed pattern match at Main (line 343, column 21 - line 450, column 18): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 345, column 21 - line 447, column 18): " + [ v.constructor.name ]);
                       })();
                       React.modifyState($$this)(function (s$prime) {
                           return {
@@ -7777,70 +7469,70 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 452, column 9 - line 454, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 449, column 9 - line 451, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var v = Push.decodePush(bytes);
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push.Metric)) {
                   var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $122 = v.value0.val.value0.stat.value0.name === "cpu_mem";
-                      if ($122) {
+                      var $120 = v.value0.val.value0.stat.value0.name === "cpu_mem";
+                      if ($120) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var cpu_hour = (function () {
-                      var $123 = v.value0.val.value0.stat.value0.name === "cpu.hour";
-                      if ($123) {
+                      var $121 = v.value0.val.value0.stat.value0.name === "cpu.hour";
+                      if ($121) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var uptime = (function () {
-                      var $124 = v.value0.val.value0.stat.value0.name === "uptime";
-                      if ($124) {
+                      var $122 = v.value0.val.value0.stat.value0.name === "uptime";
+                      if ($122) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var version = (function () {
-                      var $125 = v.value0.val.value0.stat.value0.name === "v";
-                      if ($125) {
+                      var $123 = v.value0.val.value0.stat.value0.name === "v";
+                      if ($123) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $126 = v.value0.val.value0.stat.value0.name === "fs./";
-                      if ($126) {
+                      var $124 = v.value0.val.value0.stat.value0.name === "fs./";
+                      if ($124) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $127 = v.value0.val.value0.stat.value0.name === "fd";
-                      if ($127) {
+                      var $125 = v.value0.val.value0.stat.value0.name === "fd";
+                      if ($125) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $128 = v.value0.val.value0.stat.value0.name === "thr";
-                      if ($128) {
+                      var $126 = v.value0.val.value0.stat.value0.name === "thr";
+                      if ($126) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var kvsSize_year = (function () {
-                      var $129 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
-                      if ($129) {
+                      var $127 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
+                      if ($127) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var feature = (function () {
-                      var $130 = v.value0.val.value0.stat.value0.name === "feature";
-                      if ($130) {
+                      var $128 = v.value0.val.value0.stat.value0.name === "feature";
+                      if ($128) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7868,28 +7560,42 @@ var PS = {};
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Push.StatMsg && v.value0.val.value0.stat instanceof Push.Measure)) {
                   var value$prime = Global.readInt(10)(v.value0.val.value0.stat.value0.value);
                   var searchTs = (function () {
-                      var $142 = v.value0.val.value0.stat.value0.name === "search.ts";
-                      if ($142) {
+                      var $140 = v.value0.val.value0.stat.value0.name === "search.ts";
+                      if ($140) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchTs_thirdQ = (function () {
-                      var $143 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
-                      if ($143) {
+                      var $141 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
+                      if ($141) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc = (function () {
-                      var $144 = v.value0.val.value0.stat.value0.name === "search.wc";
-                      if ($144) {
+                      var $142 = v.value0.val.value0.stat.value0.name === "search.wc";
+                      if ($142) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc_thirdQ = (function () {
-                      var $145 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                      var $143 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                      if ($143) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })();
+                  var searchFs = (function () {
+                      var $144 = v.value0.val.value0.stat.value0.name === "search.fs";
+                      if ($144) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })();
+                  var searchFs_thirdQ = (function () {
+                      var $145 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
                       if ($145) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
@@ -7916,44 +7622,16 @@ var PS = {};
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexTs = (function () {
-                      var $149 = v.value0.val.value0.stat.value0.name === "reindex.ts";
+                  var reindexAll = (function () {
+                      var $149 = v.value0.val.value0.stat.value0.name === "reindex.all";
                       if ($149) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexTs_thirdQ = (function () {
-                      var $150 = v.value0.val.value0.stat.value0.name === "reindex.ts.thirdQ";
+                  var reindexAll_thirdQ = (function () {
+                      var $150 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
                       if ($150) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var reindexWc = (function () {
-                      var $151 = v.value0.val.value0.stat.value0.name === "reindex.wc";
-                      if ($151) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var reindexWc_thirdQ = (function () {
-                      var $152 = v.value0.val.value0.stat.value0.name === "reindex.wc.thirdQ";
-                      if ($152) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var reindexFiles = (function () {
-                      var $153 = v.value0.val.value0.stat.value0.name === "reindex.files";
-                      if ($153) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var reindexFiles_thirdQ = (function () {
-                      var $154 = v.value0.val.value0.stat.value0.name === "reindex.files.thirdQ";
-                      if ($154) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7968,15 +7646,13 @@ var PS = {};
                           searchTs_thirdQ: searchTs_thirdQ,
                           searchWc: searchWc,
                           searchWc_thirdQ: searchWc_thirdQ,
+                          searchFs: searchFs,
+                          searchFs_thirdQ: searchFs_thirdQ,
                           staticGen: staticGen,
                           staticGen_thirdQ: staticGen_thirdQ,
                           staticGen_year: staticGen_year,
-                          reindexTs: reindexTs,
-                          reindexTs_thirdQ: reindexTs_thirdQ,
-                          reindexWc: reindexWc,
-                          reindexWc_thirdQ: reindexWc_thirdQ,
-                          reindexFiles: reindexFiles,
-                          reindexFiles_thirdQ: reindexFiles_thirdQ
+                          reindexAll: reindexAll,
+                          reindexAll_thirdQ: reindexAll_thirdQ
                       }),
                       err: Data_Maybe.Nothing.value,
                       action: Data_Maybe.Nothing.value

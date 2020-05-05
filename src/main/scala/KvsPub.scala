@@ -23,10 +23,9 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
     })
     List(("search.ts", 5)
        , ("search.wc", 5)
+       , ("search.fs", 5)
        , ("static.gen", 5)
-       , ("reindex.ts", 100)
-       , ("reindex.wc", 100)
-       , ("reindex.files", 100)
+       , ("reindex.all", 5)
        )
     .foreach{ case (name, n) =>
       kvs.all[StatEn](s"${name}.latest").map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.groupBy(_.host).foreach{ case (host, xs) =>
