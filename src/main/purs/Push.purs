@@ -1,16 +1,12 @@
 module Push where
 
-import Data.Array (snoc)
 import Data.ArrayBuffer.Types (Uint8Array)
 import Data.Either (Either(Left, Right))
 import Data.Int.Bits (zshr, (.&.))
-import Data.Map (Map)
-import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing))
-import Data.Tuple (Tuple(Tuple), fst, snd)
+import Data.Tuple (Tuple(Tuple))
 import Prelude (bind, pure, ($), (+), (<))
 import Proto.Decode as Decode
-import CommonApi
 
 decodeStringString :: Uint8Array -> Int -> Decode.Result (Tuple String String)
 decodeStringString _xs_ pos0 = do

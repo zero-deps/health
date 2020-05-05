@@ -2,7 +2,6 @@ module Schema where
 
 import Data.Maybe (Maybe)
 import Prelude (class Eq)
-import Data.Map (Map)
 
 type NodeAddr = String
 type Feature = String
@@ -25,6 +24,7 @@ type UpdateData =
   , measure :: Maybe MeasureUpdate
   , action :: Maybe String
   , err :: Maybe ErrorInfo
+  , feature :: Maybe String
   }
 
 type MetricsUpdate =
@@ -36,7 +36,6 @@ type MetricsUpdate =
   , fd :: Maybe (Array String)
   , thr :: Maybe (Array String)
   , kvsSize_year :: Maybe String
-  , feature :: Maybe String
   }
 
 type MeasureUpdate =
@@ -83,7 +82,6 @@ type NodeInfo =
   , staticGenYear_points :: Array NumPoint
   , staticGen_thirdQ :: Maybe String
   , kvsSizeYearPoints :: Array NumPoint
-  , features :: Map Feature (Array NumPoint)
   , importLog :: Array { t :: String, msg :: String }
   }
 

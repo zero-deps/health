@@ -17,6 +17,7 @@ import DomOps as DomOps
 import Effect (Effect)
 import Effect.Console (error)
 import Errors as ErrorsCom
+import Features as FeaturesCom
 import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
@@ -27,7 +28,7 @@ import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyStat
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
 import ReactDOM as ReactDOM
-import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
+import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData, NumPoint, Feature)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
 import Ext.String (startsWith)
@@ -36,6 +37,7 @@ type State =
   { menu :: Menu
   , nodes :: Map NodeAddr NodeInfo
   , node :: Maybe NodeAddr
+  , features :: Map Feature (Array NumPoint)
   , errors :: Array ErrorInfo
   , ws :: WebSocket
   , leftMenu :: Boolean
@@ -46,17 +48,18 @@ type Props =
   { menu :: Array Menu
   }
 
-data Menu = Nodes | Errors
+data Menu = Nodes | Features | Errors
 derive instance eqMenu :: Eq Menu
 instance showMenu :: Show Menu where
   show Nodes = "Nodes"
+  show Features = "Features"
   show Errors = "Errors"
 
 view :: Effect Unit
 view = do
   container <- DomOps.byId "container"
   let props =
-        { menu: [ Nodes, Errors ]
+        { menu: [ Nodes, Features, Errors ]
         }
   let element = createLeafElement reactClass props
   void $ ReactDOM.render element container
@@ -70,6 +73,7 @@ reactClass = component "Main" \this -> do
       { menu: Nodes
       , nodes: Map.empty
       , node: Nothing
+      , features: Map.empty
       , errors: []
       , ws: ws
       , leftMenu: false
@@ -157,27 +161,31 @@ reactClass = component "Main" \this -> do
       where
       menuIcon :: Menu -> String
       menuIcon Nodes = "icon-app"
+      menuIcon Features = "icon-bulb-63"
       menuIcon Errors = "icon-alert-circle-exc"
 
       menuContent :: State -> Effect ReactElement
-      menuContent { menu: Nodes, node: Just host, nodes: nodes } =
+      menuContent { menu: Nodes, node: Just host, nodes } =
         case lookup host nodes of
           Just node -> pure $ createLeafElement NodeCom.reactClass node
           Nothing -> map (\_ -> createLeafElement dummy {}) $ error "bad node"
         where
         dummy :: ReactClass {}
         dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
-      menuContent { menu: Nodes, nodes: nodes, ws } =
+      menuContent { menu: Nodes, nodes, ws } =
         pure $ createLeafElement NodesCom.reactClass 
                 { nodes: fromFoldable nodes
                 , ws
                 , openNode: \host -> modifyState this _{ node = Just host }
                 }
-      menuContent { menu: Errors, errors: errors } =
-        pure $ createLeafElement ErrorsCom.reactClass { errors: errors, showAddr: true }
+      menuContent { menu: Features, features } =
+        pure $ createLeafElement FeaturesCom.reactClass { features }
+      menuContent { menu: Errors, errors } =
+        pure $ createLeafElement ErrorsCom.reactClass { errors, showAddr: true }
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
+      goto Features = modifyState this _{ menu = Features }
       goto Errors = modifyState this _{ menu = Errors }
 
       toggleLeftMenu :: Effect Unit
@@ -206,10 +214,11 @@ reactClass = component "Main" \this -> do
             { host: host
             , ip: ip
             , time: time
-            , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, kvsSize_year, feature }
+            , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, kvsSize_year }
             , measure: Nothing
             , err: Nothing
             , action: Nothing
+            , feature
             }
         Right { val: StatMsg { stat: Measure { name, value}, meta: { time, host, ip }}} -> do
           let value' = readInt 10 value
@@ -238,6 +247,7 @@ reactClass = component "Main" \this -> do
               }
             , err: Nothing
             , action: Nothing
+            , feature: Nothing
             }
         Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace', toptrace}, meta: { time, host, ip }}} -> do
           let exception = split (Pattern "~") exception'
@@ -252,6 +262,7 @@ reactClass = component "Main" \this -> do
             , measure: Nothing
             , err: Just err
             , action: Nothing
+            , feature: Nothing
             }
         Right { val: StatMsg { stat: Action { action }, meta: { time, host, ip }}} -> updateWith
           { host: host
@@ -261,6 +272,7 @@ reactClass = component "Main" \this -> do
           , measure: Nothing
           , err: Nothing
           , action: Just action
+          , feature: Nothing
           }
         Right { val: NodeRemoveOk { addr } } -> 
           modifyState this \st -> st{ nodes = Map.delete addr st.nodes }
@@ -277,11 +289,6 @@ reactClass = component "Main" \this -> do
         let cpuPoints = fromMaybe [] $ map (\b -> [{ t: time', y: readInt 10 b }]) cpu
         let cpuHourPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.cpu_hour
         let kvsSizeYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.kvsSize_year
-        let featurePoint = do
-              v <- a.metrics >>= _.feature
-              case split (Pattern "~") v of
-                [ n, num ] -> Just { name: n, point: { t: time', y: readInt 10 num } }
-                _ -> Nothing
         
         mem <- case cpu_mem of
           Just ([ _, free', total', heap' ]) -> do
@@ -367,14 +374,6 @@ reactClass = component "Main" \this -> do
                 
                 let reindexAll_points' = takeEnd 5 $ node.reindexAll_points <> reindexAll_points
 
-                let features' = maybe node.features
-                              (\x -> do
-                                let points' = case lookup x.name node.features of
-                                      Just points -> snoc points x.point
-                                      Nothing -> singleton x.point
-                                Map.insert x.name points' node.features
-                              ) featurePoint
-
                 let errs' = take 100 $ errs <> node.errs
 
                 let importLog = case a.action of
@@ -409,7 +408,6 @@ reactClass = component "Main" \this -> do
                   , staticGenYear_points = staticGenYear_points'
                   , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
                   , kvsSizeYearPoints = kvsSizeYearPoints'
-                  , features = features'
                   , importLog = importLog
                   }
               Nothing ->
@@ -442,12 +440,27 @@ reactClass = component "Main" \this -> do
                 , staticGenYear_points: maybe [] singleton staticGenYearPoint
                 , staticGen_thirdQ: staticGen_thirdQ
                 , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
-                , features: maybe Map.empty (\x -> Map.singleton x.name $ singleton x.point ) featurePoint
                 , importLog: []
                 }
         modifyState this \s' -> s' { nodes = Map.insert node'.host node' s'.nodes }
+        
         case a.err of
           Just err -> modifyState this \s' -> s' { errors = err : (take 99 s'.errors) }
+          Nothing -> pure unit
+
+        case a.feature of
+          Just v ->
+            case split (Pattern "~") v of
+              [ name, num ] ->
+                let point = { t: time', y: readInt 10 num }
+                in modifyState this \s' -> s' { features = upd point s'.features }
+                where upd point features =
+                        let xs =
+                              case Map.lookup name features of
+                                Just points -> snoc points point
+                                Nothing -> singleton point
+                        in Map.insert name xs features
+              _ -> pure unit
           Nothing -> pure unit
 
     errHandler :: List String -> Effect Unit
