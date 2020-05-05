@@ -6,23 +6,19 @@ import BarChart as BarChart
 import BigChart as BigChart
 import CpuChart as CpuChart
 import YearChart as YearChart
-import Data.Int (fromNumber) as Int
 import Data.Maybe (Maybe, fromMaybe)
-import Data.Map (lookup)
-import Data.Array (foldl)
-import DomOps (cn, onChangeValue)
+import DomOps (cn)
 import Effect (Effect)
 import Errors as Errors
 import FormatOps (duration, formatNum, milliseconds)
-import Prelude (bind, map, pure, ($), (<>), (==), show, (+))
-import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, forceUpdate, modifyState, modifyStateWithCallback)
-import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td, select, option)
-import React.DOM.Props (style, colSpan, onClick, value)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), Feature)
+import Prelude (bind, map, pure, ($), (<>), (==))
+import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
+import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
+import React.DOM.Props (style, colSpan, onClick)
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour))
 
 type State =
   { bigChartRange :: ChartRange
-  , feature :: Feature
   }
 type Props = NodeInfo
 
@@ -30,7 +26,7 @@ reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
   p <- getProps this
   pure
-    { state: { bigChartRange: Live, feature: "disabled-users" }
+    { state: { bigChartRange: Live }
     , render: render this
     }
   where
@@ -107,44 +103,6 @@ reactClass = component "Node" \this -> do
             , div [ cn "card-body" ]
               [ div [ cn "chart-area" ]
                 [ createLeafElement YearChart.reactClass { points: p.kvsSizeYearPoints, label: "KB" } ]
-              ]
-            ]
-          ]
-        ]
-      , div [cn "row" ]
-        [ div [ cn "col-12" ]
-          [ div [ cn "card card-chart" ]
-            [ div [ cn "card-header" ]
-              [ div [ cn "row" ]
-                [ div [ cn "col-9 text-left" ]
-                  [ h5 [ cn "card-category" ]
-                    [ text "Feature usage" ]
-                  , h2 [ cn "card-title" ]
-                    [ text $ "Total: " <> (show $ fromMaybe 0 $ do
-                            xs <- lookup s.feature p.features
-                            Int.fromNumber $ foldl (\acc x -> acc + x.y) 0.0 xs)
-                    ]
-                  ]
-                  , div [ cn "col-3" ]
-                  [ div [ cn "input-group" ]
-                    [ select [ cn "custom-select"
-                             , onChangeValue \v -> modifyStateWithCallback this _{ feature = v } (forceUpdate this)
-                             , value s.feature
-                             ]
-                      [ option [ value "disabled-users" ] [ text "Disabled users"]
-                      , option [ value "wc-flow" ] [ text "Webcontents flow"]
-                      ]
-                    ]
-                  ]
-                ]
-              ]
-            , div [ cn "card-body" ]
-              [ div [ cn "chart-area" ]
-                [ createLeafElement YearChart.reactClass 
-                  { points: fromMaybe [] $ lookup s.feature p.features
-                  , label: ""
-                  }
-                ]
               ]
             ]
           ]

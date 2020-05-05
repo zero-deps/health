@@ -1,15 +1,9 @@
 module Pull where
 
-import Data.Array (concatMap)
 import Data.ArrayBuffer.Types (Uint8Array)
-import Data.Map (Map)
-import Data.Map as Map
-import Data.Maybe (Maybe, fromMaybe)
 import Data.Tuple (Tuple(Tuple))
-import Prelude (map, ($))
 import Proto.Encode as Encode
-import Proto.Uint8ArrayExt (length, concatAll, fromArray)
-import CommonApi
+import Proto.Uint8ArrayExt (length, concatAll)
 
 encodeStringString :: Tuple String String -> Uint8Array
 encodeStringString (Tuple k v) = do
