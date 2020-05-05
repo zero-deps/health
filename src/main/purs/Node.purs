@@ -6,7 +6,6 @@ import BarChart as BarChart
 import BigChart as BigChart
 import CpuChart as CpuChart
 import YearChart as YearChart
-import MeasureChart as MeasureChart
 import Data.Int (fromNumber) as Int
 import Data.Maybe (Maybe, fromMaybe)
 import Data.Map (lookup)
@@ -14,16 +13,15 @@ import Data.Array (foldl)
 import DomOps (cn, onChangeValue)
 import Effect (Effect)
 import Errors as Errors
-import FormatOps (duration, formatNum)
+import FormatOps (duration, formatNum, milliseconds)
 import Prelude (bind, map, pure, ($), (<>), (==), show, (+))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, forceUpdate, modifyState, modifyStateWithCallback)
 import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td, select, option)
 import React.DOM.Props (style, colSpan, onClick, value)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), ReindexChart(TsReindex, WcReindex, FilesReindex), Feature)
+import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour), Feature)
 
 type State =
   { bigChartRange :: ChartRange
-  , reindexChart :: ReindexChart
   , feature :: Feature
   }
 type Props = NodeInfo
@@ -32,7 +30,7 @@ reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
   p <- getProps this
   pure
-    { state: { bigChartRange: Live, reindexChart: TsReindex, feature: "disabled-users" }
+    { state: { bigChartRange: Live, feature: "disabled-users" }
     , render: render this
     }
   where
@@ -85,67 +83,11 @@ reactClass = component "Node" \this -> do
           ]
         ]
       , div [ cn "row" ]
-        [ barChart "Translations: Search" p.searchTs_thirdQ p.searchTs_points
-        , barChart "Web Contents: Search" p.searchWc_thirdQ p.searchWc_points
-        , barChart "Static: Generation" p.staticGen_thirdQ p.staticGen_points
-        ]
-      , let thirdQ = case s.reindexChart of
-              TsReindex -> p.reindexTs_thirdQ
-              WcReindex -> p.reindexWc_thirdQ
-              FilesReindex -> p.reindexFiles_thirdQ
-        in div [ cn "row" ] 
-        [ div [ cn "col-12" ]
-          [ div [ cn "card card-chart" ]
-            [ div [ cn "card-header" ]
-              [ div [ cn "row" ]
-                [ div [ cn "col-7 col-sm-6 text-left" ]
-                  [ h5 [ cn "card-category" ]
-                    [ text "Reindex" ]
-                  , h2 [ cn "card-title" ]
-                    [ i [ cn "tim-icons icon-user-run text-info" ] []
-                    , text $ fromMaybe "--" $ map (_<>" ms") thirdQ
-                    ]
-                  ]
-                  , div [ cn "col-5 col-sm-6" ]
-                  [ div [ cn "btn-group btn-group-toggle float-right" ]
-                    [ label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == TsReindex then " active" else ""
-                            , onClick \_ -> modifyStateWithCallback this _{ reindexChart = TsReindex } (forceUpdate this)
-                            ]
-                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
-                        [ text "Traslations" ]
-                      , span [ cn "d-block d-sm-none" ]
-                        [ text "Ts" ]
-                      ]
-                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == WcReindex then " active" else ""
-                            , onClick \_ -> modifyStateWithCallback this _{ reindexChart = WcReindex } (forceUpdate this)
-                            ]
-                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
-                        [ text "Web Contents" ]
-                      , span [ cn "d-block d-sm-none" ]
-                        [ text "Ws" ]
-                      ]
-                    , label [ cn $ "btn btn-sm btn-primary btn-simple" <> if s.reindexChart == FilesReindex then " active" else ""
-                            , onClick \_ -> modifyStateWithCallback this _{ reindexChart = FilesReindex } (forceUpdate this)
-                          ]
-                      [ span [ cn "d-none d-sm-block d-md-block d-lg-block d-xl-block" ]
-                        [ text "Files" ]
-                      , span [ cn "d-block d-sm-none" ]
-                        [ text "Fs" ]
-                      ]
-                    ]
-                  ]
-                ]
-              ]
-            , div [ cn "card-body" ]
-              [ div [ cn $ "chart-area" ]
-                [ createLeafElement MeasureChart.reactClass $ case s.reindexChart of
-                     TsReindex -> { points: map _.y p.reindexTs_points, labels: map _.t p.reindexTs_points }
-                     WcReindex -> { points: map _.y p.reindexWc_points, labels: map _.t p.reindexWc_points }
-                     FilesReindex -> { points: map _.y p.reindexFiles_points, labels: map _.t p.reindexFiles_points }
-                ]
-              ]
-            ]
-          ]
+        [ barChart "Search: Translations" p.searchTs_thirdQ   p.searchTs_points
+        , barChart "Search: Contents"     p.searchWc_thirdQ   p.searchWc_points
+        , barChart "Search: Files"        p.searchFs_thirdQ   p.searchFs_points
+        , barChart "Static: Generation"   p.staticGen_thirdQ  p.staticGen_points
+        , barChart "Reindex"              p.reindexAll_thirdQ p.reindexAll_points
         ]
       , div [cn "row" ]
         [ div [ cn "col-12" ]
@@ -222,13 +164,13 @@ reactClass = component "Node" \this -> do
       ]
   barChart :: String -> Maybe String -> Array {t::String,y::Number} -> ReactElement
   barChart title thirdQ values =
-    div [ cn "col-lg-3 col-md-12" ]
+    div [ cn "col-lg-4 col-md-12" ]
       [ div [ cn "card card-chart" ]
         [ div [ cn "card-header" ]
           [ h5 [ cn "card-category" ] [ text title ]
           , h3 [ cn "card-title" ]
             [ i [ cn "tim-icons icon-user-run text-info" ] []
-            , text $ fromMaybe "--" $ map (_<>" ms") thirdQ
+            , text $ fromMaybe "--" $ map milliseconds thirdQ
             ]
           ]
         , div [ cn "card-body" ]

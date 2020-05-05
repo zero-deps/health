@@ -44,15 +44,13 @@ type MeasureUpdate =
   , searchTs_thirdQ :: Maybe String
   , searchWc :: Maybe String
   , searchWc_thirdQ :: Maybe String
+  , searchFs :: Maybe String
+  , searchFs_thirdQ :: Maybe String
   , staticGen :: Maybe String
   , staticGen_thirdQ :: Maybe String
   , staticGen_year :: Maybe String
-  , reindexTs :: Maybe String
-  , reindexTs_thirdQ :: Maybe String
-  , reindexWc :: Maybe String
-  , reindexWc_thirdQ :: Maybe String
-  , reindexFiles :: Maybe String
-  , reindexFiles_thirdQ :: Maybe String
+  , reindexAll :: Maybe String
+  , reindexAll_thirdQ :: Maybe String
   }
 
 type NodeInfo =
@@ -77,12 +75,10 @@ type NodeInfo =
   , searchTs_thirdQ :: Maybe String
   , searchWc_points :: Array { t :: String, y :: Number }
   , searchWc_thirdQ :: Maybe String
-  , reindexTs_points :: Array { t :: String, y :: Number }
-  , reindexTs_thirdQ :: Maybe String
-  , reindexWc_points :: Array { t :: String, y :: Number }
-  , reindexWc_thirdQ :: Maybe String
-  , reindexFiles_points :: Array { t :: String, y :: Number }
-  , reindexFiles_thirdQ :: Maybe String
+  , searchFs_points :: Array { t :: String, y :: Number }
+  , searchFs_thirdQ :: Maybe String
+  , reindexAll_points :: Array { t :: String, y :: Number }
+  , reindexAll_thirdQ :: Maybe String
   , staticGen_points :: Array { t :: String, y :: Number }
   , staticGenYear_points :: Array NumPoint
   , staticGen_thirdQ :: Maybe String
@@ -93,9 +89,6 @@ type NodeInfo =
 
 data ChartRange = Live | Hour
 derive instance eqChartRange :: Eq ChartRange
-
-data ReindexChart = TsReindex | WcReindex | FilesReindex
-derive instance eqReindexChart :: Eq ReindexChart
 
 type FsInfo =
   { used :: Number
