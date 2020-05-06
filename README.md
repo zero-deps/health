@@ -39,20 +39,18 @@ Before you start you need to have `npm`.
 
 One-time setup:
 ```bash
-npm install
-npm i -g bower purescript
-npm update -g
-npm -s run dep
+brew install bower purescript
 ```
 
 To compile code:
 ```bash
-npm -s run com
+bin/dep
+bin/com
 ```
 
 If you need REPL:
 ```bash
-npm -s run rep
+purs repl 'bower_components/purescript-*/src/**/*.purs'
 ```
 
 To see the result do:
