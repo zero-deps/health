@@ -1,6 +1,6 @@
 val akkaVersion = "2.5.31"
 val frontierVersion = "2.0.2"
-val extVersion = "2.0.0"
+val extVersion = "2.1.1"
 val kvsVersion = "4.10.0"
 val protoVersion = "1.7.1"
 
