@@ -12,7 +12,7 @@ import DomOps (cn, onClickEff, onChangeValue)
 import Effect (Effect)
 import Ext.String (includes, startsWith)
 import Prelude (Unit, apply, bind, map, not, pure, unit, ($), (<<<), (<=), (<>), (||))
-import Pull(Pull(NodeRemove), encodePull)
+import Api.Pull(Pull(NodeRemove), encodePull)
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, modifyState)
 import React.DOM (div, h4, table, tbody', td, text, th', thead, tr, tr', i, a, input, button)
 import React.DOM.Props (onClick, style, href, _type, placeholder, value)
@@ -89,7 +89,7 @@ reactClass = component "Nodes" \this -> do
                             , onClickEff $ do
                                 w <- window
                                 res <- confirm "Remove this node?" w
-                                if res then WsOps.sendB props.ws $ encodePull $ NodeRemove {addr: x.host}
+                                if res then WsOps.send props.ws $ encodePull $ NodeRemove {addr: x.host}
                                 else pure unit
                             ]
                           [ i [ cn "tim-icons icon-trash-simple" ] [] ] 

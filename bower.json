@@ -2,11 +2,10 @@
   "name": "health",
   "private": true,
   "devDependencies": {
-    "purescript-react": "*",
-    "purescript-react-dom": "*",
-    "purescript-web-html": "*",
-    "purescript-web-socket": "*",
-    "purescript-protobuf": "https://github.com/zero-deps/purescript-protobuf.git",
-    "purescript-psci-support": "*"
+    "purescript-react-dom": "6.1.0",
+    "purescript-web-html": "2.3.0",
+    "purescript-web-socket": "2.0.0",
+    "purescript-protobuf": "https://github.com/zero-deps/purescript-protobuf.git#1.1.1",
+    "purescript-psci-support": "4.0.0"
   }
 }

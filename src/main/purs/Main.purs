@@ -4,9 +4,8 @@ module Main
 
 import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
-import Data.ArrayBuffer.Types (Uint8Array)
+import Proto.Uint8Array (Uint8Array)
 import Data.Either (Either(Right))
-import Data.List (List)
 import Data.Map (Map, lookup)
 import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
@@ -23,7 +22,7 @@ import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
 import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=))
-import Push (Push(StatMsg, NodeRemoveOk), Stat(Metric, Measure, Error, Action), decodePush)
+import Api.Push (Push(StatMsg, NodeRemoveAck), Stat(Metric, Measure, Error, Action), decodePush)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
@@ -274,7 +273,7 @@ reactClass = component "Main" \this -> do
           , action: Just action
           , feature: Nothing
           }
-        Right { val: NodeRemoveOk { addr } } -> 
+        Right { val: NodeRemoveAck { addr } } -> 
           modifyState this \st -> st{ nodes = Map.delete addr st.nodes }
         _ -> error "unknown type"
       where
@@ -463,5 +462,5 @@ reactClass = component "Main" \this -> do
               _ -> pure unit
           Nothing -> pure unit
 
-    errHandler :: List String -> Effect Unit
+    errHandler :: Array String -> Effect Unit
     errHandler xs = void $ sequence $ map error xs

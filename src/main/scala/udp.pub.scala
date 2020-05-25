@@ -6,13 +6,12 @@ import java.net.InetSocketAddress
 import zd.proto.api.{decode}
 import .stats.client._
 import zero.ext._, option._
-import zd.kvs.Kvs
 
 object UdpPub {
-  def props(kvs: Kvs): Props = Props(new UdpPub(kvs))
+  def props: Props = Props(new UdpPub)
 }
 
-class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
+class UdpPub extends Actor with Stash with ActorLogging {
   import context.system
 
   val cfg = system.settings.config.getConfig("stats.server")
@@ -59,6 +58,6 @@ class UdpPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   }
 
   override def postStop(): Unit = {
-    socket map (_ ! Udp.Unbind)
+    socket map_ (_ ! Udp.Unbind)
   }
 }
