@@ -2,7 +2,7 @@ nocolor="$(tput sgr0)"
 red="$(tput setaf 1)"
 green="$(tput setaf 2)"
 
-if [ $(purs --version) == '0.13.6' ]; then
+if [[ $(purs --version) == 0.13.8* ]]; then
   printf '%s%s%s\n' $green 'Compiling...' $nocolor &&
   purs compile 'bower_components/purescript-*/src/**/*.purs' 'src/main/purs/*.purs' --no-prefix -o 'out' &&
   purs bundle 'out/**/*.js' -o 'src/main/resources/assets/js/main.js' -m Main &&

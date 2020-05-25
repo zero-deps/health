@@ -2,41 +2,42 @@ module Main
   ( view
   ) where
 
+import Api.Push (Push(StatMsg, NodeRemoveAck), Stat(Metric, Measure, Error, Action), decodePush)
 import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
-import Proto.Uint8Array (Uint8Array)
 import Data.Either (Either(Right))
-import Data.Map (Map, lookup)
+import Data.Map (Map, lookup, unionWith, insertWith)
 import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
+import Data.Tuple (Tuple(Tuple))
 import DomOps (cn)
 import DomOps as DomOps
 import Effect (Effect)
 import Effect.Console (error)
 import Errors as ErrorsCom
+import Ext.String (startsWith)
 import Features as FeaturesCom
 import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=))
-import Api.Push (Push(StatMsg, NodeRemoveAck), Stat(Metric, Measure, Error, Action), decodePush)
+import Prelude (class Eq, class Show, Unit, add, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=))
+import Proto.Uint8Array (Uint8Array)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
 import React.DOM.Props (href, target, onClick)
 import ReactDOM as ReactDOM
-import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData, NumPoint, Feature)
+import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData, Feature)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
-import Ext.String (startsWith)
 
 type State = 
   { menu :: Menu
   , nodes :: Map NodeAddr NodeInfo
   , node :: Maybe NodeAddr
-  , features :: Map Feature (Array NumPoint)
+  , features :: Map Feature (Map Number Number)
   , errors :: Array ErrorInfo
   , ws :: WebSocket
   , leftMenu :: Boolean
@@ -178,7 +179,7 @@ reactClass = component "Main" \this -> do
                 , openNode: \host -> modifyState this _{ node = Just host }
                 }
       menuContent { menu: Features, features } =
-        pure $ createLeafElement FeaturesCom.reactClass { features }
+        pure $ createLeafElement FeaturesCom.reactClass { features: map (\x -> map (\(Tuple t y) -> { t, y }) $ Map.toUnfoldable x) features }
       menuContent { menu: Errors, errors } =
         pure $ createLeafElement ErrorsCom.reactClass { errors, showAddr: true }
 
@@ -450,15 +451,9 @@ reactClass = component "Main" \this -> do
         case a.feature of
           Just v ->
             case split (Pattern "~") v of
-              [ name, num ] ->
-                let point = { t: time', y: readInt 10 num }
-                in modifyState this \s' -> s' { features = upd point s'.features }
-                where upd point features =
-                        let xs =
-                              case Map.lookup name features of
-                                Just points -> snoc points point
-                                Nothing -> singleton point
-                        in Map.insert name xs features
+              [ name, num ] -> do
+                let v' = Map.singleton time' $ readInt 10 num
+                modifyState this \s' -> s'{ features = insertWith (unionWith add) name v' s'.features }
               _ -> pure unit
           Nothing -> pure unit
 
