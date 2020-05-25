@@ -42,42 +42,40 @@ object Flows {
   def wsHandler(system: ActorSystem, kvs: Kvs) =
     Flow[Pull].collect {
       case NodeRemove(addr) =>
-        val res = LazyList(
-          "cpu_mem.live", "cpu.hour",
-          "search.ts.latest", "search.wc.latest", "search.fs.latest",
-          "static.create.latest", "static.gen.latest",
-          "reindex.ts.latest", "reindex.wc.latest", "reindex.files.latest", "reindex.all.latest",
-          "static.create.year", "static.gen.year",
-          "kvs.size.year", "action.live", "metrics", "errors"
+        import keys._
+        LazyList(
+          `cpu_mem.live`, `cpu.hour`,
+          `search.ts.latest`, `search.wc.latest`, `search.fs.latest`,
+          `static.create.latest`, `static.gen.latest`,
+          `reindex.ts.latest`, `reindex.wc.latest`, `reindex.files.latest`, `reindex.all.latest`,
+          `static.create.year`, `static.gen.year`,
+          `kvs.size.year`, `action.live`, `metrics`, `errors`,
+          `feature`
         ).flatMap(kvs.all[StatEn](_).map(_.takeWhile(_.isRight).flatMap(_.toOption)).getOrElse(LazyList.empty)).
           filter(_.host == addr).
-          map(en => kvs.remove[StatEn](en.fid, en.id)).
-          foldLeft[Either[zd.kvs.Err, Unit]](Right(())) {
-            case (Left(e), _) => Left(e)
-            case (Right(_), Right(_)) => Right(())
-            case (_, Left(e)) => Left(e)
-          }.
-          fold(e => NodeRemoveErr(addr, "Failed to remove node"), _ => NodeRemoveOk(addr))
-        system.eventStream.publish(res)
+          foreach(en => kvs.remove[StatEn](en.fid, en.id))
+        system.eventStream.publish(NodeRemoveAck(addr))
     }
 
   def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
+      import keys._
+      import zd.kvs.empty
 
-      val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props(kvs))))
+      val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
       val logIn = Flow[Push].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save_metric = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem"|"kvs.size"|"feature", _), _) =>
         case StatMsg(Metric(name, value), StatMeta(time, host, ip)) =>
-          kvs.put(StatEn(fid="metrics", id=s"${host}${name}", prev=zd.kvs.empty, s"${name}|${value}", time, host, ip))
+          kvs.put(StatEn(fid=`metrics`, id=s"${host}${name}", prev=empty, s"${name}|${value}", time, host, ip))
       }
       val save_cpumem = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem", value), StatMeta(time, host, ip)) =>
           { // live
             val i = kvs.el.get[String](s"cpu_mem.live.idx.${host}").toOption.flatten.getOrElse("0")
             for {
-              _ <- kvs.put(StatEn(fid="cpu_mem.live", id=s"${host}${i}", prev=zd.kvs.empty, value, time, host, ip))
+              _ <- kvs.put(StatEn(fid=`cpu_mem.live`, id=s"${host}${i}", prev=empty, value, time, host, ip))
               i1 = ((i.toInt + 1) % 20).toString
               _ <- kvs.el.put(s"cpu_mem.live.idx.${host}", i1)
             } yield ()
@@ -98,7 +96,7 @@ object Flows {
                 kvs.el.put(s"cpu.hour.n.${host}${i}", n1.toString)
                 kvs.el.put(s"cpu.hour.v.${host}${i}", v1.toString)
                 val time1 = (((time.toLong / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000).toString
-                kvs.put(StatEn(fid="cpu.hour", id=s"${host}${i}", prev=zd.kvs.empty, v1.toInt.toString, time1, host, ip))
+                kvs.put(StatEn(fid=`cpu.hour`, id=s"$host$i", prev=empty, v1.toInt.toString, time1, host, ip))
                 system.eventStream.publish(StatMsg(Metric("cpu.hour", v1.toInt.toString), StatMeta(time1, host, ip)))
               }
             case _ =>
@@ -112,7 +110,7 @@ object Flows {
           }
           val i = kvs.el.get[String](s"${name}.latest.idx.${host}").toOption.flatten.getOrElse("0")
           for {
-            _ <- kvs.put(StatEn(fid=s"${name}.latest", id=s"${host}${i}", prev=zd.kvs.empty, value, time, host, ip))
+            _ <- kvs.put(StatEn(fid=s"${name}.latest", id=s"${host}${i}", prev=empty, value, time, host, ip))
             i1 = ((i.toInt + 1) % limit).toString
             _ <- kvs.el.put(s"${name}.latest.idx.${host}", i1)
           } yield ()
@@ -140,7 +138,7 @@ object Flows {
         kvs.el.put(s"${name}.year.n.${host}${i}", n1.toString)
         kvs.el.put(s"${name}.year.v.${host}${i}", v1.toString)
         val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
-        kvs.put(StatEn(fid=s"${name}.year", id=s"${host}${i}", prev=zd.kvs.empty, v1.toString, time1, host, ip))
+        kvs.put(StatEn(fid=s"${name}.year", id=s"${host}${i}", prev=empty, v1.toString, time1, host, ip))
         (v1, time1)
       }
       val save_year_value = Flow[Push].collect{
@@ -164,13 +162,13 @@ object Flows {
           kvs.el.put(s"feature.${name}.t.${host}${i}", time)
           kvs.el.put(s"feature.${name}.n.${host}${i}", n1.toString)
           val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
-          kvs.put(StatEn(fid=s"feature", id=s"${host}${i}${name}", prev=zd.kvs.empty, s"${name}~${n1}", time1, host, ip))
+          kvs.put(StatEn(fid=`feature`, id=s"${host}${i}${name}", prev=empty, s"${name}~${n1}", time1, host, ip))
       }
       val save_action = Flow[Push].collect{
         case StatMsg(Action(action), StatMeta(time, host, ip)) =>
           val i = kvs.el.get[String](s"action.live.idx.${host}").toOption.flatten.getOrElse("0")
           for {
-            _ <- kvs.put(StatEn(fid="action.live", id=s"${host}${i}", prev=zd.kvs.empty, action, time, host, ip))
+            _ <- kvs.put(StatEn(fid=`action.live`, id=s"${host}${i}", prev=empty, action, time, host, ip))
             i1 = ((i.toInt + 1) % 20).toString
             _ <- kvs.el.put(s"action.live.idx.${host}", i1)
           } yield ()
@@ -179,7 +177,7 @@ object Flows {
         case StatMsg(Error(exception, stacktrace, toptrace), StatMeta(time, host, ip)) =>
           val i = kvs.el.get[String](s"errors.idx.${host}").toOption.flatten.getOrElse("0")
           for {
-            _ <- kvs.put(StatEn(fid="errors", id=s"${host}${i}", prev=zd.kvs.empty, s"${exception}|${stacktrace}|${toptrace}", time, host, ip))
+            _ <- kvs.put(StatEn(fid=`errors`, id=s"${host}${i}", prev=empty, s"${exception}|${stacktrace}|${toptrace}", time, host, ip))
             i1 = ((i.toInt + 1) % 100).toString
             _ <- kvs.el.put(s"errors.idx.${host}", i1)
           } yield ()

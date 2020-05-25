@@ -24,6 +24,8 @@ class Route(implicit val system: ExtendedActorSystem) extends RouteGrip[HttpRequ
       }
     case HttpRequest(GET,Path(Root),_,_,_) =>
       Future.successful(chunks(Some("assets"),"index.html"))
+    case HttpRequest(GET,Path(Root/"favicon.svg"),_,_,_) =>
+      Future.successful(chunks(Some("assets"),"favicon.svg"))
     case HttpRequest(GET,Path(Root/"css"/request),_,_,_) =>
       Future.successful(chunks(Some("assets/css"),request))
     case HttpRequest(GET,Path(Root/"js"/request),_,_,_) =>

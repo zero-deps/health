@@ -1,5 +1,6 @@
 module Ops.ArrayBuffer where
 
-import Data.ArrayBuffer.Types (ArrayBuffer, Uint8Array)
+import Proto.Uint8Array (Uint8Array)
+import Data.ArrayBuffer.Types (ArrayBuffer)
 
 foreign import uint8Array :: ArrayBuffer -> Uint8Array
