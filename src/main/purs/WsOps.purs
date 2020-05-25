@@ -14,18 +14,18 @@ import Ops.ArrayBuffer (uint8Array)
 import Prelude hiding (div)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (addEventListener, eventListener)
-import Web.HTML (window) as DOM
-import Web.HTML.Location (protocol, host) as DOM
-import Web.HTML.Window (location) as DOM
 import Web.Socket.BinaryType (BinaryType(ArrayBuffer))
-import Web.Socket.Event.EventTypes (onOpen, onMessage, onError, onClose) as WS
+import Web.Socket.Event.EventTypes (onOpen, onMessage) as WS
 import Web.Socket.Event.MessageEvent (MessageEvent, fromEvent, data_)
 import Web.Socket.WebSocket (WebSocket)
-import Web.Socket.WebSocket (create, sendArrayBufferView, toEventTarget, setBinaryType, close) as WS
+import Web.Socket.WebSocket (create, sendArrayBufferView, toEventTarget, setBinaryType) as WS
 import Unsafe.Coerce (unsafeCoerce)
 
 create :: String -> Effect WebSocket
-create url = WS.create url []
+create url = do
+  ws <- WS.create url []
+  onOpen ws \_ -> WS.setBinaryType ws ArrayBuffer
+  pure ws
 
 onOpen :: forall a. WebSocket -> (Event -> Effect a) -> Effect Unit
 onOpen ws handler =
@@ -33,7 +33,6 @@ onOpen ws handler =
     useCapture = false
     target = WS.toEventTarget ws
   in do
-    WS.setBinaryType ws ArrayBuffer
     l <- eventListener handler
     addEventListener WS.onOpen l useCapture target
 
