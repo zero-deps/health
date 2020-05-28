@@ -1,7 +1,8 @@
 .DS_Store
 /.psci_modules/
-/bower_components/
-/out/
+/.spago/
+/node_modules/
+/output/
 /rng_data*/
 /src/main/resources/application.conf
 /tmp/

@@ -1,5 +1,5 @@
 "use strict"
 
-exports.formatNum = function(num) {
-  return num.toLocaleString("en-GB")
-}
+exports.formatNum = num => new Intl.NumberFormat("uk-UA").format(num)
+
+exports.formatLocal = options => new Intl.DateTimeFormat('uk-UA', options).format
