@@ -44,13 +44,12 @@ brew install bower purescript
 
 To compile code:
 ```bash
-bin/dep
-bin/com
+./com
 ```
 
 If you need REPL:
 ```bash
-purs repl 'bower_components/purescript-*/src/**/*.purs'
+npx spago repl
 ```
 
 To see the result do:

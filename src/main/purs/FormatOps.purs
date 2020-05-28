@@ -1,33 +1,23 @@
 module FormatOps where
 
 import Prelude
-
 import Effect (Effect)
+import Effect.Uncurried (EffectFn1, runEffectFn1)
 import Global (readInt)
 
 import Data.Int (floor)
-import Data.JSDate (fromTime, getUTCDate, getUTCFullYear, getUTCHours, getUTCMinutes, getUTCMonth, getUTCSeconds, getTimezoneOffset, now)
-import Data.String.CodePoints (length)
+import Data.JSDate (JSDate, fromTime)
 
 foreign import formatNum :: Number -> String
 
+foreign import formatLocal :: forall a. { | a } -> EffectFn1 JSDate String
+formatLocal' :: forall a. { | a } -> JSDate -> Effect String
+formatLocal' o d = runEffectFn1 (formatLocal o) d
+
 dateTime :: Number -> Effect String
-dateTime ms' = do
-  timezone <- now >>= getTimezoneOffset
-  let ms = ms' - timezone * 60.0 * 1000.0
+dateTime ms = do
   let d = fromTime ms
-  let day = datePart $ getUTCDate d
-  let month = datePart $ (getUTCMonth d) + 1.0
-  let year = datePart $ getUTCFullYear d
-  let hours = datePart $ getUTCHours d
-  let minutes = datePart $ getUTCMinutes d
-  let seconds = datePart $ getUTCSeconds d
-  pure $ year<>"."<>month<>"."<>day<>" "<>hours<>":"<>minutes<>":"<>seconds
-  where
-  datePart :: Number -> String
-  datePart num =
-    let str = show $ floor num
-    in if length str < 2 then "0"<>str else str
+  formatLocal' { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" } d
 
 duration :: String -> { value :: String, unit :: String }
 duration sec = let sec' = floor $ readInt 10 sec in
