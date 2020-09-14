@@ -1,16 +1,15 @@
 package 
 package stats
 
-import zd.proto.api.{MessageCodec, N}
+import zd.proto.api._
 import zd.proto.macrosapi.{caseCodecAuto, sealedTraitCodecAuto}
 
 object Pull {
-  implicit val pullCodec: MessageCodec[Pull] = {
-    implicit val NodeRemoveCodec: MessageCodec[NodeRemove] = caseCodecAuto[NodeRemove]
-    sealedTraitCodecAuto[Pull]
-  }
+  implicit val HealthAskC = caseCodecAuto[HealthAsk]
+  implicit val PullC = sealedTraitCodecAuto[Pull]
 }
 
+@RestrictedN(10)
 sealed trait Pull
 
-@N(10) final case class NodeRemove(@N(1) addr: String) extends Pull
+@N(20) final case class HealthAsk(@N(1) host: String) extends Pull

@@ -9,7 +9,7 @@ import Effect (Effect)
 import Global (readInt)
 import Prelude (Unit, bind, map, pure, ($), (<>), (==))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
-import React.DOM (div, h4, table, tbody', td, text, th', thead, tr', div', br')
+import React.DOM (div, h5, table, tbody', td, text, th', thead, tr', div')
 import React.DOM.Props (onClick, style, colSpan)
 import Schema (ErrorInfo)
 
@@ -17,6 +17,7 @@ type State = {}
 type Props =
   { errors :: Array ErrorInfo
   , showAddr :: Boolean
+  , showTitle :: Boolean
   }
 
 reactClass :: ReactClass Props
@@ -32,12 +33,13 @@ reactClass = component "Errors" \this -> do
       pure $
         div [ cn "row" ]
         [ div [ cn "col-md-12" ]
-          [ div [ cn "card" ]
+          [ div [ cn "card" ] $ (if props.showTitle then
             [ div [ cn "card-header" ]
-              [ h4 [ cn "card-title" ]
+              [ h5 [ cn "card-category" ]
                 [ text "Errors" ]
               ]
-            , div [ cn "card-body" ]
+            ] else []) <>
+            [ div [ cn "card-body" ]
               [ div [ cn "table-responsive" ]
                 [ table [ cn "table tablesorter" ]
                   [ thead [ cn "text-primary" ]
@@ -81,7 +83,7 @@ errorReactClass = component "Error" \this -> do
       let nocause = props.err.toptrace == "--"
       pure $
         tr' $ (if props.showAddr then
-        [ td [ cn "align-top" ] [ text props.err.host, br', text props.err.ip ] ] else [] ) <>
+        [ td [ cn "align-top" ] [ text props.err.host ] ] else [] ) <>
         [ td [ cn "align-top" ] [ text dt ]
         , td [ cn "align-top", style { width: "40%" }, colSpan (if nocause then 2 else 1) ] $ map (\y -> 
             div [ style { wordBreak: "break-all" } ]

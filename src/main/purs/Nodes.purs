@@ -2,23 +2,20 @@ module Nodes
   ( reactClass
   ) where
 
-import Data.Array (filter, (!!))
+import Data.Array (filter)
 import Data.Foldable (maximum)
 import Data.Maybe (fromMaybe)
-import Data.String (Pattern(Pattern), split)
 import Data.String.CodePoints (length) as String
 import Data.String.Common (toLower)
-import DomOps (cn, onClickEff, onChangeValue)
+import DomOps (cn, onChangeValue)
 import Effect (Effect)
-import Ext.String (includes, startsWith)
-import Prelude (Unit, apply, bind, map, not, pure, unit, ($), (<<<), (<=), (<>), (||))
-import Api.Pull(Pull(NodeRemove), encodePull)
+import Ext.String (includes)
+import Prelude (Unit, apply, discard, map, not, pure, unit, ($), (<=), (>), (-), (<>), (||))
+import Api.Pull(Pull(HealthAsk), encodePull)
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, modifyState)
-import React.DOM (div, h4, table, tbody', td, text, th', thead, tr, tr', i, a, input, button)
-import React.DOM.Props (onClick, style, href, _type, placeholder, value)
+import React.DOM (div, table, tbody', td, text, th', thead, tr, tr', input, button)
+import React.DOM.Props (onClick, style, _type, placeholder, value, key)
 import Schema (NodeInfo)
-import Web.HTML (window)
-import Web.HTML.Window (confirm)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
 
@@ -51,9 +48,7 @@ reactClass = component "Nodes" \this -> do
         [ div [ cn "col-md-12" ]
           [ div [ cn "card" ]
             [ div [ cn "card-header" ]
-              [ h4 [ cn "card-title" ]
-                [ text "Nodes" ]
-              , div [ cn "form-inline" ]
+              [ div [ cn "form-inline" ]
                 [ button  [ _type "button"
                           , cn $ "btn" <> if state.active then " btn-primary" else " btn-outline-primary"
                           , onClick \_ -> modifyState this \s -> s { active = not s.active }
@@ -78,22 +73,16 @@ reactClass = component "Nodes" \this -> do
                       ]
                     ]
                   , tbody' $ map (\x ->
-                      tr [ onClick \_ -> props.openNode x.host
-                         , style { cursor: "pointer" }
-                         ]
+                      tr  [ key x.host
+                          , onClick \_ -> do
+                              if x.loaded then pure unit
+                              else WsOps.send props.ws $ encodePull $ HealthAsk { host: x.host }
+                              props.openNode x.host
+                          , style { cursor: "pointer" }
+                          ]
                       [ td [ style { fontFamily: "Fira Code" } ] [ text x.host ]
                       , td [ style { fontFamily: "Fira Code" } ] [ text x.ip ]
                       , td [ style { fontFamily: "Fira Code" } ] [ text x.lastUpdate ]
-                      , td []
-                        [ a [ href ""
-                            , onClickEff $ do
-                                w <- window
-                                res <- confirm "Remove this node?" w
-                                if res then WsOps.send props.ws $ encodePull $ NodeRemove {addr: x.host}
-                                else pure unit
-                            ]
-                          [ i [ cn "tim-icons icon-trash-simple" ] [] ] 
-                        ]
                       ]) $ activeNodes state.active $ filterNodes state.filter props.nodes
                   ]
                 ]
@@ -111,5 +100,5 @@ filterNodes v' xs =
 activeNodes :: Boolean -> Array NodeInfo -> Array NodeInfo
 activeNodes false xs = xs
 activeNodes true xs =
-  let prefix = fromMaybe "" $ maximum $ map (fromMaybe "" <<< (\x -> x !! 0) <<< split (Pattern " ") <<< _.lastUpdate) xs
-  in map (\x -> x { lastUpdate = fromMaybe x.lastUpdate $ (split (Pattern " ") x.lastUpdate) !! 1 }) $ filter (startsWith prefix <<< _.lastUpdate) xs
+  let max_time = fromMaybe 0.0 $ maximum $ map _.lastUpdate_ms xs
+  in filter (\x -> x.lastUpdate_ms > max_time - 3600000.0) xs

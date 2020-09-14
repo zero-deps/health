@@ -1,6 +1,6 @@
 package .stats
 
-import zd.proto.api.N
+import zd.proto.api._
 import zd.proto.macrosapi.{caseCodecAuto, sealedTraitCodecAuto}
 
 object Push {
@@ -18,11 +18,11 @@ object Push {
 
   implicit val pushCodec = {
     implicit val StatPushCodec = caseCodecAuto[StatMsg]
-    implicit val NodeRemoveOkCodec = caseCodecAuto[NodeRemoveAck]
     sealedTraitCodecAuto[Push]
   }
 }
 
+@RestrictedN(10)
 sealed trait Push
 
 @N(1) final case class StatMsg(@N(1) stat: Stat, @N(2) meta: StatMeta) extends Push
@@ -34,5 +34,3 @@ sealed trait Stat
 @N(4) final case class Action(@N(1) action: String) extends Stat
 
 final case class StatMeta(@N(1) time: String, @N(2) host: String, @N(3) ip: String)
-
-@N(10) final case class NodeRemoveAck(@N(1) addr: String) extends Push

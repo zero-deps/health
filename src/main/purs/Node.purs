@@ -13,7 +13,7 @@ import Errors as Errors
 import FormatOps (duration, formatNum, milliseconds)
 import Prelude (bind, map, pure, ($), (<>), (==))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
-import React.DOM (div, div', h2, h3, h4, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
+import React.DOM (div, div', h2, h3, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
 import React.DOM.Props (style, colSpan, onClick)
 import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour))
 
@@ -116,7 +116,7 @@ reactClass = component "Node" \this -> do
         , othCard p
         ]
       , div [ cn "row" ] [ importCard p ]
-      , createLeafElement Errors.reactClass { errors: p.errs, showAddr: false }
+      , createLeafElement Errors.reactClass { errors: p.errs, showAddr: false, showTitle: true }
       ]
   barChart :: String -> Maybe String -> Array {t::String,y::Number} -> ReactElement
   barChart title thirdQ values =
@@ -142,7 +142,7 @@ reactClass = component "Node" \this -> do
     div [ cn "col-lg-6 col-md-12" ]
       [ div [ cn "card" ]
         [ div [ cn "card-header" ]
-          [ h4 [ cn "card-title" ]
+          [ h5 [ cn "card-category" ]
             [ text title ]
           ]
         , div [ cn "card-body", style {  } ]
@@ -161,7 +161,7 @@ reactClass = component "Node" \this -> do
     div [ cn "col-lg-6 col-md-12" ]
       [ div [ cn "card" ]
         [ div [ cn "card-header" ]
-          [ h4 [ cn "card-title" ]
+          [ h5 [ cn "card-category" ]
             [ text "Import" ]
           ]
         , div [ cn "card-body", style { maxHeight: "10rem", overflow: "scroll" } ]
