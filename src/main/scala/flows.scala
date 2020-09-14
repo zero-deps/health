@@ -10,6 +10,7 @@ import java.time.{LocalDateTime}
 import scala.util.Try
 import zd.kvs.Kvs
 import zd.proto.api.{encode, decode}
+import zero.ext._, either._
 
 object Flows {
   def ws(system: ActorSystem, kvs: Kvs): Flow[WsMessage, WsMessage, NotUsed] =
@@ -25,8 +26,10 @@ object Flows {
 
       val decodeMsg = b.add(
         Flow[ByteString].
-          map[Either[Throwable, Pull]]{ bytes => Try(decode[Pull](bytes.toArray)).toEither }.
-          collect[Pull] { case Right(pull) => pull }
+          map[Either[Throwable, Pull]]{ bytes => Try(decode[Pull](bytes.toArray)).toEither.leftMap(l => {system.log.error(l.toString);l}) }.
+          collect[Pull] {
+            case Right(pull) => pull
+          }
       )
 
       val encodeMsg = b.add(Flow[Push].map{ case m: Push => encode[Push](m) })
@@ -39,22 +42,54 @@ object Flows {
       FlowShape(msgIn.in, msgOut.out)
     })
 
-  def wsHandler(system: ActorSystem, kvs: Kvs) =
+  def wsHandler(system: ActorSystem, @annotation.unused kvs: Kvs) =
     Flow[Pull].collect {
-      case NodeRemove(addr) =>
-        import keys._
-        LazyList(
-          `cpu_mem.live`, `cpu.hour`,
-          `search.ts.latest`, `search.wc.latest`, `search.fs.latest`,
-          `static.create.latest`, `static.gen.latest`,
-          `reindex.ts.latest`, `reindex.wc.latest`, `reindex.files.latest`, `reindex.all.latest`,
-          `static.create.year`, `static.gen.year`,
-          `kvs.size.year`, `action.live`, `metrics`, `errors`,
-          `feature`
-        ).flatMap(kvs.all[StatEn](_).map(_.takeWhile(_.isRight).flatMap(_.toOption)).getOrElse(LazyList.empty)).
-          filter(_.host == addr).
-          foreach(en => kvs.remove[StatEn](en.fid, en.id))
-        system.eventStream.publish(NodeRemoveAck(addr))
+      case HealthAsk(host) =>
+        val live_start = kvs.all[StatEn](keys.`cpu_mem.live`).toOption.flatMap(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).map{
+          case a@StatEn(_,_,_,value,time,host,ip) =>
+            system.eventStream publish StatMsg(Metric("cpu_mem", value), StatMeta(time, host, ip)); a
+        }.force.headOption.map(_.time)).getOrElse("0");
+        {
+          kvs.all[StatEn](keys.`cpu.hour`).map_{ xs =>
+            val xs1 = xs.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time)
+            val min = xs1.lastOption.map(_.time.toLong).getOrElse(0L)-60*60*1000 //todo
+            xs1.dropWhile(_.time.toLong < min).foreach{ case StatEn(_,_,_,value,time,host,ip) =>
+              system.eventStream publish StatMsg(Metric("cpu.hour", value), StatMeta(time, host, ip))
+            }
+          }
+        }
+        List((keys.`search.ts.latest`, 5)
+          , (keys.`search.wc.latest`, 5)
+          , (keys.`search.fs.latest`, 5)
+          , (keys.`static.gen.latest`, 5)
+          , (keys.`reindex.all.latest`, 5)
+          ).foreach{ case (key, n) =>
+          val name = key.stripPrefix(".latest")
+          kvs.all[StatEn](key).map_{ xs =>
+            val xs1 = xs.collect{ case Right(a) => a }.filter(_.host == host)
+            val thirdQ = xs1.sortBy(_.data).apply((xs1.length*0.7).toInt).data
+            system.eventStream publish StatMsg(Measure(s"$name.thirdQ", thirdQ), StatMeta(time="0", host, ""))
+            xs1.sortBy(_.time).takeRight(n).foreach(x =>
+              system.eventStream publish StatMsg(Measure(name, x.data), StatMeta(x.time, host, ""))
+            )
+          }
+        }
+        kvs.all[StatEn](keys.`static.gen.year`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLong.toLocalDataTime.isBefore(year_ago())).foreach{
+          case StatEn(_,_,_, value, time, host, ip) => system.eventStream publish StatMsg(Measure(keys.`static.gen.year`, value), StatMeta(time, host, ip))
+        })
+        kvs.all[StatEn](keys.`kvs.size.year`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLong.toLocalDataTime.isBefore(year_ago())).foreach{
+          case StatEn(_,_,_, value, time, host, ip) => system.eventStream publish StatMsg(Metric(keys.`kvs.size.year`, value), StatMeta(time, host, ip))
+        })
+        kvs.all[StatEn](keys.`action.live`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time < live_start).foreach{
+          case StatEn(_,_,_, action, time, host, ip) => system.eventStream publish StatMsg(Action(action), StatMeta(time, host, ip))
+        })
+        kvs.all[StatEn](keys.`metrics`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).foreach{
+          case StatEn(_,_,_, stat, time, host, ip) => stat.split('|') match {
+            case Array(name, value) =>
+              system.eventStream publish StatMsg(Metric(name, value), StatMeta(time, host, ip))
+            case _ =>
+          }
+        })
     }
 
   def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {

@@ -2,11 +2,11 @@ module Main
   ( view
   ) where
 
-import Api.Push (Push(StatMsg, NodeRemoveAck), Stat(Metric, Measure, Error, Action), decodePush)
+import Api.Push (Push(StatMsg), Stat(Metric, Measure, Error, Action), decodePush)
 import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
 import Data.Either (Either(Right))
-import Data.Map (Map, lookup, unionWith, insertWith)
+import Data.Map (Map, lookup, unionWith, insertWith, update)
 import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
@@ -23,11 +23,11 @@ import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, add, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=))
+import Prelude (class Eq, class Show, Unit, add, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=), (<<<))
 import Proto.Uint8Array (Uint8Array)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
-import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul)
-import React.DOM.Props (href, target, onClick)
+import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul, h5, h2, iframe)
+import React.DOM.Props (href, onClick, src, style)
 import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData, Feature)
 import Web.Socket.WebSocket (WebSocket)
@@ -48,18 +48,27 @@ type Props =
   { menu :: Array Menu
   }
 
-data Menu = Nodes | Features | Errors
+data Menu = Nodes | Features | Errors | Paper | Notice
 derive instance eqMenu :: Eq Menu
 instance showMenu :: Show Menu where
-  show Nodes = "Nodes"
+  show Nodes = "Health"
   show Features = "Features"
   show Errors = "Errors"
+  show Paper = "Paper"
+  show Notice = "Notice"
+
+menuIcon :: Menu -> String
+menuIcon Nodes = "icon-heart-2"
+menuIcon Features = "icon-bulb-63"
+menuIcon Errors = "icon-alert-circle-exc"
+menuIcon Paper = "icon-paper"
+menuIcon Notice = "icon-caps-small"
 
 view :: Effect Unit
 view = do
   container <- DomOps.byId "container"
   let props =
-        { menu: [ Nodes, Features, Errors ]
+        { menu: [ Nodes, Features, Errors, Paper, Notice ]
         }
   let element = createLeafElement reactClass props
   void $ ReactDOM.render element container
@@ -144,26 +153,9 @@ reactClass = component "Main" \this -> do
               ]
             ]
           , div [ cn "content" ] [ menuContent' ]
-          , div [ cn "footer" ]
-            [ div [ cn "container-fluid" ]
-              [ ul [ cn "nav" ]
-                [ li [ cn "nav-item" ]
-                  [ a [ href "http://ua--doc.ee..corp/health.html", cn "nav-link" ] [ text "Documentation" ] ]
-                ]
-              , div [ cn "copyright" ]
-                [ text "© "
-                , a [ href "https://demos.creative-tim.com/black-dashboard/examples/dashboard.html", target "_blank" ] [ text "CT" ]
-                ]
-              ]
-            ]
           ]
         ]
       where
-      menuIcon :: Menu -> String
-      menuIcon Nodes = "icon-app"
-      menuIcon Features = "icon-bulb-63"
-      menuIcon Errors = "icon-alert-circle-exc"
-
       menuContent :: State -> Effect ReactElement
       menuContent { menu: Nodes, node: Just host, nodes } =
         case lookup host nodes of
@@ -176,17 +168,52 @@ reactClass = component "Main" \this -> do
         pure $ createLeafElement NodesCom.reactClass 
                 { nodes: fromFoldable nodes
                 , ws
-                , openNode: \host -> modifyState this _{ node = Just host }
+                , openNode: \host -> modifyState this \s -> s{ node = Just host, nodes = update (Just <<< _{ loaded = true }) host s.nodes }
                 }
       menuContent { menu: Features, features } =
         pure $ createLeafElement FeaturesCom.reactClass { features: map (\x -> map (\(Tuple t y) -> { t, y }) $ Map.toUnfoldable x) features }
       menuContent { menu: Errors, errors } =
-        pure $ createLeafElement ErrorsCom.reactClass { errors, showAddr: true }
+        pure $ createLeafElement ErrorsCom.reactClass { errors, showAddr: true, showTitle: false }
+      menuContent { menu: Paper } =
+        pure $
+          div [ cn "row" ]
+            [ div [ cn "col-md-12" ]
+              [ div [ cn "card" ]
+                [ div [ cn "card-header" ]
+                  [ h5 [ cn "card-category" ] [ text "Paper" ]
+                  , h2 [ cn "card-title" ] [ text "Monitoring and Management" ]
+                  ]
+                , div [ cn "card-body", style { height: "calc(100vh - 220px)" } ]
+                  [ iframe [ src "http://ua--doc.ee..corp/health.html#start" ] []
+                  ]
+                ]
+              ]
+            ]
+      menuContent { menu: Notice } =
+        pure $
+          div [ cn "row" ]
+            [ div [ cn "col-md-12" ]
+              [ div [ cn "card" ]
+                [ div [ cn "card-header" ]
+                  [ h5 [ cn "card-category" ] [ text "Notice" ]
+                  , h2 [ cn "card-title" ] [ text "MIT License" ]
+                  ]
+                , div [ cn "card-body" ]
+                  [ p [] [ text "Copyright (c) 2017 Creative Tim (https://www.creative-tim.com)" ]
+                  , p [] [ text "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:" ]
+                  , p [] [ text "The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software." ]
+                  , p [] [ text "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE." ]
+                  ]
+                ]
+              ]
+            ]
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
       goto Features = modifyState this _{ menu = Features }
       goto Errors = modifyState this _{ menu = Errors }
+      goto Paper = modifyState this _{ menu = Paper }
+      goto Notice = modifyState this _{ menu = Notice }
 
       toggleLeftMenu :: Effect Unit
       toggleLeftMenu = modifyState this \s -> s{ leftMenu = not s.leftMenu }
@@ -274,8 +301,6 @@ reactClass = component "Main" \this -> do
           , action: Just action
           , feature: Nothing
           }
-        Right { val: NodeRemoveAck { addr } } -> 
-          modifyState this \st -> st{ nodes = Map.delete addr st.nodes }
         _ -> error "unknown type"
       where
       updateWith :: UpdateData -> Effect Unit
@@ -382,6 +407,7 @@ reactClass = component "Main" \this -> do
 
                 node
                   { lastUpdate = dt
+                  , lastUpdate_ms = time'
                   , version = version <|> node.version
                   , cpuPoints = cpuPoints''
                   , cpuHourPoints = cpuHourPoints'
@@ -413,7 +439,9 @@ reactClass = component "Main" \this -> do
               Nothing ->
                 { host: a.host
                 , ip: a.ip
+                , loaded: false
                 , lastUpdate: dt
+                , lastUpdate_ms: time'
                 , version: version
                 , cpuPoints: cpuPoints
                 , cpuHourPoints: maybe [] singleton cpuHourPoint

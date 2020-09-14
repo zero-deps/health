@@ -2,7 +2,7 @@ package .stats
 
 import akka.actor.{ActorLogging, Actor, ActorRef, Props, Stash}
 import zd.kvs.Kvs
-import java.time.LocalDateTime
+import zero.ext._, either._
 
 object KvsPub {
   def props(kvs: Kvs): Props = Props(new KvsPub(kvs))
@@ -10,71 +10,30 @@ object KvsPub {
 
 class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   override def preStart(): Unit = {
-    import keys._
-    kvs.all[StatEn](`cpu_mem.live`).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.sortBy(_.time).foreach{
-      case StatEn(_,_,_,value,time,host,ip) =>
-        self ! StatMsg(Metric("cpu_mem", value), StatMeta(time, host, ip))
-    })
-    kvs.all[StatEn](`cpu.hour`).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.groupBy(_.host).foreach{ case (host, xs) =>
+    // find all nodes
+    kvs.all[StatEn](keys.`cpu_mem.live`).map_(_.foldLeft(Map.empty[String, StatMeta]){
+      case (acc, Right(a)) => acc.get(a.host) match {
+        case Some(b) if b.time >= a.time => acc
+        case _ => acc + (a.host -> StatMeta(a.time, a.host, a.ip))
+      }
+      case (acc, _) => acc
+    }.values.foreach(self ! StatMsg(Metric("", ""), _)))
+    // features
+    kvs.all[StatEn](keys.`feature`).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.groupBy(_.host).foreach{ case (host, xs) =>
       val xs1 = xs.toVector.sortBy(_.time.toLong)
-      val min = xs1.last.time.toLong-60*60*1000
-      xs1.dropWhile(_.time.toLong < min).foreach{ case StatEn(_,_,_,value,time,host,ip) =>
-        self ! StatMsg(Metric("cpu.hour", value), StatMeta(time, host, ip))
+      xs1.dropWhile(_.time.toLong.toLocalDataTime.isBefore(year_ago())).foreach{ case StatEn(_,_,_, value, time, host, ip) =>
+        self ! StatMsg(Metric(keys.`feature`, value), StatMeta(time, host, ip))
       }
     })
-    List((`search.ts.latest`, 5)
-       , (`search.wc.latest`, 5)
-       , (`search.fs.latest`, 5)
-       , (`static.gen.latest`, 5)
-       , (`reindex.all.latest`, 5)
-       )
-    .foreach{ case (key, n) =>
-      val name = key.stripPrefix(".latest")
-      kvs.all[StatEn](key).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.groupBy(_.host).foreach{ case (host, xs) =>
-        val xs1 = xs.toVector
-        val thirdQ = xs1.sortBy(_.data).apply((xs1.length*0.7).toInt).data
-        self ! StatMsg(Measure(s"$name.thirdQ", thirdQ), StatMeta(time="0", host, ""))
-        xs1.sortBy(_.time).takeRight(n).foreach(x =>
-          self ! StatMsg(Measure(name, x.data), StatMeta(x.time, host, ""))
-        )
-      })
-    }
-    List(`static.gen.year`).foreach(name =>
-      kvs.all[StatEn](name).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.groupBy(_.host).foreach{ case (host, xs) =>
-        val xs1 = xs.toVector.sortBy(_.time.toLong)
-        val min = LocalDateTime.now().minusYears(1)
-        xs1.dropWhile(_.time.toLong.toLocalDataTime.isBefore(min)).foreach{ case StatEn(_,_,_,value, time, host, ip) =>
-          self ! StatMsg(Measure(name, value), StatMeta(time, host, ip))
-        }
-    }))
-    List(`feature`, `kvs.size.year`).foreach(name =>
-      kvs.all[StatEn](name).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.groupBy(_.host).foreach{ case (host, xs) =>
-        val xs1 = xs.toVector.sortBy(_.time.toLong)
-        val min = LocalDateTime.now().minusYears(1)
-        xs1.dropWhile(_.time.toLong.toLocalDataTime.isBefore(min)).foreach{ case StatEn(_,_,_,value, time, host, ip) =>
-          self ! StatMsg(Metric(name, value), StatMeta(time, host, ip))
-        }
-      }))
-    kvs.all[StatEn](`action.live`).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.sortBy(_.time).foreach{
-      case StatEn(_,_,_,action,time,host,ip) =>
-        self ! StatMsg(Action(action), StatMeta(time, host, ip))
-    })
-    kvs.all[StatEn](`metrics`).map(_.takeWhile(_.isRight).flatMap(_.toOption)).map(_.foreach{
-      case StatEn(_,_,_,stat,time,host,ip) =>
-        stat.split('|') match {
-          case Array(name, value) =>
-            self ! StatMsg(Metric(name, value), StatMeta(time, host, ip))
-          case _ =>
-        }
-    })
-    kvs.all[StatEn](`errors`).map(_.takeWhile(_.isRight).flatMap(_.toOption)).foreach(_.sortBy(_.time).foreach{
-      case StatEn(_,_,_,stat,time,host,ip) =>
-        stat.split('|') match {
-          case Array(exception, stacktrace, toptrace) =>
-            self ! StatMsg(Error(exception, stacktrace, toptrace), StatMeta(time, host, ip))
-          case _ =>
-        }
-    })
+    // get unique errrors
+    kvs.all[StatEn](keys.`errors`).map_(_.foldLeft(Map.empty[String, StatMsg]){
+      case (acc, Right(a)) => a.data.split('|') match {
+        case Array(exception, stacktrace, toptrace) if !(acc contains stacktrace) =>
+          acc + (stacktrace -> StatMsg(Error(exception, stacktrace, toptrace), StatMeta(a.time, a.host, a.ip)))
+        case _ => acc
+      }
+      case (acc, _) => acc
+    }.values.to(Vector).sortBy(_.meta.time).takeRight(20).foreach(self ! _))
   }
 
   def receive: Receive = {

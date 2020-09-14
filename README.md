@@ -97,6 +97,11 @@ echo -n 'error::TEST::local::Test Exception::[{"className":".stats.handlers.Erro
 
 http://127.0.0.1:8002
 
+### UI
+
+Demo: https://demos.creative-tim.com/black-dashboard/examples/dashboard.html  
+GitHub: https://github.com/creativetimofficial/black-dashboard
+
 ## Stats client
 Library for sending messages to Stats.
 Maven repository: http://ua--nexus01.ee..corp/nexus/content/repositories/releases

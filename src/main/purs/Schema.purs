@@ -55,7 +55,9 @@ type MeasureUpdate =
 type NodeInfo =
   { host :: String
   , ip :: String
+  , loaded :: Boolean
   , lastUpdate :: String
+  , lastUpdate_ms :: Number
   , version :: Maybe String
   , cpuPoints :: Array NumPoint
   , cpuHourPoints :: Array NumPoint

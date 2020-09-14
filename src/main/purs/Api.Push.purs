@@ -7,7 +7,6 @@ module Api.Push
   , Error
   , Action
   , StatMeta
-  , NodeRemoveAck
   , decodePush
   ) where
 
@@ -23,7 +22,7 @@ import Proto.Uint8Array (Uint8Array)
 decodeFieldLoop :: forall a b c. Int -> Decode.Result a -> (a -> b) -> Decode.Result' (Step { a :: Int, b :: b, c :: Int } { pos :: Int, val :: c })
 decodeFieldLoop end res f = map (\{ pos, val } -> Loop { a: end, b: f val, c: pos }) res
 
-data Push = StatMsg StatMsg | NodeRemoveAck NodeRemoveAck
+data Push = StatMsg StatMsg
 type StatMsg = { stat :: Stat, meta :: StatMeta }
 type StatMsg' = { stat :: Maybe Stat, meta :: Maybe StatMeta }
 data Stat = Metric Metric | Measure Measure | Error Error | Action Action
@@ -38,15 +37,12 @@ type Action = { action :: String }
 type Action' = { action :: Maybe String }
 type StatMeta = { time :: String, host :: String, ip :: String }
 type StatMeta' = { time :: Maybe String, host :: Maybe String, ip :: Maybe String }
-type NodeRemoveAck = { addr :: String }
-type NodeRemoveAck' = { addr :: Maybe String }
 
 decodePush :: Uint8Array -> Decode.Result Push
 decodePush _xs_ = do
   { pos: pos1, val: tag } <- Decode.uint32 _xs_ 0
   case tag `zshr` 3 of
     1 -> decode (decodeStatMsg _xs_ pos1) StatMsg
-    10 -> decode (decodeNodeRemoveAck _xs_ pos1) NodeRemoveAck
     i -> Left $ Decode.BadType i
   where
   decode :: forall a. Decode.Result a -> (a -> Push) -> Decode.Result Push
@@ -169,21 +165,5 @@ decodeStatMeta _xs_ pos0 = do
         1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { time = Just val }
         2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { host = Just val }
         3 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { ip = Just val }
-        _ -> decodeFieldLoop end (Decode.skipType _xs_ pos2 $ tag .&. 7) \_ -> acc
-    decode end acc pos1 = pure $ Done { pos: pos1, val: acc }
-
-decodeNodeRemoveAck :: Uint8Array -> Int -> Decode.Result NodeRemoveAck
-decodeNodeRemoveAck _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
-  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { addr: Nothing } pos
-  case val of
-    { addr: Just addr } -> pure { pos: pos1, val: { addr } }
-    _ -> Left $ Decode.MissingFields "NodeRemoveAck"
-    where
-    decode :: Int -> NodeRemoveAck' -> Int -> Decode.Result' (Step { a :: Int, b :: NodeRemoveAck', c :: Int } { pos :: Int, val :: NodeRemoveAck' })
-    decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
-      case tag `zshr` 3 of
-        1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { addr = Just val }
         _ -> decodeFieldLoop end (Decode.skipType _xs_ pos2 $ tag .&. 7) \_ -> acc
     decode end acc pos1 = pure $ Done { pos: pos1, val: acc }

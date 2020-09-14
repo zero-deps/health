@@ -24,15 +24,15 @@ class UdpPub extends Actor with Stash with ActorLogging {
   var socket: Option[ActorRef] = None
   var stageActor: Option[ActorRef] = None
 
-  def hostname(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A")
-  def ipaddr(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A")
+  def hostname(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A").split("-depl-").head
+  def ipaddr(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A").split("-depl-").head
 
   def receive: Receive = {
     case _: Udp.Bound =>
       socket = sender.some
 
     case Udp.Received(data, remote) =>
-      decode[ClientMsg](data.toArray) match {
+      val _ = util.Try(decode[ClientMsg](data.toArray)).collect{
         case MetricMsg(name, value, hostname1, ipaddr1) =>
           self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), host=hostname(hostname1, remote), ip=ipaddr(hostname1, remote)))
         case MeasureMsg(name, value, hostname1, ipaddr1) =>
@@ -50,6 +50,7 @@ class UdpPub extends Actor with Stash with ActorLogging {
       log.debug("got stage actor for udp")
       unstashAll()
       stageActor = a.some
+
     case msg: Push =>
       stageActor match {
         case Some(a) => a ! msg

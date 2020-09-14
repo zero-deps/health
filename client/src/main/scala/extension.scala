@@ -79,7 +79,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
       else if (uptime < 3600) 1 minute
       else 1 hour;
     scheduler.scheduleOnce(t) {
-      metric("uptime", uptime.toString)
+      metric(id.uptime, uptime.toString)
       scheduleUptime()
     }
     ()

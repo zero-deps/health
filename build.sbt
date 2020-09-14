@@ -121,3 +121,5 @@ lazy val api = project.in(file("api")).settings(
 , libraryDependencies += "io.github.zero-deps" %% "proto-macros" % proto % Compile
 , libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto
 )
+
+maintainer := ".core.be@.com"
