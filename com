@@ -1,6 +1,6 @@
 npx spago build && npx purs bundle 'output/**/*.js' -o 'src/main/resources/assets/js/main.js' -m Main
 
-files=("css\/nucleo-icons.css" "css\/black-dashboard.css" "js\/require.js" "js\/main.js" "js\/protobuf.js")
+files=("css\/nucleo-icons.css" "css\/black-dashboard.css" "js\/require.js" "js\/main.js")
 for file in ${files[@]}; do
   cmd="date -r src/main/resources/assets/$file +'%s'"
   v=$(eval "$cmd")
