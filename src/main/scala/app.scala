@@ -34,7 +34,7 @@ object StatsApp extends App {
     `kvs.size.year`, `action.live`, `metrics`, `errors`,
     `feature`
   ).foreach(kvs.all[StatEn](_).map_(_.collect{ case Right(a) => a }.filter{ a =>
-    val old = a.time.toLong.toLocalDataTime.isBefore(year_ago())
+    val old = a.time.toLong.toLocalDataTime().isBefore(year_ago())
     val blocklist = List(":4450", ":4011", ":4012", ":4013", "gitlab-ci-runner", "-depl-")
     blocklist.exists(a.host.contains) || old
   }.foreach(en => kvs.remove[StatEn](en.fid, en.id))))

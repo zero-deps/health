@@ -9,7 +9,7 @@ class Logger extends Actor {
 
   def receive: Receive = {
     case msg: InitializeLogger =>
-      sender ! Logging.loggerInitialized()
+      sender() ! Logging.loggerInitialized()
     case event @ Error(cause: Throwable, logSource: String, logClass: Class[_], message: Any) =>
       val stacktrace = Some{
         val xs = cause.getStackTrace.map(_.toString)

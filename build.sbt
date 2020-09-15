@@ -4,7 +4,7 @@ val frontier = "2.0.2-1-gb7b0ec7"
 val kvs = "4.10.0-5-gf8c46ee"
 val proto = "1.7.1"
 val protopurs = "1.9-1-g0e4361f"
-val scalaV = "2.13.2"
+val scalaV = "2.13.3"
 
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := scalaV
@@ -16,7 +16,6 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 , "-explaintypes"
 , "-feature"
 , "-language:_"
-, "-target:jvm-12"
 , "-unchecked"
 , "-Xfatal-warnings"
 , "-Xlint:adapted-args"
@@ -25,7 +24,6 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 , "-Xlint:inaccessible"
 , "-Xlint:infer-any"
 , "-Xlint:missing-interpolator"
-, "-Xlint:nullary-override"
 , "-Xlint:nullary-unit"
 , "-Xlint:option-implicit"
 , "-Xlint:package-object-classes"
@@ -65,6 +63,7 @@ lazy val stats = project.in(file(".")).settings(
 , libraryDependencies += "com.." %% "ftier" % frontier
 , libraryDependencies += "io.github.zero-deps" %% "kvs-core" % kvs
 , libraryDependencies += "io.github.zero-deps" %% "ext" % ext
+, libraryDependencies += "dev.zio" %% "zio" % "1.0.1"
 , fork := true
 , deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),

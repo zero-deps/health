@@ -25,7 +25,7 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
   IO(Udp) ! Udp.SimpleSender
 
   def receive: Receive = {
-    case Udp.SimpleSenderReady => context become ready(sender)
+    case Udp.SimpleSenderReady => context become ready(sender())
   }
 
   def send(udp: ActorRef)(msg: ClientMsg): Unit = {
