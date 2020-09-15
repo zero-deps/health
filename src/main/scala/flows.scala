@@ -74,10 +74,10 @@ object Flows {
             )
           }
         }
-        kvs.all[StatEn](keys.`static.gen.year`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLong.toLocalDataTime.isBefore(year_ago())).foreach{
+        kvs.all[StatEn](keys.`static.gen.year`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLong.toLocalDataTime().isBefore(year_ago())).foreach{
           case StatEn(_,_,_, value, time, host, ip) => system.eventStream publish StatMsg(Measure(keys.`static.gen.year`, value), StatMeta(time, host, ip))
         })
-        kvs.all[StatEn](keys.`kvs.size.year`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLong.toLocalDataTime.isBefore(year_ago())).foreach{
+        kvs.all[StatEn](keys.`kvs.size.year`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLong.toLocalDataTime().isBefore(year_ago())).foreach{
           case StatEn(_,_,_, value, time, host, ip) => system.eventStream publish StatMsg(Metric(keys.`kvs.size.year`, value), StatMeta(time, host, ip))
         })
         kvs.all[StatEn](keys.`action.live`).map_(_.collect{ case Right(a) => a }.filter(_.host == host).sortBy(_.time).dropWhile(_.time < live_start).foreach{
@@ -159,10 +159,10 @@ object Flows {
       }
 
       def saveYearValue(name: String, value: Long, time: String, host: String, ip: String): (Long, String) = {
-        val date = time.toLong.toLocalDataTime
+        val date = time.toLong.toLocalDataTime()
         val i = date.getMonthValue - 1
         val now = LocalDateTime.now()
-        val last = kvs.el.get[String](s"${name}.year.t.${host}${i}").toOption.flatten.map(_.toLong.toLocalDataTime).getOrElse(now)
+        val last = kvs.el.get[String](s"${name}.year.t.${host}${i}").toOption.flatten.map(_.toLong.toLocalDataTime()).getOrElse(now)
         val n =
           if (date.getYear != last.getYear) 0
           else kvs.el.get[String](s"${name}.year.n.${host}${i}").toOption.flatten.map(_.toInt).getOrElse(0)
@@ -172,7 +172,7 @@ object Flows {
         kvs.el.put(s"${name}.year.t.${host}${i}", time)
         kvs.el.put(s"${name}.year.n.${host}${i}", n1.toString)
         kvs.el.put(s"${name}.year.v.${host}${i}", v1.toString)
-        val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
+        val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis().toString
         kvs.put(StatEn(fid=s"${name}.year", id=s"${host}${i}", prev=empty, v1.toString, time1, host, ip))
         (v1, time1)
       }
@@ -186,17 +186,17 @@ object Flows {
       }
       val save_feature = Flow[Push].collect{
         case StatMsg(Metric("feature", name), StatMeta(time, host, ip)) =>
-          val date = time.toLong.toLocalDataTime
+          val date = time.toLong.toLocalDataTime()
           val i = date.getMonthValue - 1
           val now = LocalDateTime.now()
-          val last = kvs.el.get[String](s"feature.${name}.t.${host}${i}").toOption.flatten.map(_.toLong.toLocalDataTime).getOrElse(now)
+          val last = kvs.el.get[String](s"feature.${name}.t.${host}${i}").toOption.flatten.map(_.toLong.toLocalDataTime()).getOrElse(now)
           val n =
             if (date.getYear != last.getYear) 0
             else kvs.el.get[String](s"feature.${name}.n.${host}${i}").toOption.flatten.map(_.toInt).getOrElse(0)
           val n1 = n + 1
           kvs.el.put(s"feature.${name}.t.${host}${i}", time)
           kvs.el.put(s"feature.${name}.n.${host}${i}", n1.toString)
-          val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis.toString
+          val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis().toString
           kvs.put(StatEn(fid=`feature`, id=s"${host}${i}${name}", prev=empty, s"${name}~${n1}", time1, host, ip))
       }
       val save_action = Flow[Push].collect{

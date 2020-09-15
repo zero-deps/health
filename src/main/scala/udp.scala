@@ -29,7 +29,7 @@ class UdpPub extends Actor with Stash with ActorLogging {
 
   def receive: Receive = {
     case _: Udp.Bound =>
-      socket = sender.some
+      socket = sender().some
 
     case Udp.Received(data, remote) =>
       val _ = util.Try(decode[ClientMsg](data.toArray)).collect{
