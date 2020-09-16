@@ -24,8 +24,8 @@ class UdpPub extends Actor with Stash with ActorLogging {
   var socket: Option[ActorRef] = None
   var stageActor: Option[ActorRef] = None
 
-  def hostname(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A").split("-depl-").head
-  def ipaddr(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A").split("-depl-").head
+  def merge_host(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostName)).getOrElse("N/A").split("-depl-").head
+  def merge_ipaddr(x: Option[String], remote: InetSocketAddress): String = x.orElse(Option(remote.getAddress).map(_.getHostAddress)).getOrElse("N/A").split("-depl-").head
 
   def receive: Receive = {
     case _: Udp.Bound =>
@@ -34,13 +34,29 @@ class UdpPub extends Actor with Stash with ActorLogging {
     case Udp.Received(data, remote) =>
       val _ = util.Try(decode[ClientMsg](data.toArray)).collect{
         case MetricMsg(name, value, hostname1, ipaddr1) =>
-          self ! StatMsg(stat=Metric(name, value), meta=StatMeta(now_ms(), host=hostname(hostname1, remote), ip=ipaddr(hostname1, remote)))
+          val host = merge_host(hostname1, remote)
+          val ipaddr = merge_ipaddr(hostname1, remote)
+          val time = System.currentTimeMillis
+          self ! HostMsg(host=host, ipaddr=ipaddr, time=time)
+          self ! StatMsg(stat=Metric(name, value), time=time, host=host)
         case MeasureMsg(name, value, hostname1, ipaddr1) =>
-          self ! StatMsg(stat=Measure(name, value), meta=StatMeta(now_ms(), host=hostname(hostname1, remote), ip=ipaddr(hostname1, remote)))
+          val host = merge_host(hostname1, remote)
+          val ipaddr = merge_ipaddr(hostname1, remote)
+          val time = System.currentTimeMillis
+          self ! HostMsg(host=host, ipaddr=ipaddr, time=time)
+          self ! StatMsg(stat=Measure(name, value), time=time, host=host)
         case ErrorMsg(exception, stacktrace, toptrace, hostname1, ipaddr1) =>
-          self ! StatMsg(stat=Error(exception, stacktrace, toptrace), meta=StatMeta(now_ms(), host=hostname(hostname1, remote), ip=ipaddr(hostname1, remote)))
+          val host = merge_host(hostname1, remote)
+          val ipaddr = merge_ipaddr(hostname1, remote)
+          val time = System.currentTimeMillis
+          self ! HostMsg(host=host, ipaddr=ipaddr, time=time)
+          self ! StatMsg(stat=Error(exception, stacktrace, toptrace), time=time, host=host)
         case ActionMsg(action, hostname1, ipaddr1) =>
-          self ! StatMsg(stat=Action(action), meta=StatMeta(now_ms(), host=hostname(hostname1, remote), ip=ipaddr(hostname1, remote)))
+          val host = merge_host(hostname1, remote)
+          val ipaddr = merge_ipaddr(hostname1, remote)
+          val time = System.currentTimeMillis
+          self ! HostMsg(host=host, ipaddr=ipaddr, time=time)
+          self ! StatMsg(stat=Action(action), time=time, host=host)
       }
 
     case Udp.Unbound =>

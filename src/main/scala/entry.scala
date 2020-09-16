@@ -2,12 +2,8 @@ package .stats
 
 import zd.proto.api.N
 
-final case class StatEn
-  ( @N(1) fid: String
-  , @N(2) id: String
-  , @N(3) prev: String
-  , @N(4) data: String
-  , @N(5) time: String
-  , @N(6) host: String
-  , @N(7) ip: String
-  ) extends zd.kvs.en.En
+final case class EnData
+  ( @N(1) value: String
+  , @N(2) time: Long
+  , @N(3) host: String
+  )
