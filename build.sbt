@@ -1,8 +1,8 @@
 val akka = "2.5.31"
 val ext = "2.1.1-2-gd0abdf9"
 val frontier = "2.0.2-1-gb7b0ec7"
-val kvs = "4.10.0-5-gf8c46ee"
-val proto = "1.7.1"
+val kvs = "5.1.0-16-g0b00814"
+val proto = "1.7.1-6-gcdbdf93"
 val protopurs = "1.9-1-g0e4361f"
 val scalaV = "2.13.3"
 

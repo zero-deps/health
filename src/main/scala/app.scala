@@ -33,13 +33,38 @@ object StatsApp extends App {
     `static.create.year`, `static.gen.year`,
     `kvs.size.year`, `action.live`, `metrics`, `errors`,
     `feature`
-  ).foreach(kvs.all[StatEn](_).map_(_.collect{ case Right(a) => a }.filter{ a =>
-    val old = a.time.toLong.toLocalDataTime().isBefore(year_ago())
-    val blocklist = List(":4450", ":4011", ":4012", ":4013", "gitlab-ci-runner", "-depl-")
-    blocklist.exists(a.host.contains) || old
-  }.foreach(en => kvs.remove[StatEn](en.fid, en.id))))
+  ).foreach{ fid =>
+    kvs.all(fid).map_(_.collect{ case Right(a) => a.id -> extract(a) }.filter{ case (_, data) =>
+      val old = data.time.toLong.toLocalDataTime().isBefore(year_ago())
+      val blocklist = List("gitlab-ci-runner")
+      blocklist.exists(data.host.contains) || old
+    }.foreach{ case (id, _) => kvs.remove(fid, id) })
+  }
 
   Flows.udp(system, kvs).run()
 
   ws.bindAndHandle
+
+  // import zio._
+
+  // val app: ZIO[ActorSystem, Any, Unit] = {
+  //   (for {
+  //     q    <- Queue.unbounded[NewEvent]
+  //     _    <- workerLoop(q).forever.fork
+  //     addr <- SocketAddress.inetSocketAddress(8001)
+  //     kvs  <- ZIO.access[Kvs](_.get)
+  //     bl   <- ZIO.access[Blocking](_.get)
+  //     _    <- httpServer.bind(
+  //               addr,
+  //               IO.succeed(req => httpHandler(req).provideLayer(ZLayer.succeed(kvs))),
+  //               IO.succeed(msg => wsHandler(q)(msg).provideSomeLayer[WsContext](ZLayer.succeed(kvs) ++ ZLayer.succeed(bl)))
+  //             )
+  //   } yield ()).provideLayer(Kvs.live ++ Blocking.live)
+  // }
+
+  // val runtime = Runtime.default
+  // runtime.unsafeRun(app.provideLayer(system).fold(
+  //   err => { println(err); 1 },
+  //   _   => {               0 }
+  // ))
 }
