@@ -1,6 +1,6 @@
 package .stats
 
-import zd.proto.purs.{Purescript, io}
+import zero.protopurs.{Purescript, io}
 
 object Purs extends App {
   val res = Purescript.generate[Push, Pull](moduleEncode="Api.Pull", moduleDecode="Api.Push", "Api.Common", Nil)
