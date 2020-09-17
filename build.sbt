@@ -1,9 +1,9 @@
 val akka = "2.5.31"
 val ext = "2.1.1-2-gd0abdf9"
 val frontier = "2.0.2-1-gb7b0ec7"
-val kvs = "5.1.0-16-g0b00814"
-val proto = "1.7.1-6-gcdbdf93"
-val protopurs = "1.9-1-g0e4361f"
+val kvs = "5.1.0-21-g20bbd4f"
+val proto = "1.8"
+val protopurs = "2.1"
 val scalaV = "2.13.3"
 
 ThisBuild / organization := "com.."
