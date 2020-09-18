@@ -28,9 +28,9 @@ object StatsApp extends App {
   LazyList(
     `cpu_mem.live`, `cpu.hour`,
     `search.ts.latest`, `search.wc.latest`, `search.fs.latest`,
-    `static.create.latest`, `static.gen.latest`,
-    `reindex.ts.latest`, `reindex.wc.latest`, `reindex.files.latest`, `reindex.all.latest`,
-    `static.create.year`, `static.gen.year`,
+    `static.gen.latest`,
+    `reindex.all.latest`,
+    `static.gen.year`,
     `kvs.size.year`, `action.live`, `metrics`, `errors`,
     `feature`
   ).foreach{ fid =>
