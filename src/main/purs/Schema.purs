@@ -10,16 +10,14 @@ type ErrorInfo =
   { exception :: Array String
   , stacktrace :: Array String
   , toptrace :: String
-  , time :: String
+  , time :: Number
   , host :: String
-  , ip :: String
   , key :: String -- for React
   }
 
 type UpdateData =
   { host :: String
-  , ip :: String
-  , time :: String
+  , time :: Number
   , metrics :: Maybe MetricsUpdate
   , measure :: Maybe MeasureUpdate
   , action :: Maybe String

@@ -227,7 +227,7 @@ reactClass = component "Main" \this -> do
     onMsg :: ReactThis Props State -> Uint8Array -> Effect Unit
     onMsg this bytes = do
       case decodePush bytes of
-        Right { val: StatMsg { stat: Metric { name, value}, meta: { time, host, ip }}} -> do
+        Right { val: StatMsg { stat: Metric { name, value}, time, host }} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
           let cpu_hour = if name == "cpu.hour" then Just value else Nothing
           let uptime = if name == "uptime" then Just value else Nothing
@@ -239,7 +239,6 @@ reactClass = component "Main" \this -> do
           let feature = if name == "feature" then Just value else Nothing
           updateWith
             { host: host
-            , ip: ip
             , time: time
             , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, kvsSize_year }
             , measure: Nothing
@@ -247,7 +246,7 @@ reactClass = component "Main" \this -> do
             , action: Nothing
             , feature
             }
-        Right { val: StatMsg { stat: Measure { name, value}, meta: { time, host, ip }}} -> do
+        Right { val: StatMsg { stat: Measure { name, value }, time, host }} -> do
           let value' = readInt 10 value
           let searchTs = if name == "search.ts" then Just value else Nothing
           let searchTs_thirdQ = if name == "search.ts.thirdQ" then Just value else Nothing
@@ -262,7 +261,6 @@ reactClass = component "Main" \this -> do
           let reindexAll_thirdQ = if name == "reindex.all.thirdQ" then Just value else Nothing
           updateWith
             { host: host
-            , ip: ip
             , time: time
             , metrics: Nothing
             , measure: Just
@@ -276,14 +274,13 @@ reactClass = component "Main" \this -> do
             , action: Nothing
             , feature: Nothing
             }
-        Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace', toptrace}, meta: { time, host, ip }}} -> do
+        Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace', toptrace}, time, host }} -> do
           let exception = split (Pattern "~") exception'
           let stacktrace = split (Pattern "~") stacktrace'
-          let key = host<>time
-          let err = { exception, stacktrace, toptrace, time, host, ip, key }
+          let key = host<> (show time)
+          let err = { exception, stacktrace, toptrace, time, host, key }
           updateWith
             { host: host
-            , ip: ip
             , time: time
             , metrics: Nothing
             , measure: Nothing
@@ -291,9 +288,8 @@ reactClass = component "Main" \this -> do
             , action: Nothing
             , feature: Nothing
             }
-        Right { val: StatMsg { stat: Action { action }, meta: { time, host, ip }}} -> updateWith
+        Right { val: StatMsg { stat: Action { action }, time, host }} -> updateWith
           { host: host
-          , ip: ip
           , time: time
           , metrics: Nothing
           , measure: Nothing
@@ -305,7 +301,7 @@ reactClass = component "Main" \this -> do
       where
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
-        let time' = readInt 10 a.time
+        let time' = a.time
         dt <- dateTime time'
         let uptime = a.metrics >>= _.uptime
         let version = a.metrics >>= _.version
@@ -438,7 +434,7 @@ reactClass = component "Main" \this -> do
                   }
               Nothing ->
                 { host: a.host
-                , ip: a.ip
+                , ip: ""
                 , loaded: false
                 , lastUpdate: dt
                 , lastUpdate_ms: time'

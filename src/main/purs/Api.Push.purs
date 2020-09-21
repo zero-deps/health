@@ -6,7 +6,7 @@ module Api.Push
   , Measure
   , Error
   , Action
-  , StatMeta
+  , HostMsg
   , decodePush
   ) where
 
@@ -22,9 +22,10 @@ import Proto.Uint8Array (Uint8Array)
 decodeFieldLoop :: forall a b c. Int -> Decode.Result a -> (a -> b) -> Decode.Result' (Step { a :: Int, b :: b, c :: Int } { pos :: Int, val :: c })
 decodeFieldLoop end res f = map (\{ pos, val } -> Loop { a: end, b: f val, c: pos }) res
 
-data Push = StatMsg StatMsg
-type StatMsg = { stat :: Stat, meta :: StatMeta }
-type StatMsg' = { stat :: Maybe Stat, meta :: Maybe StatMeta }
+data Push = StatMsg StatMsg | HostMsg HostMsg
+derive instance eqPush :: Eq Push
+type StatMsg = { stat :: Stat, time :: Number, host :: String }
+type StatMsg' = { stat :: Maybe Stat, time :: Maybe Number, host :: Maybe String }
 data Stat = Metric Metric | Measure Measure | Error Error | Action Action
 derive instance eqStat :: Eq Stat
 type Metric = { name :: String, value :: String }
@@ -35,14 +36,15 @@ type Error = { exception :: String, stacktrace :: String, toptrace :: String }
 type Error' = { exception :: Maybe String, stacktrace :: Maybe String, toptrace :: Maybe String }
 type Action = { action :: String }
 type Action' = { action :: Maybe String }
-type StatMeta = { time :: String, host :: String, ip :: String }
-type StatMeta' = { time :: Maybe String, host :: Maybe String, ip :: Maybe String }
+type HostMsg = { host :: String, ipaddr :: String, time :: Number }
+type HostMsg' = { host :: Maybe String, ipaddr :: Maybe String, time :: Maybe Number }
 
 decodePush :: Uint8Array -> Decode.Result Push
 decodePush _xs_ = do
-  { pos: pos1, val: tag } <- Decode.uint32 _xs_ 0
+  { pos: pos1, val: tag } <- Decode.unsignedVarint32 _xs_ 0
   case tag `zshr` 3 of
     1 -> decode (decodeStatMsg _xs_ pos1) StatMsg
+    2 -> decode (decodeHostMsg _xs_ pos1) HostMsg
     i -> Left $ Decode.BadType i
   where
   decode :: forall a. Decode.Result a -> (a -> Push) -> Decode.Result Push
@@ -50,29 +52,30 @@ decodePush _xs_ = do
 
 decodeStatMsg :: Uint8Array -> Int -> Decode.Result StatMsg
 decodeStatMsg _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
-  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { stat: Nothing, meta: Nothing } pos
+  { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
+  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { stat: Nothing, time: Nothing, host: Nothing } pos
   case val of
-    { stat: Just stat, meta: Just meta } -> pure { pos: pos1, val: { stat, meta } }
+    { stat: Just stat, time: Just time, host: Just host } -> pure { pos: pos1, val: { stat, time, host } }
     _ -> Left $ Decode.MissingFields "StatMsg"
     where
     decode :: Int -> StatMsg' -> Int -> Decode.Result' (Step { a :: Int, b :: StatMsg', c :: Int } { pos :: Int, val :: StatMsg' })
     decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
+      { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (decodeStat _xs_ pos2) \val -> acc { stat = Just val }
-        2 -> decodeFieldLoop end (decodeStatMeta _xs_ pos2) \val -> acc { meta = Just val }
+        2 -> decodeFieldLoop end (Decode.signedVarint64 _xs_ pos2) \val -> acc { time = Just val }
+        3 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { host = Just val }
         _ -> decodeFieldLoop end (Decode.skipType _xs_ pos2 $ tag .&. 7) \_ -> acc
     decode end acc pos1 = pure $ Done { pos: pos1, val: acc }
 
 decodeStat :: Uint8Array -> Int -> Decode.Result Stat
 decodeStat _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
+  { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
   tailRecM3 decode (pos + msglen) Nothing pos
     where
     decode :: Int -> Maybe Stat -> Int -> Decode.Result' (Step { a :: Int, b :: Maybe Stat, c :: Int } { pos :: Int, val :: Stat })
     decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
+      { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (decodeMetric _xs_ pos2) (Just <<< Metric)
         2 -> decodeFieldLoop end (decodeMeasure _xs_ pos2) (Just <<< Measure)
@@ -84,7 +87,7 @@ decodeStat _xs_ pos0 = do
 
 decodeMetric :: Uint8Array -> Int -> Decode.Result Metric
 decodeMetric _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
+  { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
   { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { name: Nothing, value: Nothing } pos
   case val of
     { name: Just name, value: Just value } -> pure { pos: pos1, val: { name, value } }
@@ -92,7 +95,7 @@ decodeMetric _xs_ pos0 = do
     where
     decode :: Int -> Metric' -> Int -> Decode.Result' (Step { a :: Int, b :: Metric', c :: Int } { pos :: Int, val :: Metric' })
     decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
+      { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { name = Just val }
         2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { value = Just val }
@@ -101,7 +104,7 @@ decodeMetric _xs_ pos0 = do
 
 decodeMeasure :: Uint8Array -> Int -> Decode.Result Measure
 decodeMeasure _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
+  { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
   { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { name: Nothing, value: Nothing } pos
   case val of
     { name: Just name, value: Just value } -> pure { pos: pos1, val: { name, value } }
@@ -109,7 +112,7 @@ decodeMeasure _xs_ pos0 = do
     where
     decode :: Int -> Measure' -> Int -> Decode.Result' (Step { a :: Int, b :: Measure', c :: Int } { pos :: Int, val :: Measure' })
     decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
+      { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { name = Just val }
         2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { value = Just val }
@@ -118,7 +121,7 @@ decodeMeasure _xs_ pos0 = do
 
 decodeError :: Uint8Array -> Int -> Decode.Result Error
 decodeError _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
+  { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
   { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { exception: Nothing, stacktrace: Nothing, toptrace: Nothing } pos
   case val of
     { exception: Just exception, stacktrace: Just stacktrace, toptrace: Just toptrace } -> pure { pos: pos1, val: { exception, stacktrace, toptrace } }
@@ -126,7 +129,7 @@ decodeError _xs_ pos0 = do
     where
     decode :: Int -> Error' -> Int -> Decode.Result' (Step { a :: Int, b :: Error', c :: Int } { pos :: Int, val :: Error' })
     decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
+      { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { exception = Just val }
         2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { stacktrace = Just val }
@@ -136,7 +139,7 @@ decodeError _xs_ pos0 = do
 
 decodeAction :: Uint8Array -> Int -> Decode.Result Action
 decodeAction _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
+  { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
   { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { action: Nothing } pos
   case val of
     { action: Just action } -> pure { pos: pos1, val: { action } }
@@ -144,26 +147,26 @@ decodeAction _xs_ pos0 = do
     where
     decode :: Int -> Action' -> Int -> Decode.Result' (Step { a :: Int, b :: Action', c :: Int } { pos :: Int, val :: Action' })
     decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
+      { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { action = Just val }
         _ -> decodeFieldLoop end (Decode.skipType _xs_ pos2 $ tag .&. 7) \_ -> acc
     decode end acc pos1 = pure $ Done { pos: pos1, val: acc }
 
-decodeStatMeta :: Uint8Array -> Int -> Decode.Result StatMeta
-decodeStatMeta _xs_ pos0 = do
-  { pos, val: msglen } <- Decode.uint32 _xs_ pos0
-  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { time: Nothing, host: Nothing, ip: Nothing } pos
+decodeHostMsg :: Uint8Array -> Int -> Decode.Result HostMsg
+decodeHostMsg _xs_ pos0 = do
+  { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
+  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { host: Nothing, ipaddr: Nothing, time: Nothing } pos
   case val of
-    { time: Just time, host: Just host, ip: Just ip } -> pure { pos: pos1, val: { time, host, ip } }
-    _ -> Left $ Decode.MissingFields "StatMeta"
+    { host: Just host, ipaddr: Just ipaddr, time: Just time } -> pure { pos: pos1, val: { host, ipaddr, time } }
+    _ -> Left $ Decode.MissingFields "HostMsg"
     where
-    decode :: Int -> StatMeta' -> Int -> Decode.Result' (Step { a :: Int, b :: StatMeta', c :: Int } { pos :: Int, val :: StatMeta' })
+    decode :: Int -> HostMsg' -> Int -> Decode.Result' (Step { a :: Int, b :: HostMsg', c :: Int } { pos :: Int, val :: HostMsg' })
     decode end acc pos1 | pos1 < end = do
-      { pos: pos2, val: tag } <- Decode.uint32 _xs_ pos1
+      { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
-        1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { time = Just val }
-        2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { host = Just val }
-        3 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { ip = Just val }
+        1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { host = Just val }
+        2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { ipaddr = Just val }
+        3 -> decodeFieldLoop end (Decode.signedVarint64 _xs_ pos2) \val -> acc { time = Just val }
         _ -> decodeFieldLoop end (Decode.skipType _xs_ pos2 $ tag .&. 7) \_ -> acc
     decode end acc pos1 = pure $ Done { pos: pos1, val: acc }
