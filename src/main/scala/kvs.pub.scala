@@ -19,7 +19,7 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
     //   case (acc, _) => acc
     // }.values.foreach(self ! StatMsg(Metric("", ""), _))) //todo: send new data type
     // features
-    kvs.all(keys.`feature`).map_(_.collect{ case Right(a) => extract(a)}.groupBy(_.host).foreach{ case (host, xs) =>
+    kvs.all(str_to_bytes("feature")).map_(_.collect{ case Right(a) => extract(a)}.groupBy(_.host).foreach{ case (host, xs) =>
       val xs1 = xs.toVector.sortBy(_.time)
       xs1.dropWhile(_.time.toLong.toLocalDataTime().isBefore(year_ago())).foreach{ case EnData(value, time, host) =>
         self ! StatMsg(Metric("feature", value), time=time, host=host)
