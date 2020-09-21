@@ -79,7 +79,7 @@ errorReactClass = component "Error" \this -> do
     render this = do
       s <- getState this
       props <- getProps this
-      dt <- dateTime $ readInt 10 props.err.time
+      dt <- dateTime props.err.time
       let nocause = props.err.toptrace == "--"
       pure $
         tr' $ (if props.showAddr then

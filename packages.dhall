@@ -127,7 +127,7 @@ let additions =
       { protobuf =
         { dependencies = [ "integers", "arrays" ]
         , repo = "https://github.com/zero-deps/purescript-protobuf.git"
-        , version = "1.1.1"
+        , version = "1.2.1"
         }
       }
 
