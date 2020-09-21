@@ -45,13 +45,13 @@ object Flows {
   def wsHandler(system: ActorSystem, @annotation.unused kvs: Kvs) =
     Flow[Pull].collect {
       case HealthAsk(host) =>
-        val live_start = kvs.all(keys.`cpu_mem.live`).toOption.flatMap(_.collect{ case Right(a) => extract(a) }.filter(_.host == host).sortBy(_.time).map{
+        val live_start = kvs.all(str_to_bytes(s"cpu_mem.live.$host")).toOption.flatMap(_.collect{ case Right(a) => extract(a) }.sortBy(_.time).map{
           case EnData(value, time, host) =>
             system.eventStream publish StatMsg(Metric("cpu_mem", value), time=time, host=host); time
         }.force.headOption).getOrElse(0L);
         {
-          kvs.all(keys.`cpu.hour`).map_{ xs =>
-            val xs1 = xs.collect{ case Right(a) => extract(a) }.filter(_.host == host).sortBy(_.time)
+          kvs.all(str_to_bytes(s"cpu.hour.$host")).map_{ xs =>
+            val xs1 = xs.collect{ case Right(a) => extract(a) }.sortBy(_.time)
             val min = xs1.lastOption.map(_.time).getOrElse(0L)-60*60*1000 //todo
             xs1.dropWhile(_.time < min).foreach{
               case EnData(value, time, host) =>
@@ -59,14 +59,14 @@ object Flows {
             }
           }
         }
-        List((keys.`search.ts.latest`, "search.ts", 5)
-          , (keys.`search.wc.latest`, "search.wc", 5)
-          , (keys.`search.fs.latest`, "search.fs", 5)
-          , (keys.`static.gen.latest`, "static.gen", 5)
-          , (keys.`reindex.all.latest`, "reindex.all", 5)
-          ).foreach{ case (key, name, n) =>
-          kvs.all(key).map_{ xs =>
-            val xs1 = xs.collect{ case Right(a) => extract(a) }.filter(_.host == host)
+        List(("search.ts", 5)
+          , ("search.wc", 5)
+          , ("search.fs", 5)
+          , ("static.gen", 5)
+          , ("reindex.all", 5)
+          ).foreach{ case (name, n) =>
+          kvs.all(str_to_bytes(s"$name.$host")).map_{ xs =>
+            val xs1 = xs.collect{ case Right(a) => extract(a) }
             val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
             system.eventStream publish StatMsg(Measure(s"$name.thirdQ", thirdQ), time=0, host=host)
             xs1.sortBy(_.time).takeRight(n).foreach(x =>
@@ -74,16 +74,16 @@ object Flows {
             )
           }
         }
-        kvs.all(keys.`static.gen.year`).map_(_.collect{ case Right(a) => extract(a) }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
+        kvs.all(str_to_bytes(s"static.gen.year.$host")).map_(_.collect{ case Right(a) => extract(a) }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
           case EnData(value, time, host) => system.eventStream publish StatMsg(Measure("static.gen.year", value), time=time, host=host)
         })
-        kvs.all(keys.`kvs.size.year`).map_(_.collect{ case Right(a) => extract(a) }.filter(_.host == host).sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
+        kvs.all(str_to_bytes(s"kvs.size.year.$host")).map_(_.collect{ case Right(a) => extract(a) }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
           case EnData(value, time, host) => system.eventStream publish StatMsg(Metric("kvs.size.year", value), time=time, host=host)
         })
-        kvs.all(keys.`action.live`).map_(_.collect{ case Right(a) => extract(a) }.filter(_.host == host).sortBy(_.time).dropWhile(_.time < live_start).foreach{
+        kvs.all(str_to_bytes(s"action.live.$host")).map_(_.collect{ case Right(a) => extract(a) }.sortBy(_.time).dropWhile(_.time < live_start).foreach{
           case EnData(action, time, host) => system.eventStream publish StatMsg(Action(action), time=time, host=host)
         })
-        kvs.all(keys.`metrics`).map_(_.collect{ case Right(a) => extract(a) }.filter(_.host == host).foreach{
+        kvs.all(str_to_bytes(s"metrics.$host")).map_(_.collect{ case Right(a) => extract(a) }.foreach{
           case EnData(stat, time, host) => stat.split('|') match { //todo: remove split, use name
             case Array(name, value) =>
               system.eventStream publish StatMsg(Metric(name, value), time=time, host=host)
@@ -95,21 +95,19 @@ object Flows {
   def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
     RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
       import GraphDSL.Implicits._
-      import keys._
-
       val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
       val logIn = Flow[Push].map{ msg => system.log.debug("UDP: {}", msg); msg }
       val save_metric = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem"|"kvs.size"|"feature", _), _, _) =>
         case StatMsg(Metric(name, value), time, host) =>
-          kvs.put(fid=`metrics`, id=str_to_bytes(s"${host}${name}"), insert(EnData(value=s"${name}|${value}", time=time, host=host)))
+          kvs.put(fid=str_to_bytes(s"metrics.$host"), id=str_to_bytes(name), insert(EnData(value=s"${name}|${value}", time=time, host=host)))
       }
       val save_cpumem = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem", value), time, host) =>
           { // live
             val i = kvs.el.get(str_to_bytes(s"cpu_mem.live.idx.$host")).toOption.flatten.map(integer).getOrElse(0)
             for {
-              _ <- kvs.put(fid=`cpu_mem.live`, id=str_to_bytes(s"${host}${i}"), insert(EnData(value=value, time=time, host=host)))
+              _ <- kvs.put(fid=str_to_bytes(s"cpu_mem.live.$host"), id=int_to_bytes(i), insert(EnData(value=value, time=time, host=host)))
               i1 = (i + 1) % 20
               _ <- kvs.el.put(str_to_bytes(s"cpu_mem.live.idx.$host"), int_to_bytes(i1))
             } yield ()
@@ -117,7 +115,7 @@ object Flows {
           value.split('~') match {
             case Array(cpu, _, _, _) =>
               { // hour
-                val i = ((time / 1000 / 60) % 60) / 3 // [0, 19]
+                val i = (((time / 1000 / 60) % 60) / 3).toInt // [0, 19]
                 val now = System.currentTimeMillis
                 val last = kvs.el.get(str_to_bytes(s"cpu.hour.t.$host$i")).toOption.flatten.map(long).getOrElse(now)
                 val n =
@@ -130,7 +128,7 @@ object Flows {
                 kvs.el.put(str_to_bytes(s"cpu.hour.n.$host$i"), int_to_bytes(n1))
                 kvs.el.put(str_to_bytes(s"cpu.hour.v.$host$i"), float_to_bytes(v1))
                 val time1 = ((time / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000
-                kvs.put(fid=`cpu.hour`, id=str_to_bytes(s"$host$i"), insert(EnData(value=v1.toInt.toString, time=time1, host=host)))
+                kvs.put(fid=str_to_bytes(s"cpu.hour.$host"), id=int_to_bytes(i), insert(EnData(value=v1.toInt.toString, time=time1, host=host)))
                 system.eventStream.publish(StatMsg(Metric("cpu.hour", v1.toInt.toString), time=time1, host=host))
               }
             case _ =>
@@ -144,13 +142,13 @@ object Flows {
           }
           val i = kvs.el.get(str_to_bytes(s"${name}.latest.idx.$host")).toOption.flatten.map(integer).getOrElse(0)
           for {
-            _ <- kvs.put(fid=str_to_bytes(s"${name}.latest"), id=str_to_bytes(s"${host}${i}"), insert(EnData(value=value, time=time, host=host)))
+            _ <- kvs.put(fid=str_to_bytes(s"${name}.latest.$host"), id=int_to_bytes(i), insert(EnData(value=value, time=time, host=host)))
             i1 = (i + 1) % limit
             _ <- kvs.el.put(str_to_bytes(s"$name.latest.idx.$host"), int_to_bytes(i1))
           } yield ()
           // calculate new quartile
-          kvs.all(str_to_bytes(s"${name}.latest")).map_{ xs =>
-            val xs1 = xs.collect{ case Right(a) => extract(a)}.filter(_.host == host).toVector.sortBy(_.value.toInt)
+          kvs.all(str_to_bytes(s"${name}.latest.$host")).map_{ xs =>
+            val xs1 = xs.collect{ case Right(a) => extract(a)}.toVector.sortBy(_.value.toInt)
             val thirdQ = xs1((xs1.length*0.7).toInt).value
             val msg = StatMsg(Measure(s"${name}.thirdQ", thirdQ), time=0, host=host)
             system.eventStream.publish(msg)
@@ -172,7 +170,7 @@ object Flows {
         kvs.el.put(str_to_bytes(s"${name}.year.n.${host}${i}"), int_to_bytes(n1))
         kvs.el.put(str_to_bytes(s"${name}.year.v.${host}${i}"), long_to_bytes(v1))
         val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
-        kvs.put(fid=str_to_bytes(s"${name}.year"), id=str_to_bytes(s"${host}${i}"), insert(EnData(value=v1.toString, time=time1, host=host)))
+        kvs.put(fid=str_to_bytes(s"${name}.year.$host"), id=int_to_bytes(i), insert(EnData(value=v1.toString, time=time1, host=host)))
         (v1, time1)
       }
       val save_year_value = Flow[Push].collect{
@@ -196,13 +194,13 @@ object Flows {
           kvs.el.put(str_to_bytes(s"feature.${name}.t.${host}${i}"), long_to_bytes(time))
           kvs.el.put(str_to_bytes(s"feature.${name}.n.${host}${i}"), int_to_bytes(n1))
           val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
-          kvs.put(fid=`feature`, id=str_to_bytes(s"${host}${i}${name}"), insert(EnData(value=s"${name}~${n1}", time=time1, host=host)))
+          kvs.put(fid=str_to_bytes("feature"), id=str_to_bytes(s"${host}${i}${name}"), insert(EnData(value=s"${name}~${n1}", time=time1, host=host)))
       }
       val save_action = Flow[Push].collect{
         case StatMsg(Action(action), time, host) =>
           val i = kvs.el.get(str_to_bytes(s"action.live.idx.$host")).toOption.flatten.map(integer).getOrElse(0)
           for {
-            _ <- kvs.put(fid=`action.live`, id=str_to_bytes(s"${host}${i}"), insert(EnData(value=action, time=time, host=host)))
+            _ <- kvs.put(fid=str_to_bytes(s"action.live.$host"), id=int_to_bytes(i), insert(EnData(value=action, time=time, host=host)))
             i1 = (i + 1) % 20
             _ <- kvs.el.put(str_to_bytes(s"action.live.idx.$host"), int_to_bytes(i1))
           } yield ()
@@ -211,7 +209,7 @@ object Flows {
         case StatMsg(Error(exception, stacktrace, toptrace), time, host) =>
           val i = kvs.el.get(str_to_bytes(s"errors.idx.$host")).toOption.flatten.map(integer).getOrElse(0)
           for {
-            _ <- kvs.put(fid=`errors`, id=str_to_bytes(s"${host}${i}"), insert(EnData(value=s"${exception}|${stacktrace}|${toptrace}", time=time, host=host)))
+            _ <- kvs.put(fid=str_to_bytes(s"errors.$host"), id=int_to_bytes(i), insert(EnData(value=s"${exception}|${stacktrace}|${toptrace}", time=time, host=host)))
             i1 = (i + 1) % 100
             _ <- kvs.el.put(str_to_bytes(s"errors.idx.$host"), int_to_bytes(i1))
           } yield ()
