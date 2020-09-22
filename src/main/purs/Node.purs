@@ -15,12 +15,12 @@ import Prelude (bind, map, pure, ($), (<>), (==))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, div', h2, h3, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
 import React.DOM.Props (style, colSpan, onClick)
-import Schema (FdInfo, FsInfo, NodeInfo, ThrInfo, ChartRange(Live, Hour))
+import Schema (FdInfo, FsInfo, NodeData, ThrInfo, ChartRange(Live, Hour))
 
 type State =
   { bigChartRange :: ChartRange
   }
-type Props = NodeInfo
+type Props = NodeData
 
 reactClass :: ReactClass Props
 reactClass = component "Node" \this -> do
@@ -156,7 +156,7 @@ reactClass = component "Node" \this -> do
           ]
         ]
       ]
-  importCard :: NodeInfo -> ReactElement
+  importCard :: NodeData -> ReactElement
   importCard { importLog } =
     div [ cn "col-lg-6 col-md-12" ]
       [ div [ cn "card" ]
@@ -173,7 +173,7 @@ reactClass = component "Node" \this -> do
         , div [ cn "card-footer text-muted" ] [ text "This section shows progress of import of archive. Use it for debugging purpose." ]
         ]
       ]
-  othCard :: NodeInfo -> ReactElement
+  othCard :: NodeData -> ReactElement
   othCard p = let uptime = map duration p.uptime in card "Other Metrics"
     [ th' [ text "Name" ]
     , th [ cn "text-right" ] [ text "Value" ]

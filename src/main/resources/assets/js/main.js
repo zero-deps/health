@@ -2053,6 +2053,7 @@ var PS = {};
       });
   };
   exports["StatMsg"] = StatMsg;
+  exports["HostMsg"] = HostMsg;
   exports["Metric"] = Metric;
   exports["Measure"] = Measure;
   exports["Error"] = $$Error;
@@ -2197,7 +2198,6 @@ var PS = {};
   }, $foreign.pureE);
   var functorEffect = new Data_Functor.Functor(Control_Applicative.liftA1(applicativeEffect));
   exports["functorEffect"] = functorEffect;
-  exports["applyEffect"] = applyEffect;
   exports["applicativeEffect"] = applicativeEffect;
   exports["bindEffect"] = bindEffect;
 })(PS);
@@ -2589,7 +2589,6 @@ var PS = {};
   var p = mkDOM(false)("p");
   var p$prime = p([  ]);          
   var span = mkDOM(false)("span");
-  var span$prime = span([  ]);
   var table = mkDOM(false)("table");
   var tbody = mkDOM(false)("tbody");
   var tbody$prime = tbody([  ]);
@@ -2634,7 +2633,6 @@ var PS = {};
   exports["p"] = p;
   exports["p'"] = p$prime;
   exports["span"] = span;
-  exports["span'"] = span$prime;
   exports["table"] = table;
   exports["tbody'"] = tbody$prime;
   exports["td"] = td;
@@ -4907,10 +4905,10 @@ var PS = {};
   };
   exports["empty"] = empty;
   exports["singleton"] = singleton;
-  exports["insert"] = insert;
   exports["insertWith"] = insertWith;
   exports["lookup"] = lookup;
   exports["toUnfoldable"] = toUnfoldable;
+  exports["alter"] = alter;
   exports["update"] = update;
   exports["unionWith"] = unionWith;
   exports["functorMap"] = functorMap;
@@ -6574,7 +6572,6 @@ var PS = {};
   var exports = $PS["Nodes"];
   var Api_Pull = $PS["Api.Pull"];
   var Control_Applicative = $PS["Control.Applicative"];
-  var Control_Apply = $PS["Control.Apply"];
   var Data_Array = $PS["Data.Array"];
   var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
@@ -6582,10 +6579,12 @@ var PS = {};
   var Data_Ord = $PS["Data.Ord"];
   var Data_String_CodePoints = $PS["Data.String.CodePoints"];
   var Data_String_Common = $PS["Data.String.Common"];
+  var Data_Traversable = $PS["Data.Traversable"];
   var Data_Unit = $PS["Data.Unit"];
   var DomOps = $PS["DomOps"];
   var Effect = $PS["Effect"];
   var Ext_String = $PS["Ext.String"];
+  var FormatOps = $PS["FormatOps"];
   var React = $PS["React"];
   var React_DOM = $PS["React.DOM"];
   var React_DOM_Props = $PS["React.DOM.Props"];
@@ -6598,7 +6597,7 @@ var PS = {};
           };
           var v1 = Data_String_Common.toLower(v);
           return Data_Array.filter(function (x) {
-              return Ext_String.includes(v1)(Data_String_Common.toLower(x.host)) || Ext_String.includes(v1)(Data_String_Common.toLower(x.ip));
+              return Ext_String.includes(v1)(Data_String_Common.toLower(x.host)) || Ext_String.includes(v1)(Data_String_Common.toLower(x.ipaddr));
           })(xs);
       };
   };
@@ -6615,44 +6614,28 @@ var PS = {};
                   return x.lastUpdate_ms > max_time - 3600000.0;
               })(xs);
           };
-          throw new Error("Failed pattern match at Nodes (line 100, column 1 - line 100, column 59): " + [ v.constructor.name, xs.constructor.name ]);
+          throw new Error("Failed pattern match at Nodes (line 106, column 1 - line 106, column 59): " + [ v.constructor.name, xs.constructor.name ]);
       };
   };
   var reactClass = (function () {
       var render = function ($$this) {
-          return Control_Apply.apply(Effect.applyEffect)(Data_Functor.map(Effect.functorEffect)(function (v) {
-              return function (v1) {
-                  return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("form-inline") ])([ React_DOM.button([ React_DOM_Props["_type"]("button"), DomOps.cn("btn" + (function () {
-                      if (v1.active) {
-                          return " btn-primary";
-                      };
-                      return " btn-outline-primary";
-                  })()), React_DOM_Props.onClick(function (v2) {
-                      return React.modifyState($$this)(function (s) {
-                          return {
-                              filter: s.filter,
-                              active: !s.active
-                          };
-                      });
-                  }) ])([ React_DOM.text("Active") ]), React_DOM.input([ React_DOM_Props["_type"]("search"), DomOps.cn("form-control ml-2"), React_DOM_Props.placeholder("Filter nodes"), React_DOM_Props.value(v1.filter), DomOps.onChangeValue(function (v2) {
-                      return React.modifyState($$this)(function (v3) {
-                          return {
-                              filter: v2,
-                              active: v3.active
-                          };
-                      });
-                  }) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Host Name") ]), React_DOM["th'"]([ React_DOM.text("IP Address") ]), React_DOM["th'"]([ React_DOM.text("Last Update") ]) ]) ]), React_DOM["tbody'"](Data_Functor.map(Data_Functor.functorArray)(function (x) {
-                      return React_DOM.tr([ React_DOM_Props.key(x.host), React_DOM_Props.onClick(function (v2) {
+          return function __do() {
+              var props = React.getProps($$this)();
+              var state = React.getState($$this)();
+              var rows = Data_Traversable.sequence(Data_Traversable.traversableArray)(Effect.applicativeEffect)(Data_Functor.map(Data_Functor.functorArray)(function (x) {
+                  return function __do() {
+                      var lastUpdate = FormatOps.dateTime(x.lastUpdate_ms)();
+                      return React_DOM.tr([ React_DOM_Props.key(x.host), React_DOM_Props.onClick(function (v) {
                           return function __do() {
                               (function () {
-                                  if (x.loaded) {
+                                  if (x.historyLoaded) {
                                       return Data_Unit.unit;
                                   };
-                                  return WsOps.send(v.ws)(Api_Pull.encodePull(new Api_Pull.HealthAsk({
+                                  return WsOps.send(props.ws)(Api_Pull.encodePull(new Api_Pull.HealthAsk({
                                       host: x.host
                                   })))();
                               })();
-                              return v.openNode(x.host)();
+                              return props.openNode(x.host)();
                           };
                       }), React_DOM_Props.style({
                           cursor: "pointer"
@@ -6660,12 +6643,32 @@ var PS = {};
                           fontFamily: "Fira Code"
                       }) ])([ React_DOM.text(x.host) ]), React_DOM.td([ React_DOM_Props.style({
                           fontFamily: "Fira Code"
-                      }) ])([ React_DOM.text(x.ip) ]), React_DOM.td([ React_DOM_Props.style({
+                      }) ])([ React_DOM.text(x.ipaddr) ]), React_DOM.td([ React_DOM_Props.style({
                           fontFamily: "Fira Code"
-                      }) ])([ React_DOM.text(x.lastUpdate) ]) ]);
-                  })(activeNodes(v1.active)(filterNodes(v1.filter)(v.nodes)))) ]) ]) ]) ]) ]) ]);
-              };
-          })(React.getProps($$this)))(React.getState($$this));
+                      }) ])([ React_DOM.text(lastUpdate) ]) ]);
+                  };
+              })(activeNodes(state.active)(filterNodes(state.filter)(props.nodes))))();
+              return React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("form-inline") ])([ React_DOM.button([ React_DOM_Props["_type"]("button"), DomOps.cn("btn" + (function () {
+                  if (state.active) {
+                      return " btn-primary";
+                  };
+                  return " btn-outline-primary";
+              })()), React_DOM_Props.onClick(function (v) {
+                  return React.modifyState($$this)(function (s) {
+                      return {
+                          filter: s.filter,
+                          active: !s.active
+                      };
+                  });
+              }) ])([ React_DOM.text("Active") ]), React_DOM.input([ React_DOM_Props["_type"]("search"), DomOps.cn("form-control ml-2"), React_DOM_Props.placeholder("Filter nodes"), React_DOM_Props.value(state.filter), DomOps.onChangeValue(function (v) {
+                  return React.modifyState($$this)(function (v1) {
+                      return {
+                          filter: v,
+                          active: v1.active
+                      };
+                  });
+              }) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Host Name") ]), React_DOM["th'"]([ React_DOM.text("IP Address") ]), React_DOM["th'"]([ React_DOM.text("Last Update") ]) ]) ]), React_DOM["tbody'"](rows) ]) ]) ]) ]) ]) ]);
+          };
       };
       return React.component()("Nodes")(function ($$this) {
           return Control_Applicative.pure(Effect.applicativeEffect)({
@@ -6879,21 +6882,17 @@ var PS = {};
           });
           var menuContent = function (v) {
               if (v.menu instanceof Nodes && v.node instanceof Data_Maybe.Just) {
-                  var dummy = React.component()("Dummy")(function (v1) {
-                      return Control_Applicative.pure(Effect.applicativeEffect)({
-                          render: Control_Applicative.pure(Effect.applicativeEffect)(React_DOM["span'"]([  ]))
-                      });
-                  });
                   var v1 = Data_Map_Internal.lookup(Data_Ord.ordString)(v.node.value0)(v.nodes);
-                  if (v1 instanceof Data_Maybe.Just) {
-                      return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement()(Node.reactClass)(v1.value0));
+                  if (v1 instanceof Data_Maybe.Just && v1.value0.nodeData instanceof Data_Maybe.Just) {
+                      return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement()(Node.reactClass)(v1.value0.nodeData.value0));
+                  };
+                  if (v1 instanceof Data_Maybe.Just && v1.value0.nodeData instanceof Data_Maybe.Nothing) {
+                      return Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.div([  ])([ React_DOM.text("Data is not available yet.") ]));
                   };
                   if (v1 instanceof Data_Maybe.Nothing) {
-                      return Data_Functor.map(Effect.functorEffect)(function (v2) {
-                          return React.createLeafElement()(dummy)({});
-                      })(Effect_Console.error("bad node"));
+                      return Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.div([  ])([ React_DOM.text("Node doesn't exist anymore.") ]));
                   };
-                  throw new Error("Failed pattern match at Main (line 161, column 9 - line 163, column 79): " + [ v1.constructor.name ]);
+                  throw new Error("Failed pattern match at Main (line 161, column 9 - line 164, column 74): " + [ v1.constructor.name ]);
               };
               if (v.menu instanceof Nodes) {
                   return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement()(Nodes_1.reactClass)({
@@ -6903,43 +6902,16 @@ var PS = {};
                           return React.modifyState($$this)(function (s) {
                               return {
                                   menu: s.menu,
-                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($186) {
+                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($208) {
                                       return Data_Maybe.Just.create((function (v2) {
                                           return {
-                                              loaded: true,
-                                              actPoints: v2.actPoints,
-                                              cpuHourPoints: v2.cpuHourPoints,
-                                              cpuLast: v2.cpuLast,
-                                              cpuPoints: v2.cpuPoints,
-                                              errs: v2.errs,
-                                              fd: v2.fd,
-                                              fs: v2.fs,
+                                              historyLoaded: true,
                                               host: v2.host,
-                                              importLog: v2.importLog,
-                                              ip: v2.ip,
-                                              kvsSizeYearPoints: v2.kvsSizeYearPoints,
-                                              lastUpdate: v2.lastUpdate,
+                                              ipaddr: v2.ipaddr,
                                               lastUpdate_ms: v2.lastUpdate_ms,
-                                              memFree: v2.memFree,
-                                              memLast: v2.memLast,
-                                              memPoints: v2.memPoints,
-                                              memTotal: v2.memTotal,
-                                              reindexAll_points: v2.reindexAll_points,
-                                              reindexAll_thirdQ: v2.reindexAll_thirdQ,
-                                              searchFs_points: v2.searchFs_points,
-                                              searchFs_thirdQ: v2.searchFs_thirdQ,
-                                              searchTs_points: v2.searchTs_points,
-                                              searchTs_thirdQ: v2.searchTs_thirdQ,
-                                              searchWc_points: v2.searchWc_points,
-                                              searchWc_thirdQ: v2.searchWc_thirdQ,
-                                              staticGenYear_points: v2.staticGenYear_points,
-                                              staticGen_points: v2.staticGen_points,
-                                              staticGen_thirdQ: v2.staticGen_thirdQ,
-                                              thr: v2.thr,
-                                              uptime: v2.uptime,
-                                              version: v2.version
+                                              nodeData: v2.nodeData
                                           };
-                                      })($186));
+                                      })($208));
                                   })(host)(s.nodes),
                                   node: new Data_Maybe.Just(host),
                                   features: s.features,
@@ -7058,7 +7030,7 @@ var PS = {};
                       };
                   });
               };
-              throw new Error("Failed pattern match at Main (line 211, column 7 - line 211, column 34): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 209, column 7 - line 209, column 34): " + [ v.constructor.name ]);
           };
           return function __do() {
               var s = React.getState($$this)();
@@ -7071,8 +7043,8 @@ var PS = {};
                   return "";
               })()) ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $88 = Data_Eq.eq(eqMenu)(x)(s.menu);
-                      if ($88) {
+                      var $94 = Data_Eq.eq(eqMenu)(x)(s.menu);
+                      if ($94) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -7171,7 +7143,7 @@ var PS = {};
                           if (cpu_mem instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 314, column 16 - line 322, column 34): " + [ cpu_mem.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 317, column 16 - line 325, column 34): " + [ cpu_mem.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
                           return v.used;
@@ -7210,7 +7182,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 328, column 15 - line 335, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 331, column 15 - line 338, column 34): " + [ v.constructor.name ]);
                       })();
                       var fd = (function () {
                           var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
@@ -7232,7 +7204,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 337, column 15 - line 343, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 340, column 15 - line 346, column 34): " + [ v.constructor.name ]);
                       })();
                       var thr = (function () {
                           var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
@@ -7260,7 +7232,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 345, column 16 - line 354, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 348, column 16 - line 357, column 34): " + [ v.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (label) {
                           return [ {
@@ -7332,13 +7304,21 @@ var PS = {};
                           return v.reindexAll_thirdQ;
                       });
                       var errs = Data_Maybe.maybe([  ])(Data_Array.singleton)(a.err);
+                      var importLog = (function () {
+                          if (a.action instanceof Data_Maybe.Just && Ext_String.startsWith("import")(a.action.value0)) {
+                              return Data_Array.singleton({
+                                  t: dt,
+                                  msg: a.action.value0
+                              });
+                          };
+                          return [  ];
+                      })();
                       var s = React.getState($$this)();
-                      var node$prime = (function () {
-                          var v = Data_Map_Internal.lookup(Data_Ord.ordString)(a.host)(s.nodes);
-                          if (v instanceof Data_Maybe.Just) {
-                              var cpuPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.cpuPoints)(cpuPoints);
-                              var memPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.memPoints)(memPoints);
-                              var actPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.actPoints)(action);
+                      var nodes$prime = Data_Map_Internal.alter(Data_Ord.ordString)(function (v) {
+                          if (v instanceof Data_Maybe.Just && v.value0.nodeData instanceof Data_Maybe.Just) {
+                              var cpuPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.cpuPoints)(cpuPoints);
+                              var memPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.memPoints)(memPoints);
+                              var actPoints$prime = Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.actPoints)(action);
                               var minTime = Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v1) {
                                   return v1.t;
                               })(Data_Array.last(Data_Array.dropEnd(20)(cpuPoints$prime)))))(Data_Ord.max(Data_Ord.ordNumber)(Data_Maybe.fromMaybe(0.0)(Data_Functor.map(Data_Maybe.functorMaybe)(function (v1) {
@@ -7355,120 +7335,151 @@ var PS = {};
                               var actPoints$prime$prime = Data_Array.filter(function (x) {
                                   return x.t > minTime;
                               })(actPoints$prime);
-                              var cpuHourPoints$prime = Data_Maybe.maybe(v.value0.cpuHourPoints)(function (x) {
+                              var cpuHourPoints$prime = Data_Maybe.maybe(v.value0.nodeData.value0.cpuHourPoints)(function (x) {
                                   return Data_Array.snoc(Data_Array.filter(function (y) {
                                       return y.t !== x.t && y.t >= x.t - 60.0 * 60.0 * 1000.0;
-                                  })(v.value0.cpuHourPoints))(x);
+                                  })(v.value0.nodeData.value0.cpuHourPoints))(x);
                               })(cpuHourPoint);
-                              var kvsSizeYearPoints$prime = Data_Maybe.maybe(v.value0.kvsSizeYearPoints)(function (x) {
+                              var kvsSizeYearPoints$prime = Data_Maybe.maybe(v.value0.nodeData.value0.kvsSizeYearPoints)(function (x) {
                                   return Data_Array.snoc(Data_Array.filter(function (y) {
                                       return y.t !== x.t && y.t >= x.t - 365.0 * 24.0 * 3600.0 * 1000.0;
-                                  })(v.value0.kvsSizeYearPoints))(x);
+                                  })(v.value0.nodeData.value0.kvsSizeYearPoints))(x);
                               })(kvsSizeYearPoint);
-                              var searchTs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.searchTs_points)(searchTs_points));
-                              var searchWc_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.searchWc_points)(searchWc_points));
-                              var searchFs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.searchFs_points)(searchFs_points));
-                              var staticGen_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.staticGen_points)(staticGen_points));
-                              var staticGenYear_points$prime = Data_Maybe.maybe(v.value0.staticGenYear_points)(function (x) {
+                              var searchTs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.searchTs_points)(searchTs_points));
+                              var searchWc_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.searchWc_points)(searchWc_points));
+                              var searchFs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.searchFs_points)(searchFs_points));
+                              var staticGen_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.staticGen_points)(staticGen_points));
+                              var staticGenYear_points$prime = Data_Maybe.maybe(v.value0.nodeData.value0.staticGenYear_points)(function (x) {
                                   return Data_Array.snoc(Data_Array.filter(function (y) {
                                       return y.t !== x.t && y.t >= x.t - 365.0 * 24.0 * 3600.0 * 1000.0;
-                                  })(v.value0.staticGenYear_points))(x);
+                                  })(v.value0.nodeData.value0.staticGenYear_points))(x);
                               })(staticGenYearPoint);
-                              var reindexAll_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.reindexAll_points)(reindexAll_points));
-                              var errs$prime = Data_Array.take(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(errs)(v.value0.errs));
-                              var importLog = (function () {
-                                  if (a.action instanceof Data_Maybe.Just && Ext_String.startsWith("import")(a.action.value0)) {
-                                      return Data_Array.cons({
-                                          t: dt,
-                                          msg: a.action.value0
-                                      })(Data_Array.take(99)(v.value0.importLog));
-                                  };
-                                  return v.value0.importLog;
-                              })();
-                              return {
-                                  lastUpdate: dt,
+                              var reindexAll_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.reindexAll_points)(reindexAll_points));
+                              var errs$prime = Data_Array.take(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(errs)(v.value0.nodeData.value0.errs));
+                              var importLog$prime = Data_Array.take(100)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(importLog)(v.value0.nodeData.value0.importLog));
+                              return Data_Maybe.Just.create({
                                   lastUpdate_ms: a.time,
-                                  version: Control_Alt.alt(Data_Maybe.altMaybe)(version)(v.value0.version),
-                                  cpuPoints: cpuPoints$prime$prime,
-                                  cpuHourPoints: cpuHourPoints$prime,
-                                  memPoints: memPoints$prime$prime,
-                                  actPoints: actPoints$prime$prime,
-                                  cpuLast: Control_Alt.alt(Data_Maybe.altMaybe)(cpu)(v.value0.cpuLast),
-                                  memLast: Control_Alt.alt(Data_Maybe.altMaybe)(memUsed)(v.value0.memLast),
-                                  uptime: Control_Alt.alt(Data_Maybe.altMaybe)(uptime)(v.value0.uptime),
-                                  memFree: Control_Alt.alt(Data_Maybe.altMaybe)(memFree)(v.value0.memFree),
-                                  memTotal: Control_Alt.alt(Data_Maybe.altMaybe)(memTotal)(v.value0.memTotal),
-                                  fs: Control_Alt.alt(Data_Maybe.altMaybe)(fs)(v.value0.fs),
-                                  fd: Control_Alt.alt(Data_Maybe.altMaybe)(fd)(v.value0.fd),
-                                  thr: Control_Alt.alt(Data_Maybe.altMaybe)(thr)(v.value0.thr),
-                                  errs: errs$prime,
-                                  searchTs_points: searchTs_points$prime,
-                                  searchTs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchTs_thirdQ)(v.value0.searchTs_thirdQ),
-                                  searchWc_points: searchWc_points$prime,
-                                  searchWc_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchWc_thirdQ)(v.value0.searchWc_thirdQ),
-                                  searchFs_points: searchFs_points$prime,
-                                  searchFs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchFs_thirdQ)(v.value0.searchFs_thirdQ),
-                                  reindexAll_points: reindexAll_points$prime,
-                                  reindexAll_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(reindexAll_thirdQ)(v.value0.reindexAll_thirdQ),
-                                  staticGen_points: staticGen_points$prime,
-                                  staticGenYear_points: staticGenYear_points$prime,
-                                  staticGen_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(staticGen_thirdQ)(v.value0.staticGen_thirdQ),
-                                  kvsSizeYearPoints: kvsSizeYearPoints$prime,
-                                  importLog: importLog,
+                                  nodeData: Data_Maybe.Just.create({
+                                      version: Control_Alt.alt(Data_Maybe.altMaybe)(version)(v.value0.nodeData.value0.version),
+                                      cpuPoints: cpuPoints$prime$prime,
+                                      cpuHourPoints: cpuHourPoints$prime,
+                                      memPoints: memPoints$prime$prime,
+                                      actPoints: actPoints$prime$prime,
+                                      cpuLast: Control_Alt.alt(Data_Maybe.altMaybe)(cpu)(v.value0.nodeData.value0.cpuLast),
+                                      memLast: Control_Alt.alt(Data_Maybe.altMaybe)(memUsed)(v.value0.nodeData.value0.memLast),
+                                      uptime: Control_Alt.alt(Data_Maybe.altMaybe)(uptime)(v.value0.nodeData.value0.uptime),
+                                      memFree: Control_Alt.alt(Data_Maybe.altMaybe)(memFree)(v.value0.nodeData.value0.memFree),
+                                      memTotal: Control_Alt.alt(Data_Maybe.altMaybe)(memTotal)(v.value0.nodeData.value0.memTotal),
+                                      fs: Control_Alt.alt(Data_Maybe.altMaybe)(fs)(v.value0.nodeData.value0.fs),
+                                      fd: Control_Alt.alt(Data_Maybe.altMaybe)(fd)(v.value0.nodeData.value0.fd),
+                                      thr: Control_Alt.alt(Data_Maybe.altMaybe)(thr)(v.value0.nodeData.value0.thr),
+                                      errs: errs$prime,
+                                      searchTs_points: searchTs_points$prime,
+                                      searchTs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchTs_thirdQ)(v.value0.nodeData.value0.searchTs_thirdQ),
+                                      searchWc_points: searchWc_points$prime,
+                                      searchWc_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchWc_thirdQ)(v.value0.nodeData.value0.searchWc_thirdQ),
+                                      searchFs_points: searchFs_points$prime,
+                                      searchFs_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(searchFs_thirdQ)(v.value0.nodeData.value0.searchFs_thirdQ),
+                                      reindexAll_points: reindexAll_points$prime,
+                                      reindexAll_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(reindexAll_thirdQ)(v.value0.nodeData.value0.reindexAll_thirdQ),
+                                      staticGen_points: staticGen_points$prime,
+                                      staticGenYear_points: staticGenYear_points$prime,
+                                      staticGen_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(staticGen_thirdQ)(v.value0.nodeData.value0.staticGen_thirdQ),
+                                      kvsSizeYearPoints: kvsSizeYearPoints$prime,
+                                      importLog: importLog$prime
+                                  }),
+                                  historyLoaded: v.value0.historyLoaded,
                                   host: v.value0.host,
-                                  ip: v.value0.ip,
-                                  loaded: v.value0.loaded
-                              };
+                                  ipaddr: v.value0.ipaddr
+                              });
+                          };
+                          if (v instanceof Data_Maybe.Just && v.value0.nodeData instanceof Data_Maybe.Nothing) {
+                              return Data_Maybe.Just.create({
+                                  lastUpdate_ms: a.time,
+                                  nodeData: new Data_Maybe.Just({
+                                      version: version,
+                                      cpuPoints: cpuPoints,
+                                      cpuHourPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(cpuHourPoint),
+                                      memPoints: memPoints,
+                                      actPoints: action,
+                                      cpuLast: cpu,
+                                      memLast: memUsed,
+                                      uptime: uptime,
+                                      memFree: memFree,
+                                      memTotal: memTotal,
+                                      fs: fs,
+                                      fd: fd,
+                                      thr: thr,
+                                      errs: errs,
+                                      searchTs_points: searchTs_points,
+                                      searchTs_thirdQ: searchTs_thirdQ,
+                                      searchWc_points: searchWc_points,
+                                      searchWc_thirdQ: searchWc_thirdQ,
+                                      searchFs_points: searchFs_points,
+                                      searchFs_thirdQ: searchFs_thirdQ,
+                                      reindexAll_points: reindexAll_points,
+                                      reindexAll_thirdQ: reindexAll_thirdQ,
+                                      staticGen_points: staticGen_points,
+                                      staticGenYear_points: Data_Maybe.maybe([  ])(Data_Array.singleton)(staticGenYearPoint),
+                                      staticGen_thirdQ: staticGen_thirdQ,
+                                      kvsSizeYearPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(kvsSizeYearPoint),
+                                      importLog: importLog
+                                  }),
+                                  historyLoaded: v.value0.historyLoaded,
+                                  host: v.value0.host,
+                                  ipaddr: v.value0.ipaddr
+                              });
                           };
                           if (v instanceof Data_Maybe.Nothing) {
-                              return {
+                              return Data_Maybe.Just.create({
                                   host: a.host,
-                                  ip: "",
-                                  loaded: false,
-                                  lastUpdate: dt,
+                                  ipaddr: "",
+                                  historyLoaded: false,
                                   lastUpdate_ms: a.time,
-                                  version: version,
-                                  cpuPoints: cpuPoints,
-                                  cpuHourPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(cpuHourPoint),
-                                  memPoints: memPoints,
-                                  actPoints: action,
-                                  cpuLast: cpu,
-                                  memLast: memUsed,
-                                  uptime: uptime,
-                                  memFree: memFree,
-                                  memTotal: memTotal,
-                                  fs: Data_Maybe.Nothing.value,
-                                  fd: Data_Maybe.Nothing.value,
-                                  thr: Data_Maybe.Nothing.value,
-                                  errs: errs,
-                                  searchTs_points: searchTs_points,
-                                  searchTs_thirdQ: searchTs_thirdQ,
-                                  searchWc_points: searchWc_points,
-                                  searchWc_thirdQ: searchWc_thirdQ,
-                                  searchFs_points: searchFs_points,
-                                  searchFs_thirdQ: searchFs_thirdQ,
-                                  reindexAll_points: reindexAll_points,
-                                  reindexAll_thirdQ: reindexAll_thirdQ,
-                                  staticGen_points: staticGen_points,
-                                  staticGenYear_points: Data_Maybe.maybe([  ])(Data_Array.singleton)(staticGenYearPoint),
-                                  staticGen_thirdQ: staticGen_thirdQ,
-                                  kvsSizeYearPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(kvsSizeYearPoint),
-                                  importLog: [  ]
-                              };
+                                  nodeData: new Data_Maybe.Just({
+                                      version: version,
+                                      cpuPoints: cpuPoints,
+                                      cpuHourPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(cpuHourPoint),
+                                      memPoints: memPoints,
+                                      actPoints: action,
+                                      cpuLast: cpu,
+                                      memLast: memUsed,
+                                      uptime: uptime,
+                                      memFree: memFree,
+                                      memTotal: memTotal,
+                                      fs: fs,
+                                      fd: fd,
+                                      thr: thr,
+                                      errs: errs,
+                                      searchTs_points: searchTs_points,
+                                      searchTs_thirdQ: searchTs_thirdQ,
+                                      searchWc_points: searchWc_points,
+                                      searchWc_thirdQ: searchWc_thirdQ,
+                                      searchFs_points: searchFs_points,
+                                      searchFs_thirdQ: searchFs_thirdQ,
+                                      reindexAll_points: reindexAll_points,
+                                      reindexAll_thirdQ: reindexAll_thirdQ,
+                                      staticGen_points: staticGen_points,
+                                      staticGenYear_points: Data_Maybe.maybe([  ])(Data_Array.singleton)(staticGenYearPoint),
+                                      staticGen_thirdQ: staticGen_thirdQ,
+                                      kvsSizeYearPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(kvsSizeYearPoint),
+                                      importLog: importLog
+                                  })
+                              });
                           };
-                          throw new Error("Failed pattern match at Main (line 373, column 21 - line 468, column 18): " + [ v.constructor.name ]);
-                      })();
-                      React.modifyState($$this)(function (s$prime) {
+                          throw new Error("Failed pattern match at Main (line 380, column 29 - line 507, column 18): " + [ v.constructor.name ]);
+                      })(a.host)(s.nodes);
+                      React.modifyState($$this)(function (v) {
                           return {
-                              menu: s$prime.menu,
-                              nodes: Data_Map_Internal.insert(Data_Ord.ordString)(node$prime.host)(node$prime)(s$prime.nodes),
-                              node: s$prime.node,
-                              features: s$prime.features,
-                              errors: s$prime.errors,
-                              ws: s$prime.ws,
-                              leftMenu: s$prime.leftMenu,
-                              notifications: s$prime.notifications,
-                              topMenu: s$prime.topMenu
+                              menu: v.menu,
+                              nodes: nodes$prime,
+                              node: v.node,
+                              features: v.features,
+                              errors: v.errors,
+                              ws: v.ws,
+                              leftMenu: v.leftMenu,
+                              notifications: v.notifications,
+                              topMenu: v.topMenu
                           };
                       })();
                       (function () {
@@ -7490,7 +7501,7 @@ var PS = {};
                           if (a.err instanceof Data_Maybe.Nothing) {
                               return Data_Unit.unit;
                           };
-                          throw new Error("Failed pattern match at Main (line 471, column 9 - line 473, column 31): " + [ a.err.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 510, column 9 - line 512, column 31): " + [ a.err.constructor.name ]);
                       })();
                       if (a.feature instanceof Data_Maybe.Just) {
                           var v1 = Data_String_Common.split("~")(a.feature.value0);
@@ -7515,70 +7526,105 @@ var PS = {};
                       if (a.feature instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 475, column 9 - line 482, column 31): " + [ a.feature.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 514, column 9 - line 521, column 31): " + [ a.feature.constructor.name ]);
                   };
               };
               var v = Api_Push.decodePush(bytes);
+              if (v instanceof Data_Either.Right && v.value0.val instanceof Api_Push.HostMsg) {
+                  return React.modifyState($$this)(function (s) {
+                      return {
+                          menu: s.menu,
+                          nodes: Data_Map_Internal.alter(Data_Ord.ordString)(function (v2) {
+                              if (v2 instanceof Data_Maybe.Nothing) {
+                                  return new Data_Maybe.Just({
+                                      host: v.value0.val.value0.host,
+                                      ipaddr: v.value0.val.value0.ipaddr,
+                                      lastUpdate_ms: v.value0.val.value0.time,
+                                      historyLoaded: false,
+                                      nodeData: Data_Maybe.Nothing.value
+                                  });
+                              };
+                              if (v2 instanceof Data_Maybe.Just) {
+                                  return new Data_Maybe.Just({
+                                      host: v.value0.val.value0.host,
+                                      ipaddr: v.value0.val.value0.ipaddr,
+                                      lastUpdate_ms: v2.value0.lastUpdate_ms,
+                                      historyLoaded: v2.value0.historyLoaded,
+                                      nodeData: v2.value0.nodeData
+                                  });
+                              };
+                              throw new Error("Failed pattern match at Main (line 229, column 52 - line 231, column 127): " + [ v2.constructor.name ]);
+                          })(v.value0.val.value0.host)(s.nodes),
+                          node: s.node,
+                          features: s.features,
+                          errors: s.errors,
+                          ws: s.ws,
+                          leftMenu: s.leftMenu,
+                          notifications: s.notifications,
+                          topMenu: s.topMenu
+                      };
+                  });
+              };
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Metric)) {
                   var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $130 = v.value0.val.value0.stat.value0.name === "cpu_mem";
-                      if ($130) {
+                      var $151 = v.value0.val.value0.stat.value0.name === "cpu_mem";
+                      if ($151) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var cpu_hour = (function () {
-                      var $131 = v.value0.val.value0.stat.value0.name === "cpu.hour";
-                      if ($131) {
+                      var $152 = v.value0.val.value0.stat.value0.name === "cpu.hour";
+                      if ($152) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var uptime = (function () {
-                      var $132 = v.value0.val.value0.stat.value0.name === "uptime";
-                      if ($132) {
+                      var $153 = v.value0.val.value0.stat.value0.name === "uptime";
+                      if ($153) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var version = (function () {
-                      var $133 = v.value0.val.value0.stat.value0.name === "v";
-                      if ($133) {
+                      var $154 = v.value0.val.value0.stat.value0.name === "v";
+                      if ($154) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $134 = v.value0.val.value0.stat.value0.name === "fs./";
-                      if ($134) {
+                      var $155 = v.value0.val.value0.stat.value0.name === "fs./";
+                      if ($155) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $135 = v.value0.val.value0.stat.value0.name === "fd";
-                      if ($135) {
+                      var $156 = v.value0.val.value0.stat.value0.name === "fd";
+                      if ($156) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $136 = v.value0.val.value0.stat.value0.name === "thr";
-                      if ($136) {
+                      var $157 = v.value0.val.value0.stat.value0.name === "thr";
+                      if ($157) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var kvsSize_year = (function () {
-                      var $137 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
-                      if ($137) {
+                      var $158 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
+                      if ($158) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var feature = (function () {
-                      var $138 = v.value0.val.value0.stat.value0.name === "feature";
-                      if ($138) {
+                      var $159 = v.value0.val.value0.stat.value0.name === "feature";
+                      if ($159) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7605,78 +7651,78 @@ var PS = {};
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Measure)) {
                   var value$prime = Global.readInt(10)(v.value0.val.value0.stat.value0.value);
                   var searchTs = (function () {
-                      var $148 = v.value0.val.value0.stat.value0.name === "search.ts";
-                      if ($148) {
+                      var $169 = v.value0.val.value0.stat.value0.name === "search.ts";
+                      if ($169) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchTs_thirdQ = (function () {
-                      var $149 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
-                      if ($149) {
+                      var $170 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
+                      if ($170) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc = (function () {
-                      var $150 = v.value0.val.value0.stat.value0.name === "search.wc";
-                      if ($150) {
+                      var $171 = v.value0.val.value0.stat.value0.name === "search.wc";
+                      if ($171) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc_thirdQ = (function () {
-                      var $151 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
-                      if ($151) {
+                      var $172 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                      if ($172) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchFs = (function () {
-                      var $152 = v.value0.val.value0.stat.value0.name === "search.fs";
-                      if ($152) {
+                      var $173 = v.value0.val.value0.stat.value0.name === "search.fs";
+                      if ($173) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchFs_thirdQ = (function () {
-                      var $153 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
-                      if ($153) {
+                      var $174 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
+                      if ($174) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var staticGen = (function () {
-                      var $154 = v.value0.val.value0.stat.value0.name === "static.gen";
-                      if ($154) {
+                      var $175 = v.value0.val.value0.stat.value0.name === "static.gen";
+                      if ($175) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var staticGen_thirdQ = (function () {
-                      var $155 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
-                      if ($155) {
+                      var $176 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
+                      if ($176) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var staticGen_year = (function () {
-                      var $156 = v.value0.val.value0.stat.value0.name === "static.gen.year";
-                      if ($156) {
+                      var $177 = v.value0.val.value0.stat.value0.name === "static.gen.year";
+                      if ($177) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var reindexAll = (function () {
-                      var $157 = v.value0.val.value0.stat.value0.name === "reindex.all";
-                      if ($157) {
+                      var $178 = v.value0.val.value0.stat.value0.name === "reindex.all";
+                      if ($178) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var reindexAll_thirdQ = (function () {
-                      var $158 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
-                      if ($158) {
+                      var $179 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
+                      if ($179) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7736,7 +7782,10 @@ var PS = {};
                       feature: Data_Maybe.Nothing.value
                   });
               };
-              return Effect_Console.error("unknown type");
+              if (v instanceof Data_Either.Left) {
+                  return Effect_Console.error("bad encoding");
+              };
+              throw new Error("Failed pattern match at Main (line 227, column 7 - line 303, column 39): " + [ v.constructor.name ]);
           };
       };
       var errHandler = function (xs) {

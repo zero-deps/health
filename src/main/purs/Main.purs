@@ -2,11 +2,11 @@ module Main
   ( view
   ) where
 
-import Api.Push (Push(StatMsg), Stat(Metric, Measure, Error, Action), decodePush)
+import Api.Push (Push(StatMsg, HostMsg), Stat(Metric, Measure, Error, Action), decodePush)
 import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
-import Data.Either (Either(Right))
-import Data.Map (Map, lookup, unionWith, insertWith, update)
+import Data.Either (Either(..))
+import Data.Map (Map, lookup, unionWith, insertWith, update, alter)
 import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
@@ -159,16 +159,14 @@ reactClass = component "Main" \this -> do
       menuContent :: State -> Effect ReactElement
       menuContent { menu: Nodes, node: Just host, nodes } =
         case lookup host nodes of
-          Just node -> pure $ createLeafElement NodeCom.reactClass node
-          Nothing -> map (\_ -> createLeafElement dummy {}) $ error "bad node"
-        where
-        dummy :: ReactClass {}
-        dummy = component "Dummy" \_ -> pure { render: pure $ span' [] }
+          Just { nodeData: Just node } -> pure $ createLeafElement NodeCom.reactClass node
+          Just { nodeData: Nothing } -> pure $ div [] [ text "Data is not available yet." ]
+          Nothing -> pure $ div [] [ text "Node doesn't exist anymore." ]
       menuContent { menu: Nodes, nodes, ws } =
         pure $ createLeafElement NodesCom.reactClass 
                 { nodes: fromFoldable nodes
                 , ws
-                , openNode: \host -> modifyState this \s -> s{ node = Just host, nodes = update (Just <<< _{ loaded = true }) host s.nodes }
+                , openNode: \host -> modifyState this \s -> s{ node = Just host, nodes = update (Just <<< _{ historyLoaded = true }) host s.nodes }
                 }
       menuContent { menu: Features, features } =
         pure $ createLeafElement FeaturesCom.reactClass { features: map (\x -> map (\(Tuple t y) -> { t, y }) $ Map.toUnfoldable x) features }
@@ -227,6 +225,11 @@ reactClass = component "Main" \this -> do
     onMsg :: ReactThis Props State -> Uint8Array -> Effect Unit
     onMsg this bytes = do
       case decodePush bytes of
+        Right { val: HostMsg { host, ipaddr, time }} -> do
+          modifyState this \s -> s{ nodes = alter (case _ of
+              Nothing -> Just { host, ipaddr, lastUpdate_ms: time, historyLoaded: false, nodeData: Nothing }
+              Just { lastUpdate_ms, historyLoaded, nodeData } -> Just { host, ipaddr, lastUpdate_ms, historyLoaded, nodeData }
+            ) host s.nodes }
         Right { val: StatMsg { stat: Metric { name, value}, time, host }} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
           let cpu_hour = if name == "cpu.hour" then Just value else Nothing
@@ -297,7 +300,7 @@ reactClass = component "Main" \this -> do
           , action: Just action
           , feature: Nothing
           }
-        _ -> error "unknown type"
+        Left _ -> error "bad encoding"
       where
       updateWith :: UpdateData -> Effect Unit
       updateWith a = do
@@ -368,10 +371,14 @@ reactClass = component "Main" \this -> do
         let reindexAll_thirdQ = a.measure >>= _.reindexAll_thirdQ
 
         let errs = maybe [] singleton a.err
-        
+
+        let importLog = case a.action of
+              Just msg | startsWith "import" msg -> singleton { t: dt, msg }
+              _ -> []
+
         s <- getState this
-        let node' = case lookup a.host s.nodes of
-              Just node -> do
+        let nodes' = alter (case _ of
+              Just info@{ nodeData: Just node } -> do
                 let cpuPoints' = node.cpuPoints <> cpuPoints
                 let memPoints' = node.memPoints <> memPoints
                 let actPoints' = node.actPoints <> action
@@ -397,76 +404,108 @@ reactClass = component "Main" \this -> do
 
                 let errs' = take 100 $ errs <> node.errs
 
-                let importLog = case a.action of
-                                  Just msg | startsWith "import" msg -> { t: dt, msg } : (take 99 node.importLog)
-                                  _ -> node.importLog
+                let importLog' = take 100 $ importLog <> node.importLog
 
-                node
-                  { lastUpdate = dt
-                  , lastUpdate_ms = time'
-                  , version = version <|> node.version
-                  , cpuPoints = cpuPoints''
-                  , cpuHourPoints = cpuHourPoints'
-                  , memPoints = memPoints''
-                  , actPoints = actPoints''
-                  , cpuLast = cpu <|> node.cpuLast
-                  , memLast = memUsed <|> node.memLast
-                  , uptime = uptime <|> node.uptime
-                  , memFree = memFree <|> node.memFree
-                  , memTotal = memTotal <|> node.memTotal
-                  , fs = fs <|> node.fs
-                  , fd = fd <|> node.fd
-                  , thr = thr <|> node.thr
-                  , errs = errs'
-                  , searchTs_points = searchTs_points'
-                  , searchTs_thirdQ = searchTs_thirdQ <|> node.searchTs_thirdQ
-                  , searchWc_points = searchWc_points'
-                  , searchWc_thirdQ = searchWc_thirdQ <|> node.searchWc_thirdQ
-                  , searchFs_points = searchFs_points'
-                  , searchFs_thirdQ = searchFs_thirdQ <|> node.searchFs_thirdQ
-                  , reindexAll_points = reindexAll_points'
-                  , reindexAll_thirdQ = reindexAll_thirdQ <|> node.reindexAll_thirdQ
-                  , staticGen_points = staticGen_points'
-                  , staticGenYear_points = staticGenYear_points'
-                  , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
-                  , kvsSizeYearPoints = kvsSizeYearPoints'
-                  , importLog = importLog
+                Just $ info
+                  { lastUpdate_ms = time'
+                  , nodeData = Just $ node
+                    { version = version <|> node.version
+                    , cpuPoints = cpuPoints''
+                    , cpuHourPoints = cpuHourPoints'
+                    , memPoints = memPoints''
+                    , actPoints = actPoints''
+                    , cpuLast = cpu <|> node.cpuLast
+                    , memLast = memUsed <|> node.memLast
+                    , uptime = uptime <|> node.uptime
+                    , memFree = memFree <|> node.memFree
+                    , memTotal = memTotal <|> node.memTotal
+                    , fs = fs <|> node.fs
+                    , fd = fd <|> node.fd
+                    , thr = thr <|> node.thr
+                    , errs = errs'
+                    , searchTs_points = searchTs_points'
+                    , searchTs_thirdQ = searchTs_thirdQ <|> node.searchTs_thirdQ
+                    , searchWc_points = searchWc_points'
+                    , searchWc_thirdQ = searchWc_thirdQ <|> node.searchWc_thirdQ
+                    , searchFs_points = searchFs_points'
+                    , searchFs_thirdQ = searchFs_thirdQ <|> node.searchFs_thirdQ
+                    , reindexAll_points = reindexAll_points'
+                    , reindexAll_thirdQ = reindexAll_thirdQ <|> node.reindexAll_thirdQ
+                    , staticGen_points = staticGen_points'
+                    , staticGenYear_points = staticGenYear_points'
+                    , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
+                    , kvsSizeYearPoints = kvsSizeYearPoints'
+                    , importLog = importLog'
+                    }
                   }
-              Nothing ->
-                { host: a.host
-                , ip: ""
-                , loaded: false
-                , lastUpdate: dt
-                , lastUpdate_ms: time'
-                , version: version
-                , cpuPoints: cpuPoints
-                , cpuHourPoints: maybe [] singleton cpuHourPoint
-                , memPoints: memPoints
-                , actPoints: action
-                , cpuLast: cpu
-                , memLast: memUsed
-                , uptime: uptime
-                , memFree: memFree
-                , memTotal: memTotal
-                , fs: Nothing
-                , fd: Nothing
-                , thr: Nothing
-                , errs: errs
-                , searchTs_points: searchTs_points
-                , searchTs_thirdQ: searchTs_thirdQ
-                , searchWc_points: searchWc_points
-                , searchWc_thirdQ: searchWc_thirdQ
-                , searchFs_points: searchFs_points
-                , searchFs_thirdQ: searchFs_thirdQ
-                , reindexAll_points: reindexAll_points
-                , reindexAll_thirdQ: reindexAll_thirdQ
-                , staticGen_points: staticGen_points
-                , staticGenYear_points: maybe [] singleton staticGenYearPoint
-                , staticGen_thirdQ: staticGen_thirdQ
-                , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
-                , importLog: []
+              Just info@{ nodeData: Nothing } -> Just $ info
+                { lastUpdate_ms = time'
+                , nodeData = Just
+                  { version: version
+                  , cpuPoints: cpuPoints
+                  , cpuHourPoints: maybe [] singleton cpuHourPoint
+                  , memPoints: memPoints
+                  , actPoints: action
+                  , cpuLast: cpu
+                  , memLast: memUsed
+                  , uptime: uptime
+                  , memFree: memFree
+                  , memTotal: memTotal
+                  , fs: fs
+                  , fd: fd
+                  , thr: thr
+                  , errs: errs
+                  , searchTs_points: searchTs_points
+                  , searchTs_thirdQ: searchTs_thirdQ
+                  , searchWc_points: searchWc_points
+                  , searchWc_thirdQ: searchWc_thirdQ
+                  , searchFs_points: searchFs_points
+                  , searchFs_thirdQ: searchFs_thirdQ
+                  , reindexAll_points: reindexAll_points
+                  , reindexAll_thirdQ: reindexAll_thirdQ
+                  , staticGen_points: staticGen_points
+                  , staticGenYear_points: maybe [] singleton staticGenYearPoint
+                  , staticGen_thirdQ: staticGen_thirdQ
+                  , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
+                  , importLog: importLog
+                  }
                 }
-        modifyState this \s' -> s' { nodes = Map.insert node'.host node' s'.nodes }
+              Nothing -> Just $
+                { host: a.host
+                , ipaddr: ""
+                , historyLoaded: false
+                , lastUpdate_ms: time'
+                , nodeData: Just
+                  { version: version
+                  , cpuPoints: cpuPoints
+                  , cpuHourPoints: maybe [] singleton cpuHourPoint
+                  , memPoints: memPoints
+                  , actPoints: action
+                  , cpuLast: cpu
+                  , memLast: memUsed
+                  , uptime: uptime
+                  , memFree: memFree
+                  , memTotal: memTotal
+                  , fs: fs
+                  , fd: fd
+                  , thr: thr
+                  , errs: errs
+                  , searchTs_points: searchTs_points
+                  , searchTs_thirdQ: searchTs_thirdQ
+                  , searchWc_points: searchWc_points
+                  , searchWc_thirdQ: searchWc_thirdQ
+                  , searchFs_points: searchFs_points
+                  , searchFs_thirdQ: searchFs_thirdQ
+                  , reindexAll_points: reindexAll_points
+                  , reindexAll_thirdQ: reindexAll_thirdQ
+                  , staticGen_points: staticGen_points
+                  , staticGenYear_points: maybe [] singleton staticGenYearPoint
+                  , staticGen_thirdQ: staticGen_thirdQ
+                  , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
+                  , importLog: importLog
+                  }
+                }) a.host s.nodes
+        modifyState this _{ nodes = nodes' }
         
         case a.err of
           Just err -> modifyState this \s' -> s' { errors = err : (take 99 s'.errors) }
