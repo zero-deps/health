@@ -52,11 +52,14 @@ type MeasureUpdate =
 
 type NodeInfo =
   { host :: String
-  , ip :: String
-  , loaded :: Boolean
-  , lastUpdate :: String
+  , ipaddr :: String
   , lastUpdate_ms :: Number
-  , version :: Maybe String
+  , historyLoaded :: Boolean
+  , nodeData :: Maybe NodeData
+  }
+
+type NodeData =
+  { version :: Maybe String
   , cpuPoints :: Array NumPoint
   , cpuHourPoints :: Array NumPoint
   , memPoints :: Array NumPoint

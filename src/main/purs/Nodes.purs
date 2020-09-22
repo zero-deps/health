@@ -10,7 +10,7 @@ import Data.String.Common (toLower)
 import DomOps (cn, onChangeValue)
 import Effect (Effect)
 import Ext.String (includes)
-import Prelude (Unit, apply, discard, map, not, pure, unit, ($), (<=), (>), (-), (<>), (||))
+import Prelude (Unit, discard, bind, map, not, pure, unit, ($), (<=), (>), (-), (<>), (||))
 import Api.Pull(Pull(HealthAsk), encodePull)
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, modifyState)
 import React.DOM (div, table, tbody', td, text, th', thead, tr, tr', input, button)
@@ -18,6 +18,8 @@ import React.DOM.Props (onClick, style, _type, placeholder, value, key)
 import Schema (NodeInfo)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
+import Data.Traversable (sequence)
+import FormatOps (dateTime)
 
 type State = 
   { filter :: String
@@ -41,10 +43,25 @@ reactClass = component "Nodes" \this -> do
     }
   where
     render :: ReactThis Props State -> Effect ReactElement
-    render this = ado
+    render this = do
       props <- getProps this
       state <- getState this
-      in div [ cn "row" ]
+      rows <- sequence $ map (\x -> do
+        lastUpdate <- dateTime x.lastUpdate_ms
+        pure $
+          tr  [ key x.host
+              , onClick \_ -> do
+                  if x.historyLoaded then pure unit
+                  else WsOps.send props.ws $ encodePull $ HealthAsk { host: x.host }
+                  props.openNode x.host
+              , style { cursor: "pointer" }
+              ]
+          [ td [ style { fontFamily: "Fira Code" } ] [ text x.host ]
+          , td [ style { fontFamily: "Fira Code" } ] [ text x.ipaddr ]
+          , td [ style { fontFamily: "Fira Code" } ] [ text lastUpdate ]
+          ]
+      ) $ activeNodes state.active $ filterNodes state.filter props.nodes
+      pure $ div [ cn "row" ]
         [ div [ cn "col-md-12" ]
           [ div [ cn "card" ]
             [ div [ cn "card-header" ]
@@ -72,18 +89,7 @@ reactClass = component "Nodes" \this -> do
                       , th' [ text "Last Update" ]
                       ]
                     ]
-                  , tbody' $ map (\x ->
-                      tr  [ key x.host
-                          , onClick \_ -> do
-                              if x.loaded then pure unit
-                              else WsOps.send props.ws $ encodePull $ HealthAsk { host: x.host }
-                              props.openNode x.host
-                          , style { cursor: "pointer" }
-                          ]
-                      [ td [ style { fontFamily: "Fira Code" } ] [ text x.host ]
-                      , td [ style { fontFamily: "Fira Code" } ] [ text x.ip ]
-                      , td [ style { fontFamily: "Fira Code" } ] [ text x.lastUpdate ]
-                      ]) $ activeNodes state.active $ filterNodes state.filter props.nodes
+                  , tbody' rows
                   ]
                 ]
               ]
@@ -95,7 +101,7 @@ filterNodes :: String -> Array NodeInfo -> Array NodeInfo
 filterNodes v xs | String.length v <= 2 = xs
 filterNodes v' xs =
   let v = toLower v'
-  in filter (\x -> includes v (toLower x.host) || includes v (toLower x.ip)) xs
+  in filter (\x -> includes v (toLower x.host) || includes v (toLower x.ipaddr)) xs
   
 activeNodes :: Boolean -> Array NodeInfo -> Array NodeInfo
 activeNodes false xs = xs
