@@ -10,14 +10,11 @@ object KvsPub {
 
 class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   override def preStart(): Unit = {
-    // // find all nodes
-    // kvs.all(keys.`cpu_mem.live`).map_(_.foldLeft(Map.empty[String, StatMeta]){
-    //   case (acc, Right(a)) => acc.get(a.host) match {
-    //     case Some(b) if b.time >= a.time => acc
-    //     case _ => acc + (a.host -> StatMeta(a.time, a.host, a.ip))
-    //   }
-    //   case (acc, _) => acc
-    // }.values.foreach(self ! StatMsg(Metric("", ""), _))) //todo: send new data type
+    // nodes
+    kvs.all(str_to_bytes("nodes")).map_(_.collect{ case Right(a) => extract(a) }.foreach{ en =>
+      import en.{value, time, host}
+      self ! HostMsg(host=host, ipaddr=value, time=time)
+    })
     // features
     kvs.all(str_to_bytes("feature")).map_(_.collect{ case Right(a) => extract(a)}.groupBy(_.host).foreach{ case (host, xs) =>
       val xs1 = xs.toVector.sortBy(_.time)
@@ -37,13 +34,13 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   }
 
   def receive: Receive = {
-    case _: StatMsg => stash()
+    case _: Push => stash()
     case stageActor: ActorRef =>
       unstashAll()
       context.become(ready(stageActor))
   }
 
   def ready(stageActor: ActorRef): Receive = {
-    case msg: StatMsg => stageActor ! msg
+    case msg: Push => stageActor ! msg
   }
 }
