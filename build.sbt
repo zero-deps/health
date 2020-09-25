@@ -103,7 +103,7 @@ lazy val stats = project.in(file(".")).settings(
       }
     }
   )
-).aggregate(client, api, app, ws).dependsOn(client, api).enablePlugins(JavaAppPackaging, DeploySSH)
+).aggregate(client, api, app, frontier2).dependsOn(client, api).enablePlugins(JavaAppPackaging, DeploySSH)
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats"
@@ -122,9 +122,9 @@ lazy val api = project.in(file("api")).settings(
 
 lazy val app = project.in(file("app")).settings(
   skip in publish := true
-).dependsOn(ws)
+).dependsOn(frontier2)
 
-lazy val ws = project.in(file("ws")).settings(
+lazy val frontier2 = project.in(file("frontier")).settings(
   skip in publish := true
 , libraryDependencies += "dev.zio" %% "zio" % "1.0.1"
 )
