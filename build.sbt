@@ -63,7 +63,6 @@ lazy val stats = project.in(file(".")).settings(
 , libraryDependencies += "com.." %% "ftier" % frontier
 , libraryDependencies += "io.github.zero-deps" %% "kvs-core" % kvs
 , libraryDependencies += "io.github.zero-deps" %% "ext" % ext
-, libraryDependencies += "dev.zio" %% "zio" % "1.0.1"
 , fork := true
 , deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
@@ -104,7 +103,7 @@ lazy val stats = project.in(file(".")).settings(
       }
     }
   )
-).aggregate(client, api).dependsOn(client, api).enablePlugins(JavaAppPackaging, DeploySSH)
+).aggregate(client, api, app, ws).dependsOn(client, api).enablePlugins(JavaAppPackaging, DeploySSH)
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats"
@@ -119,6 +118,15 @@ lazy val api = project.in(file("api")).settings(
 , libraryDependencies += "io.github.zero-deps" %% "proto-purs" % protopurs
 , libraryDependencies += "io.github.zero-deps" %% "proto-macros" % proto % Compile
 , libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto
+)
+
+lazy val app = project.in(file("app")).settings(
+  skip in publish := true
+).dependsOn(ws)
+
+lazy val ws = project.in(file("ws")).settings(
+  skip in publish := true
+, libraryDependencies += "dev.zio" %% "zio" % "1.0.1"
 )
 
 maintainer := ".core.be@.com"
