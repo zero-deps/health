@@ -1,43 +1,28 @@
 package .stats
 
 import zd.proto._, api._, macrosapi._
+import zd.kvs._
 
 object fid {
   sealed trait Fid
   @N( 1) final case class CpuMemLive(@N(1) host: String) extends Fid
-  @N( 2) final case class CpuMemLiveIdx(@N(1) host: String) extends Fid
-  @N( 3) final case class CpuHour(@N(1) host: String) extends Fid
-  @N( 4) final case class CpuHourT(@N(1) host: String, @N(2) i: Int) extends Fid
-  @N( 5) final case class CpuHourN(@N(1) host: String, @N(2) i: Int) extends Fid
-  @N( 6) final case class CpuHourV(@N(1) host: String, @N(2) i: Int) extends Fid
-  @N( 7) final case class SearchTs(@N(1) host: String) extends Fid
-  @N( 8) final case class SearchWc(@N(1) host: String) extends Fid
-  @N( 9) final case class SearchFs(@N(1) host: String) extends Fid
-  @N(10) final case class StaticGen(@N(1) host: String) extends Fid
-  @N(11) final case class ReindexAll(@N(1) host: String) extends Fid
-  @N(12) final case class StaticGenYear(@N(1) host: String) extends Fid
-  @N(13) final case class KvsSizeYear(@N(1) host: String) extends Fid
-  @N(14) final case class ActionLive(@N(1) host: String) extends Fid
-  @N(15) final case class ActionLiveIdx(@N(1) host: String) extends Fid
-  @N(16) final case class Metrics(@N(1) host: String) extends Fid
-  @N(17) final case class Nodes() extends Fid
-  @N(18) final case class MeasureLatest(@N(1) name: String, @N(2) host: String) extends Fid
-  @N(19) final case class MeasureLatestIdx(@N(1) name: String, @N(2) host: String) extends Fid
-  @N(20) final case class MeasureYear(@N(1) name: String, @N(2) host: String) extends Fid
-  @N(21) final case class MeasureYearT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends Fid
-  @N(22) final case class MeasureYearN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends Fid
-  @N(23) final case class MeasureYearV(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends Fid
-  @N(24) final case class Feature() extends Fid
-  @N(25) final case class FeatureT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends Fid
-  @N(26) final case class FeatureN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends Fid
-  @N(27) final case class Errors(@N(1) host: String) extends Fid
-  @N(28) final case class ErrorsIdx(@N(1) host: String) extends Fid
+  @N( 2) final case class CpuHour(@N(1) host: String) extends Fid
+  @N( 3) final case class SearchTs(@N(1) host: String) extends Fid
+  @N( 4) final case class SearchWc(@N(1) host: String) extends Fid
+  @N( 5) final case class SearchFs(@N(1) host: String) extends Fid
+  @N( 6) final case class StaticGen(@N(1) host: String) extends Fid
+  @N( 7) final case class ReindexAll(@N(1) host: String) extends Fid
+  @N( 8) final case class StaticGenYear(@N(1) host: String) extends Fid
+  @N( 9) final case class KvsSizeYear(@N(1) host: String) extends Fid
+  @N(10) final case class ActionLive(@N(1) host: String) extends Fid
+  @N(11) final case class Metrics(@N(1) host: String) extends Fid
+  @N(12) final case class Nodes() extends Fid
+  @N(13) final case class MeasureLatest(@N(1) name: String, @N(2) host: String) extends Fid
+  @N(14) final case class MeasureYear(@N(1) name: String, @N(2) host: String) extends Fid
+  @N(15) final case class Feature() extends Fid
+  @N(16) final case class Errors(@N(1) host: String) extends Fid
   implicit val cpumemlivec = caseCodecAuto[CpuMemLive]
-  implicit val cpumemliveidxc = caseCodecAuto[CpuMemLiveIdx]
   implicit val cpuhourc = caseCodecAuto[CpuHour]
-  implicit val cpuhourtc = caseCodecAuto[CpuHourT]
-  implicit val cpuhournc = caseCodecAuto[CpuHourN]
-  implicit val cpuhourvc = caseCodecAuto[CpuHourV]
   implicit val searchtsc = caseCodecAuto[SearchTs]
   implicit val searchwcc = caseCodecAuto[SearchWc]
   implicit val searchfsc = caseCodecAuto[SearchFs]
@@ -46,23 +31,15 @@ object fid {
   implicit val staticgenyearc = caseCodecAuto[StaticGenYear]
   implicit val kvssizeyearc = caseCodecAuto[KvsSizeYear]
   implicit val actionlivec = caseCodecAuto[ActionLive]
-  implicit val actionliveidxc = caseCodecAuto[ActionLiveIdx]
   implicit val metricsc = caseCodecAuto[Metrics]
   implicit val nodesc = caseCodecAuto[Nodes]
   implicit val measurelatestc = caseCodecAuto[MeasureLatest]
-  implicit val measurelatestidxc = caseCodecAuto[MeasureLatestIdx]
   implicit val measureyearc = caseCodecAuto[MeasureYear]
-  implicit val measureyeartc = caseCodecAuto[MeasureYearT]
-  implicit val measureyearnc = caseCodecAuto[MeasureYearN]
-  implicit val measureyearvc = caseCodecAuto[MeasureYearV]
   implicit val featurec = caseCodecAuto[Feature]
-  implicit val featuretc = caseCodecAuto[FeatureT]
-  implicit val featurenc = caseCodecAuto[FeatureN]
   implicit val errorsc = caseCodecAuto[Errors]
-  implicit val errorsidxc = caseCodecAuto[ErrorsIdx]
   implicit val fidc = sealedTraitCodecAuto[Fid]
 
-  def apply(x: Fid): Bytes = encodeToBytes[Fid](x)
+  def apply(x: Fid): FdKey = FdKey(encodeToBytes[Fid](x))
 }
 
 object en_id {
@@ -75,6 +52,36 @@ object en_id {
   def str(x: String): Bytes = encodeToBytes(Str(x))
   def int(x: Int): Bytes = encodeToBytes(IntV(x))
   def name_host_i(host: String, name: String, i: Int): Bytes = encodeToBytes(NameHostI(name=name, host=host, i))
+}
+
+object el_id {
+  sealed trait ElId
+  @N( 1) final case class CpuMemLiveIdx(@N(1) host: String) extends ElId
+  @N( 2) final case class CpuHourT(@N(1) host: String, @N(2) i: Int) extends ElId
+  @N( 3) final case class CpuHourN(@N(1) host: String, @N(2) i: Int) extends ElId
+  @N( 4) final case class CpuHourV(@N(1) host: String, @N(2) i: Int) extends ElId
+  @N( 5) final case class ActionLiveIdx(@N(1) host: String) extends ElId
+  @N( 6) final case class MeasureLatestIdx(@N(1) name: String, @N(2) host: String) extends ElId
+  @N( 7) final case class MeasureYearT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N( 8) final case class MeasureYearN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N( 9) final case class MeasureYearV(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N(10) final case class FeatureT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N(11) final case class FeatureN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N(12) final case class ErrorsIdx(@N(1) host: String) extends ElId
+  implicit val cpumemliveidxc = caseCodecAuto[CpuMemLiveIdx]
+  implicit val cpuhourtc = caseCodecAuto[CpuHourT]
+  implicit val cpuhournc = caseCodecAuto[CpuHourN]
+  implicit val cpuhourvc = caseCodecAuto[CpuHourV]
+  implicit val actionliveidxc = caseCodecAuto[ActionLiveIdx]
+  implicit val measurelatestidxc = caseCodecAuto[MeasureLatestIdx]
+  implicit val measureyeartc = caseCodecAuto[MeasureYearT]
+  implicit val measureyearnc = caseCodecAuto[MeasureYearN]
+  implicit val measureyearvc = caseCodecAuto[MeasureYearV]
+  implicit val featuretc = caseCodecAuto[FeatureT]
+  implicit val featurenc = caseCodecAuto[FeatureN]
+  implicit val errorsidxc = caseCodecAuto[ErrorsIdx]
+  implicit val elidc = sealedTraitCodecAuto[ElId]
+  def apply(x: ElId): ElKey = ElKey(encodeToBytes[ElId](x))
 }
 
 object el_v {

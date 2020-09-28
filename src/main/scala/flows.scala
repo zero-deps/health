@@ -8,7 +8,7 @@ import akka.stream.{ClosedShape, FlowShape}
 import akka.util.ByteString
 import java.time.{LocalDateTime}
 import scala.util.Try
-import zd.kvs.Kvs
+import zd.kvs._
 import zd.proto.api.{encode, decode}
 import zero.ext._, either._
 
@@ -125,21 +125,21 @@ object Flows {
       val save_host = Flow[Push].collect{
         case msg: HostMsg =>
           import msg.{host, ipaddr, time}
-          kvs.put(fid=fid(fid.Nodes()), id=en_id.str(host), insert(EnData(value=ipaddr, time=time, host=host)))
+          kvs.put(EnKey(fid(fid.Nodes()), en_id.str(host)), insert(EnData(value=ipaddr, time=time, host=host)))
       }
       val save_metric = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem"|"kvs.size"|"feature", _), _, _) =>
         case StatMsg(Metric(name, value), time, host) =>
-          kvs.put(fid=fid(fid.Metrics(host)), id=en_id.str(name), insert(EnData(value=s"${name}|${value}", time=time, host=host)))
+          kvs.put(EnKey(fid(fid.Metrics(host)), en_id.str(name)), insert(EnData(value=s"${name}|${value}", time=time, host=host)))
       }
       val save_cpumem = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem", value), time, host) =>
           { // live
-            val i = kvs.el.get(fid(fid.CpuMemLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
+            val i = kvs.el.get(el_id(el_id.CpuMemLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
             for {
-              _ <- kvs.put(fid=fid(fid.CpuMemLive(host)), id=en_id.int(i), insert(EnData(value=value, time=time, host=host)))
+              _ <- kvs.put(EnKey(fid(fid.CpuMemLive(host)), en_id.int(i)), insert(EnData(value=value, time=time, host=host)))
               i1 = (i + 1) % 20
-              _ <- kvs.el.put(fid(fid.CpuMemLiveIdx(host)), el_v.int(i1))
+              _ <- kvs.el.put(el_id(el_id.CpuMemLiveIdx(host)), el_v.int(i1))
             } yield ()
           }
           value.split('~') match {
@@ -147,18 +147,18 @@ object Flows {
               { // hour
                 val i = (((time / 1000 / 60) % 60) / 3).toInt // [0, 19]
                 val now = System.currentTimeMillis
-                val last = kvs.el.get(fid(fid.CpuHourT(host, i))).toOption.flatten.map(el_v.long).getOrElse(now)
+                val last = kvs.el.get(el_id(el_id.CpuHourT(host, i))).toOption.flatten.map(el_v.long).getOrElse(now)
                 val n =
                   if (now - last >= 3*60*1000) 0
-                  else kvs.el.get(fid(fid.CpuHourN(host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
-                val v = kvs.el.get(fid(fid.CpuHourV(host, i))).toOption.flatten.map(el_v.float).getOrElse(0f)
+                  else kvs.el.get(el_id(el_id.CpuHourN(host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
+                val v = kvs.el.get(el_id(el_id.CpuHourV(host, i))).toOption.flatten.map(el_v.float).getOrElse(0f)
                 val n1 = n + 1
                 val v1 = (v * n + cpu.toInt) / n1
-                kvs.el.put(fid(fid.CpuHourT(host, i)), el_v.long(time))
-                kvs.el.put(fid(fid.CpuHourN(host, i)), el_v.int(n1))
-                kvs.el.put(fid(fid.CpuHourV(host, i)), el_v.float(v1))
+                kvs.el.put(el_id(el_id.CpuHourT(host, i)), el_v.long(time))
+                kvs.el.put(el_id(el_id.CpuHourN(host, i)), el_v.int(n1))
+                kvs.el.put(el_id(el_id.CpuHourV(host, i)), el_v.float(v1))
                 val time1 = ((time / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000
-                kvs.put(fid=fid(fid.CpuHour(host)), id=en_id.int(i), insert(EnData(value=v1.toInt.toString, time=time1, host=host)))
+                kvs.put(EnKey(fid(fid.CpuHour(host)), en_id.int(i)), insert(EnData(value=v1.toInt.toString, time=time1, host=host)))
                 system.eventStream.publish(StatMsg(Metric("cpu.hour", v1.toInt.toString), time=time1, host=host))
               }
             case _ =>
@@ -170,11 +170,11 @@ object Flows {
             case "reindex.all" => 100
             case _ => 20
           }
-          val i = kvs.el.get(fid(fid.MeasureLatestIdx(name=name, host=host))).toOption.flatten.map(el_v.int).getOrElse(0)
+          val i = kvs.el.get(el_id(el_id.MeasureLatestIdx(name=name, host=host))).toOption.flatten.map(el_v.int).getOrElse(0)
           for {
-            _ <- kvs.put(fid=fid(fid.MeasureLatest(name=name, host=host)), id=en_id.int(i), insert(EnData(value=value, time=time, host=host)))
+            _ <- kvs.put(EnKey(fid(fid.MeasureLatest(name=name, host=host)), en_id.int(i)), insert(EnData(value=value, time=time, host=host)))
             i1 = (i + 1) % limit
-            _ <- kvs.el.put(fid(fid.MeasureLatestIdx(name=name, host=host)), el_v.int(i1))
+            _ <- kvs.el.put(el_id(el_id.MeasureLatestIdx(name=name, host=host)), el_v.int(i1))
           } yield ()
           // calculate new quartile
           kvs.all(fid(fid.MeasureLatest(name=name, host=host))).map_{ xs =>
@@ -189,18 +189,18 @@ object Flows {
         val date = time.toLocalDataTime()
         val i = date.getMonthValue - 1
         val now = LocalDateTime.now()
-        val last = kvs.el.get(fid(fid.MeasureYearT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
+        val last = kvs.el.get(el_id(el_id.MeasureYearT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
         val n =
           if (date.getYear != last.getYear) 0
-          else kvs.el.get(fid(fid.MeasureYearN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
-        val v = kvs.el.get(fid(fid.MeasureYearV(name=name, host=host, i))).toOption.flatten.map(el_v.long).getOrElse(0L)
+          else kvs.el.get(el_id(el_id.MeasureYearN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
+        val v = kvs.el.get(el_id(el_id.MeasureYearV(name=name, host=host, i))).toOption.flatten.map(el_v.long).getOrElse(0L)
         val n1 = n + 1
         val v1 = (v * n + value.toLong) / n1
-        kvs.el.put(fid(fid.MeasureYearT(name=name, host=host, i)), el_v.long(time))
-        kvs.el.put(fid(fid.MeasureYearN(name=name, host=host, i)), el_v.int(n1))
-        kvs.el.put(fid(fid.MeasureYearV(name=name, host=host, i)), el_v.long(v1))
+        kvs.el.put(el_id(el_id.MeasureYearT(name=name, host=host, i)), el_v.long(time))
+        kvs.el.put(el_id(el_id.MeasureYearN(name=name, host=host, i)), el_v.int(n1))
+        kvs.el.put(el_id(el_id.MeasureYearV(name=name, host=host, i)), el_v.long(v1))
         val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
-        kvs.put(fid=fid(fid.MeasureYear(name=name, host=host)), id=en_id.int(i), insert(EnData(value=v1.toString, time=time1, host=host)))
+        kvs.put(EnKey(fid(fid.MeasureYear(name=name, host=host)), en_id.int(i)), insert(EnData(value=v1.toString, time=time1, host=host)))
         (v1, time1)
       }
       val save_year_value = Flow[Push].collect{
@@ -216,32 +216,32 @@ object Flows {
           val date = time.toLocalDataTime()
           val i = date.getMonthValue - 1
           val now = LocalDateTime.now()
-          val last = kvs.el.get(fid(fid.FeatureT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
+          val last = kvs.el.get(el_id(el_id.FeatureT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
           val n =
             if (date.getYear != last.getYear) 0
-            else kvs.el.get(fid(fid.FeatureN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
+            else kvs.el.get(el_id(el_id.FeatureN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
           val n1 = n + 1
-          kvs.el.put(fid(fid.FeatureT(name=name, host=host, i)), el_v.long(time))
-          kvs.el.put(fid(fid.FeatureN(name=name, host=host, i)), el_v.int(n1))
+          kvs.el.put(el_id(el_id.FeatureT(name=name, host=host, i)), el_v.long(time))
+          kvs.el.put(el_id(el_id.FeatureN(name=name, host=host, i)), el_v.int(n1))
           val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
-          kvs.put(fid=fid(fid.Feature()), id=en_id.name_host_i(name=name, host=host, i=i), insert(EnData(value=s"${name}~${n1}", time=time1, host=host)))
+          kvs.put(EnKey(fid(fid.Feature()), en_id.name_host_i(name=name, host=host, i=i)), insert(EnData(value=s"${name}~${n1}", time=time1, host=host)))
       }
       val save_action = Flow[Push].collect{
         case StatMsg(Action(action), time, host) =>
-          val i = kvs.el.get(fid(fid.ActionLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
+          val i = kvs.el.get(el_id(el_id.ActionLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
           for {
-            _ <- kvs.put(fid=fid(fid.ActionLive(host)), id=en_id.int(i), insert(EnData(value=action, time=time, host=host)))
+            _ <- kvs.put(EnKey(fid(fid.ActionLive(host)), id=en_id.int(i)), insert(EnData(value=action, time=time, host=host)))
             i1 = (i + 1) % 20
-            _ <- kvs.el.put(fid(fid.ActionLiveIdx(host)), el_v.int(i1))
+            _ <- kvs.el.put(el_id(el_id.ActionLiveIdx(host)), el_v.int(i1))
           } yield ()
       }
       val save_error = Flow[Push].collect{
         case StatMsg(Error(exception, stacktrace, toptrace), time, host) =>
-          val i = kvs.el.get(fid(fid.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
+          val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
           for {
-            _ <- kvs.put(fid=fid(fid.Errors(host)), id=en_id.int(i), insert(EnData(value=s"${exception}|${stacktrace}|${toptrace}", time=time, host=host)))
+            _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"${exception}|${stacktrace}|${toptrace}", time=time, host=host)))
             i1 = (i + 1) % 100
-            _ <- kvs.el.put(fid(fid.ErrorsIdx(host)), el_v.int(i1))
+            _ <- kvs.el.put(el_id(el_id.ErrorsIdx(host)), el_v.int(i1))
           } yield ()
       }
       def pub = Sink.foreach[Push]{ case msg =>
