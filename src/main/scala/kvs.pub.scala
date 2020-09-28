@@ -22,7 +22,7 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
         self ! StatMsg(Metric("feature", s"${key.name}~$value"), time=time, host=host)
       }
     })
-    //todo
+    //todo: common errors (stacktrace is a key)
     // // get unique errrors
     // kvs.all(fid(fid.AllErrors())).map_(_.foldLeft(Map.empty[String, StatMsg]){
     //   case (acc, Right(a)) => a.data.split('|') match {
