@@ -10,18 +10,19 @@ object KvsPub {
 
 class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
   override def preStart(): Unit = {
-    // nodes
+    /* nodes */
     kvs.all(fid(fid.Nodes())).map_(_.collect{ case Right(a) => extract(a) }.foreach{ en =>
       import en.{value, time, host}
       self ! HostMsg(host=host, ipaddr=value, time=time)
     })
-    // features
+    /* features */
     kvs.all(fid(fid.Feature())).map_(_.collect{ case Right(a) => en_id.feature(a.key.id) -> extract(a)}.groupBy(_._2.host).foreach{ case (host, xs) =>
       val xs1 = xs.toVector.sortBy(_._2.time)
       xs1.dropWhile(_._2.time.toLocalDataTime().isBefore(year_ago())).foreach{ case (key, EnData(value, time, host)) =>
         self ! StatMsg(Metric("feature", s"${key.name}~$value"), time=time, host=host)
       }
     })
+    //todo
     // // get unique errrors
     // kvs.all(keys.`errors`).map_(_.foldLeft(Map.empty[String, StatMsg]){
     //   case (acc, Right(a)) => a.data.split('|') match {

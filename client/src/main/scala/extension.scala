@@ -63,7 +63,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val fs = 1 hour
     val kvs = 1 day
   }
-  // Threads
+  /* Threads */
   scheduler.schedule(1 second, timeout.thr) {
     val all = thr.getThreadCount
     val daemon = thr.getDaemonThreadCount
@@ -71,7 +71,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
     val total = thr.getTotalStartedThreadCount
     metric("thr", s"${all}~${daemon}~${peak}~${total}")
   }
-  // Uptime (seconds)
+  /* Uptime (in seconds) */
   def scheduleUptime(): Unit = {
     val uptime = system.uptime
     val t =
@@ -85,11 +85,11 @@ class Stats(implicit system: ActorSystem) extends Extension {
     ()
   }
   scheduleUptime()
-  // CPU and memory
+  /* CPU and memory */
   scheduler.schedule(1 second, timeout.cpu_mem) {
     cpu_mem().foreach(metric("cpu_mem", _))
   }
-  // File descriptor count
+  /* File descriptor count */
   scheduler.schedule(1 second, timeout.fd) {
     fd().foreach(metric("fd", _))
   }
@@ -115,7 +115,7 @@ class Stats(implicit system: ActorSystem) extends Extension {
     }
   }
 
-  // FS (Mbytes)
+  /* FS (Mbytes) */
   FileSystems.getDefault.getRootDirectories.asScala.toList.headOption match {
     case Some(root) =>
       Try(Files.getFileStore(root)) match {

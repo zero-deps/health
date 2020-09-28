@@ -131,7 +131,7 @@ object Flows {
       }
       val save_cpumem = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem", value), time, host) =>
-          { // live
+          { /* live */
             val i = kvs.el.get(el_id(el_id.CpuMemLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
             for {
               _ <- kvs.put(EnKey(fid(fid.CpuMemLive(host)), en_id.int(i)), insert(EnData(value=value, time=time, host=host)))
@@ -141,8 +141,8 @@ object Flows {
           }
           value.split('~') match {
             case Array(cpu, _, _, _) =>
-              { // hour
-                val i = (((time / 1000 / 60) % 60) / 3).toInt // [0, 19]
+              { /* hour */
+                val i = (((time / 1000 / 60) % 60) / 3).toInt /* [0, 19] */
                 val now = System.currentTimeMillis
                 val last = kvs.el.get(el_id(el_id.CpuHourT(host, i))).toOption.flatten.map(el_v.long).getOrElse(now)
                 val n =
@@ -173,7 +173,7 @@ object Flows {
             i1 = (i + 1) % limit
             _ <- kvs.el.put(el_id(el_id.MeasureLatestIdx(name=name, host=host)), el_v.int(i1))
           } yield ()
-          // calculate new quartile
+          /* calculate new quartile */
           kvs.all(fid(fid.MeasureLatest(name=name, host=host))).map_{ xs =>
             val xs1 = xs.collect{ case Right(a) => extract(a)}.toVector.sortBy(_.value.toInt)
             val thirdQ = xs1((xs1.length*0.7).toInt).value
