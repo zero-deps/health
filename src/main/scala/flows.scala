@@ -52,7 +52,7 @@ object Flows {
         {
           kvs.all(fid(fid.CpuHour(host))).map_{ xs =>
             val xs1 = xs.collect{ case Right(a) => extract(a) }.sortBy(_.time)
-            val min = xs1.lastOption.map(_.time).getOrElse(0L)-60*60*1000 //todo
+            val min = xs1.lastOption.map(_.time).getOrElse(0L)-60*60*1000 //todo: refactoring
             xs1.dropWhile(_.time < min).foreach{
               case EnData(value, time, host) =>
                 system.eventStream publish StatMsg(Metric("cpu.hour", value), time=time, host=host)
@@ -244,8 +244,8 @@ object Flows {
         case StatMsg(Error(exception, stacktrace), time, host) =>
           val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
           for {
-            _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"$exception|$stacktrace", time=time, host=host))) //todo: stacktrace as a key
-            i1 = (i + 1) % 100 //todo: 10 unique errors?
+            _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"$exception|$stacktrace", time=time, host=host)))
+            i1 = (i + 1) % 100
             _ <- kvs.el.put(el_id(el_id.ErrorsIdx(host)), el_v.int(i1))
           } yield ()
       }
