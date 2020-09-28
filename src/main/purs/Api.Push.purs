@@ -32,8 +32,8 @@ type Metric = { name :: String, value :: String }
 type Metric' = { name :: Maybe String, value :: Maybe String }
 type Measure = { name :: String, value :: String }
 type Measure' = { name :: Maybe String, value :: Maybe String }
-type Error = { exception :: String, stacktrace :: String, toptrace :: String }
-type Error' = { exception :: Maybe String, stacktrace :: Maybe String, toptrace :: Maybe String }
+type Error = { exception :: String, stacktrace :: String }
+type Error' = { exception :: Maybe String, stacktrace :: Maybe String }
 type Action = { action :: String }
 type Action' = { action :: Maybe String }
 type HostMsg = { host :: String, ipaddr :: String, time :: Number }
@@ -122,9 +122,9 @@ decodeMeasure _xs_ pos0 = do
 decodeError :: Uint8Array -> Int -> Decode.Result Error
 decodeError _xs_ pos0 = do
   { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
-  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { exception: Nothing, stacktrace: Nothing, toptrace: Nothing } pos
+  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { exception: Nothing, stacktrace: Nothing } pos
   case val of
-    { exception: Just exception, stacktrace: Just stacktrace, toptrace: Just toptrace } -> pure { pos: pos1, val: { exception, stacktrace, toptrace } }
+    { exception: Just exception, stacktrace: Just stacktrace } -> pure { pos: pos1, val: { exception, stacktrace } }
     _ -> Left $ Decode.MissingFields "Error"
     where
     decode :: Int -> Error' -> Int -> Decode.Result' (Step { a :: Int, b :: Error', c :: Int } { pos :: Int, val :: Error' })
@@ -133,7 +133,6 @@ decodeError _xs_ pos0 = do
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { exception = Just val }
         2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { stacktrace = Just val }
-        3 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { toptrace = Just val }
         _ -> decodeFieldLoop end (Decode.skipType _xs_ pos2 $ tag .&. 7) \_ -> acc
     decode end acc pos1 = pure $ Done { pos: pos1, val: acc }
 

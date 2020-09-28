@@ -112,6 +112,14 @@ object Flows {
           case (key, EnData(value, time, host)) =>
             system.eventStream publish StatMsg(Metric(key.name, value), time=time, host=host)
         })
+        kvs.all(fid(fid.Errors(host))).map_(_.collect{ case Right(a) => extract(a) }.foreach{
+          case EnData(value, time, host) =>
+            value.split('|') match {
+              case Array(exception, stacktrace) =>
+                system.eventStream publish StatMsg(Error(exception, stacktrace), time=time, host=host)
+              case _ =>
+            }
+        })
     }
 
   def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
@@ -233,11 +241,11 @@ object Flows {
           } yield ()
       }
       val save_error = Flow[Push].collect{
-        case StatMsg(Error(exception, stacktrace, toptrace), time, host) =>
+        case StatMsg(Error(exception, stacktrace), time, host) =>
           val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
           for {
-            _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"${exception}|${stacktrace}|${toptrace}", time=time, host=host))) //todo: |
-            i1 = (i + 1) % 100
+            _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"$exception|$stacktrace", time=time, host=host))) //todo: stacktrace as a key
+            i1 = (i + 1) % 100 //todo: 10 unique errors?
             _ <- kvs.el.put(el_id(el_id.ErrorsIdx(host)), el_v.int(i1))
           } yield ()
       }

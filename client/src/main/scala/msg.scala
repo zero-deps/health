@@ -18,10 +18,9 @@ sealed trait ClientMsg
   , @N(5) ipaddr: Option[String]
   ) extends ClientMsg
 
-@N(3) @RestrictedN(4) final case class ErrorMsg
+@N(3) @RestrictedN(3, 4) final case class ErrorMsg
   ( @N(1) exception: String
   , @N(2) stacktrace: String
-  , @N(3) toptrace: String
   , @N(5) hostname: Option[String]
   , @N(6) ipaddr: Option[String]
   ) extends ClientMsg

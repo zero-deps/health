@@ -6,7 +6,6 @@ import FormatOps (dateTime)
 import Data.Array (singleton)
 import DomOps (cn)
 import Effect (Effect)
-import Global (readInt)
 import Prelude (Unit, bind, map, pure, ($), (<>), (==))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
 import React.DOM (div, h5, table, tbody', td, text, th', thead, tr', div')
@@ -80,7 +79,7 @@ errorReactClass = component "Error" \this -> do
       s <- getState this
       props <- getProps this
       dt <- dateTime props.err.time
-      let nocause = props.err.toptrace == "--"
+      let nocause = props.err.stacktrace == ["--"]
       pure $
         tr' $ (if props.showAddr then
         [ td [ cn "align-top" ] [ text props.err.host ] ] else [] ) <>
@@ -92,7 +91,7 @@ errorReactClass = component "Error" \this -> do
           case s.expandStack of
             false -> 
               td [ cn "align-top", onClick \_ -> fullStack, style { cursor: "zoom-in", fontFamily: "Fira Code", wordBreak: "break-all" } ]
-              [ text props.err.toptrace ]
+              [ text "..." ]
             true -> 
               td [ cn "align-top", onClick \_ -> shortStack, style { cursor: "zoom-out" } ]
               [ div [ style { fontFamily: "Fira Code", wordBreak: "break-all" } ] $ map (\y -> 

@@ -45,12 +45,12 @@ class UdpPub extends Actor with Stash with ActorLogging {
           val time = System.currentTimeMillis
           self ! HostMsg(host=host, ipaddr=ipaddr, time=time)
           self ! StatMsg(stat=Measure(name, value), time=time, host=host)
-        case ErrorMsg(exception, stacktrace, toptrace, hostname1, ipaddr1) =>
+        case ErrorMsg(exception, stacktrace, hostname1, ipaddr1) =>
           val host = merge_host(hostname1, remote)
           val ipaddr = merge_ipaddr(hostname1, remote)
           val time = System.currentTimeMillis
           self ! HostMsg(host=host, ipaddr=ipaddr, time=time)
-          self ! StatMsg(stat=Error(exception, stacktrace, toptrace), time=time, host=host)
+          self ! StatMsg(stat=Error(exception, stacktrace), time=time, host=host)
         case ActionMsg(action, hostname1, ipaddr1) =>
           val host = merge_host(hostname1, remote)
           val ipaddr = merge_ipaddr(hostname1, remote)

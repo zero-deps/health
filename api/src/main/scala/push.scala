@@ -24,5 +24,6 @@ sealed trait Push
 sealed trait Stat
 @N(1) final case class Metric(@N(1) name: String, @N(2) value: String) extends Stat
 @N(2) final case class Measure(@N(1) name: String, @N(2) value: String) extends Stat
-@N(3) final case class Error(@N(1) exception: String, @N(2) stacktrace: String, @N(3) toptrace: String) extends Stat
+@N(3) @RestrictedN(3)
+final case class Error(@N(1) exception: String, @N(2) stacktrace: String) extends Stat
 @N(4) final case class Action(@N(1) action: String) extends Stat

@@ -19,7 +19,6 @@ class Logger extends Actor {
       stats.error(
         exception = s"${message.toString}~${cause.toString}",
         stacktrace = stacktrace.mkString("~"),
-        toptrace = stacktrace.head
       )
   }
 }
