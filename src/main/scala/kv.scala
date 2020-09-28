@@ -44,14 +44,21 @@ object fid {
 
 object en_id {
   final case class Str(@N(1) x: String)
+  final case class Metric(@N(1) name: String)
   final case class IntV(@N(1) x: Int)
-  final case class NameHostI(@N(1) name: String, @N(2) host: String, @N(3) i: Int)
+  final case class Feature(@N(1) name: String, @N(2) host: String, @N(3) i: Int)
   implicit val strc = caseCodecAuto[Str]
+  implicit val metricc = caseCodecAuto[Metric]
   implicit val intc = caseCodecAuto[IntV]
-  implicit val namehostic = caseCodecAuto[NameHostI]
+  implicit val featurec = caseCodecAuto[Feature]
   def str(x: String): Bytes = encodeToBytes(Str(x))
   def int(x: Int): Bytes = encodeToBytes(IntV(x))
-  def name_host_i(host: String, name: String, i: Int): Bytes = encodeToBytes(NameHostI(name=name, host=host, i))
+
+  def apply(x: Feature): Bytes = encodeToBytes(x)
+  def apply(x: Metric): Bytes = encodeToBytes(x)
+
+  def feature(xs: Bytes): Feature = decode[Feature](xs)
+  def metric(xs: Bytes): Metric = decode[Metric](xs)
 }
 
 object el_id {

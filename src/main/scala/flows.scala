@@ -108,12 +108,9 @@ object Flows {
         kvs.all(fid(fid.ActionLive(host))).map_(_.collect{ case Right(a) => extract(a) }.sortBy(_.time).dropWhile(_.time < live_start).foreach{
           case EnData(action, time, host) => system.eventStream publish StatMsg(Action(action), time=time, host=host)
         })
-        kvs.all(fid(fid.Metrics(host))).map_(_.collect{ case Right(a) => extract(a) }.foreach{
-          case EnData(stat, time, host) => stat.split('|') match { //todo: remove split, use name
-            case Array(name, value) =>
-              system.eventStream publish StatMsg(Metric(name, value), time=time, host=host)
-            case _ =>
-          }
+        kvs.all(fid(fid.Metrics(host))).map_(_.collect{ case Right(a) => en_id.metric(a.key.id) -> extract(a) }.foreach{
+          case (key, EnData(value, time, host)) =>
+            system.eventStream publish StatMsg(Metric(key.name, value), time=time, host=host)
         })
     }
 
@@ -130,7 +127,7 @@ object Flows {
       val save_metric = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem"|"kvs.size"|"feature", _), _, _) =>
         case StatMsg(Metric(name, value), time, host) =>
-          kvs.put(EnKey(fid(fid.Metrics(host)), en_id.str(name)), insert(EnData(value=s"${name}|${value}", time=time, host=host)))
+          kvs.put(EnKey(fid(fid.Metrics(host)), en_id(en_id.Metric(name))), insert(EnData(value=value, time=time, host=host)))
       }
       val save_cpumem = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem", value), time, host) =>
@@ -224,7 +221,7 @@ object Flows {
           kvs.el.put(el_id(el_id.FeatureT(name=name, host=host, i)), el_v.long(time))
           kvs.el.put(el_id(el_id.FeatureN(name=name, host=host, i)), el_v.int(n1))
           val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
-          kvs.put(EnKey(fid(fid.Feature()), en_id.name_host_i(name=name, host=host, i=i)), insert(EnData(value=s"${name}~${n1}", time=time1, host=host)))
+          kvs.put(EnKey(fid(fid.Feature()), en_id(en_id.Feature(name=name, host=host, i=i))), insert(EnData(value=n1.toString, time=time1, host=host)))
       }
       val save_action = Flow[Push].collect{
         case StatMsg(Action(action), time, host) =>
@@ -239,7 +236,7 @@ object Flows {
         case StatMsg(Error(exception, stacktrace, toptrace), time, host) =>
           val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
           for {
-            _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"${exception}|${stacktrace}|${toptrace}", time=time, host=host)))
+            _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"${exception}|${stacktrace}|${toptrace}", time=time, host=host))) //todo: |
             i1 = (i + 1) % 100
             _ <- kvs.el.put(el_id(el_id.ErrorsIdx(host)), el_v.int(i1))
           } yield ()
