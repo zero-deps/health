@@ -23,6 +23,6 @@ package object stats {
 
   implicit val EnDataC = caseCodecAuto[EnData]
 
-  def extract(x: zd.kvs.en.IdEn): EnData = decode[EnData](x.en.data)
+  def extract(x: zd.kvs.en.`Key,En`): EnData = decode[EnData](x.en.data)
   def insert(x: EnData): Bytes = encodeToBytes[EnData](x)
 }
