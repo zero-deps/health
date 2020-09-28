@@ -245,25 +245,71 @@ object Flows {
           val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
           for {
             _ <- kvs.put(EnKey(fid(fid.Errors(host)), en_id.int(i)), insert(EnData(value=s"$exception|$stacktrace", time=time, host=host)))
-            i1 = (i + 1) % 100
+            i1 = (i + 1) % 10
             _ <- kvs.el.put(el_id(el_id.ErrorsIdx(host)), el_v.int(i1))
           } yield ()
       }
+      val save_common_error = Flow[Push].collect{
+        case StatMsg(Error(exception, stacktrace), time, host) =>
+          /* save unique errors (by stacktrace), 20 as maximum with latest host/time */
+          val limit = 20
+          /* check that at least on error already added */
+          val res: Res[Unit] = kvs.el.get(el_id(el_id.CommonErrorsIdx())).flatMap{
+            case None =>
+              val idx = 0
+              for {
+                _ <- kvs.el.put(el_id(el_id.CommonErrorsIdx()), el_v.int(idx))
+                _ <- kvs.put(EnKey(fid(fid.CommonErrorsStacks()), en_id.int(idx)), en_v.str(stacktrace))
+                _ <- kvs.put(EnKey(fid(fid.CommonErrors()), en_id.str(stacktrace)), insert(EnData(value=exception, time=time, host=host)))
+              } yield ()
+            case Some(x) =>
+              val last_idx = el_v.int(x)
+              /* check that this stacktrace already exists */
+              kvs.get(EnKey(fid(fid.CommonErrors()), en_id.str(stacktrace))).flatMap{
+                case Some(y) =>
+                  /* in this case we need to update time/host of error */
+                  for {
+                    _ <- kvs.put(EnKey(fid(fid.CommonErrors()), en_id.str(stacktrace)), insert(EnData(value=exception, time=time, host=host)))
+                  } yield ()
+                case None =>
+                  val idx = (last_idx + 1) % limit
+                  /* check if there is an idx mapped to other stacktrace */
+                  kvs.get(EnKey(fid(fid.CommonErrorsStacks()), en_id.int(idx))).flatMap{
+                    case None =>
+                      for {
+                        _ <- kvs.el.put(el_id(el_id.CommonErrorsIdx()), el_v.int(idx))
+                        _ <- kvs.put(EnKey(fid(fid.CommonErrorsStacks()), en_id.int(idx)), en_v.str(stacktrace))
+                        _ <- kvs.put(EnKey(fid(fid.CommonErrors()), en_id.str(stacktrace)), insert(EnData(value=exception, time=time, host=host)))
+                      } yield ()
+                    case Some(old_stack_xs) =>
+                      val old_stack = en_v.str(old_stack_xs.data)
+                      for {
+                        _ <- kvs.remove(EnKey(fid(fid.CommonErrors()), en_id.str(old_stack)))
+                        _ <- kvs.el.put(el_id(el_id.CommonErrorsIdx()), el_v.int(idx))
+                        _ <- kvs.put(EnKey(fid(fid.CommonErrorsStacks()), en_id.int(idx)), en_v.str(stacktrace))
+                        _ <- kvs.put(EnKey(fid(fid.CommonErrors()), en_id.str(stacktrace)), insert(EnData(value=exception, time=time, host=host)))
+                      } yield ()
+                  }
+              }
+          }
+          res.leftMap(e => system.log.error(e.toString))
+      }
       def pub = Sink.foreach[Push]{ case msg =>
-        system.log.debug(s"pub=${msg}")
+        system.log.debug(s"pub=$msg")
         system.eventStream.publish(msg)
       }
-      val b1 = b.add(Broadcast[Push](9))
+      val b1 = b.add(Broadcast[Push](10))
 
       udppub ~> logIn ~> b1 ~> pub
-                         b1 ~> save_host       ~> Sink.ignore
-                         b1 ~> save_metric     ~> Sink.ignore
-                         b1 ~> save_cpumem     ~> Sink.ignore
-                         b1 ~> save_measure    ~> Sink.ignore
-                         b1 ~> save_year_value ~> Sink.ignore
-                         b1 ~> save_action     ~> Sink.ignore
-                         b1 ~> save_error      ~> Sink.ignore
-                         b1 ~> save_feature    ~> Sink.ignore
+                         b1 ~> save_host         ~> Sink.ignore
+                         b1 ~> save_metric       ~> Sink.ignore
+                         b1 ~> save_cpumem       ~> Sink.ignore
+                         b1 ~> save_measure      ~> Sink.ignore
+                         b1 ~> save_year_value   ~> Sink.ignore
+                         b1 ~> save_action       ~> Sink.ignore
+                         b1 ~> save_error        ~> Sink.ignore
+                         b1 ~> save_common_error ~> Sink.ignore
+                         b1 ~> save_feature      ~> Sink.ignore
 
       ClosedShape
     })

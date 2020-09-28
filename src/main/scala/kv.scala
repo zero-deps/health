@@ -21,6 +21,8 @@ object fid {
   @N(14) final case class MeasureYear(@N(1) name: String, @N(2) host: String) extends Fid
   @N(15) final case class Feature() extends Fid
   @N(16) final case class Errors(@N(1) host: String) extends Fid
+  @N(17) final case class CommonErrors() extends Fid
+  @N(18) final case class CommonErrorsStacks() extends Fid
   implicit val cpumemlivec = caseCodecAuto[CpuMemLive]
   implicit val cpuhourc = caseCodecAuto[CpuHour]
   implicit val searchtsc = caseCodecAuto[SearchTs]
@@ -37,6 +39,8 @@ object fid {
   implicit val measureyearc = caseCodecAuto[MeasureYear]
   implicit val featurec = caseCodecAuto[Feature]
   implicit val errorsc = caseCodecAuto[Errors]
+  implicit val commonerrorsc = caseCodecAuto[CommonErrors]
+  implicit val commonerrorsstacksc = caseCodecAuto[CommonErrorsStacks]
   implicit val fidc = sealedTraitCodecAuto[Fid]
 
   def apply(x: Fid): FdKey = FdKey(encodeToBytes[Fid](x))
@@ -59,6 +63,7 @@ object en_id {
 
   def feature(xs: Bytes): Feature = decode[Feature](xs)
   def metric(xs: Bytes): Metric = decode[Metric](xs)
+  def str(xs: Bytes): String = decode[Str](xs).x
 }
 
 object el_id {
@@ -75,6 +80,7 @@ object el_id {
   @N(10) final case class FeatureT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
   @N(11) final case class FeatureN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
   @N(12) final case class ErrorsIdx(@N(1) host: String) extends ElId
+  @N(13) final case class CommonErrorsIdx() extends ElId
   implicit val cpumemliveidxc = caseCodecAuto[CpuMemLiveIdx]
   implicit val cpuhourtc = caseCodecAuto[CpuHourT]
   implicit val cpuhournc = caseCodecAuto[CpuHourN]
@@ -87,6 +93,7 @@ object el_id {
   implicit val featuretc = caseCodecAuto[FeatureT]
   implicit val featurenc = caseCodecAuto[FeatureN]
   implicit val errorsidxc = caseCodecAuto[ErrorsIdx]
+  implicit val commonerrorsidxc = caseCodecAuto[CommonErrorsIdx]
   implicit val elidc = sealedTraitCodecAuto[ElId]
   def apply(x: ElId): ElKey = ElKey(encodeToBytes[ElId](x))
 }
@@ -104,4 +111,11 @@ object el_v {
   def long(x: Bytes): Long = decode[LongV](x).x
   def float(x: Float): Bytes = encodeToBytes(FloatV(x))
   def float(x: Bytes): Float = decode[FloatV](x).x
+}
+
+object en_v {
+  final case class Str(@N(1) x: String)
+  implicit val strc = caseCodecAuto[Str]
+  def str(x: String): Bytes = encodeToBytes(Str(x))
+  def str(x: Bytes): String = decode[Str](x).x
 }
