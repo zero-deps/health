@@ -9,7 +9,6 @@ type Feature = String
 type ErrorInfo =
   { exception :: Array String
   , stacktrace :: Array String
-  , toptrace :: String
   , time :: Number
   , host :: String
   , key :: String -- for React

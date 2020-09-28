@@ -15,7 +15,7 @@ object Client {
   sealed trait Stat
   final case class MetricStat(name: String, value: String) extends Stat
   final case class MeasureStat(name: String, value: Long) extends Stat
-  final case class ErrorStat(exception: String, stacktrace: String, toptrace: String) extends Stat
+  final case class ErrorStat(exception: String, stacktrace: String) extends Stat
   final case class ActionStat(action: String) extends Stat
 }
 
@@ -41,9 +41,9 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
       val ia = InetAddress.getLocalHost
       send(udp)(MeasureMsg(name, value.toString, ia.getHostName.some, ia.getHostAddress.some))
     
-    case ErrorStat(exception, stacktrace, toptrace) =>
+    case ErrorStat(exception, stacktrace) =>
       val ia = InetAddress.getLocalHost
-      send(udp)(ErrorMsg(exception, stacktrace, toptrace, ia.getHostName.some, ia.getHostAddress.some))
+      send(udp)(ErrorMsg(exception, stacktrace, ia.getHostName.some, ia.getHostAddress.some))
     
     case ActionStat(action) =>
       val ia = InetAddress.getLocalHost

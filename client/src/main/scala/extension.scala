@@ -48,8 +48,8 @@ class Stats(implicit system: ActorSystem) extends Extension {
     cpu_mem().foreach(metric("cpu_mem", _))
   }
 
-  def error(exception: String, stacktrace: String, toptrace: String): Unit = {
-    client ! ErrorStat(exception, stacktrace, toptrace)
+  def error(exception: String, stacktrace: String): Unit = {
+    client ! ErrorStat(exception, stacktrace)
   }
 
   val gc = ManagementFactory.getGarbageCollectorMXBeans

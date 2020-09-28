@@ -24,10 +24,10 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
     })
     //todo
     // // get unique errrors
-    // kvs.all(keys.`errors`).map_(_.foldLeft(Map.empty[String, StatMsg]){
+    // kvs.all(fid(fid.AllErrors())).map_(_.foldLeft(Map.empty[String, StatMsg]){
     //   case (acc, Right(a)) => a.data.split('|') match {
-    //     case Array(exception, stacktrace, toptrace) if !(acc contains stacktrace) =>
-    //       acc + (stacktrace -> StatMsg(Error(exception, stacktrace, toptrace), StatMeta(a.time, a.host, a.ip)))
+    //     case Array(exception, stacktrace) if !(acc contains stacktrace) =>
+    //       acc + (stacktrace -> StatMsg(Error(exception, stacktrace), StatMeta(a.time, a.host, a.ip)))
     //     case _ => acc
     //   }
     //   case (acc, _) => acc

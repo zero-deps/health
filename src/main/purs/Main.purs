@@ -26,7 +26,7 @@ import Nodes as NodesCom
 import Prelude (class Eq, class Show, Unit, add, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=), (<<<))
 import Proto.Uint8Array (Uint8Array)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
-import React.DOM (a, button, div, i, li, nav, p, p', span, span', text, ul, h5, h2, iframe)
+import React.DOM (a, button, div, i, li, nav, p, p', span, text, ul, h5, h2, iframe)
 import React.DOM.Props (href, onClick, src, style)
 import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData, Feature)
@@ -277,11 +277,11 @@ reactClass = component "Main" \this -> do
             , action: Nothing
             , feature: Nothing
             }
-        Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace', toptrace}, time, host }} -> do
+        Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace'}, time, host }} -> do
           let exception = split (Pattern "~") exception'
           let stacktrace = split (Pattern "~") stacktrace'
           let key = host<> (show time)
-          let err = { exception, stacktrace, toptrace, time, host, key }
+          let err = { exception, stacktrace, time, host, key }
           updateWith
             { host: host
             , time: time
