@@ -10,12 +10,12 @@ package object client {
   def cpu_mem(): Option[String] = {
     ManagementFactory.getOperatingSystemMXBean match {
       case os: OperatingSystemMXBean =>
-        // CPU load (percentage)
+        /* CPU load (percentage) */
         val cpu = os.getCpuLoad match {
-          case x if x < 0 => "" // not available
+          case x if x < 0 => "" /* not available */
           case x => (100*x).toInt.toString
         }
-        // Memory (Mbytes)
+        /* Memory (Mbytes) */
         val free = os.getFreeMemorySize
         val total = os.getTotalMemorySize
         val mem = ManagementFactory.getMemoryMXBean
@@ -28,7 +28,7 @@ package object client {
   def fd(): Option[String] = {
     ManagementFactory.getOperatingSystemMXBean match {
       case os: UnixOperatingSystemMXBean =>
-        // File descriptor count
+        /* File descriptor count */
         val open = os.getOpenFileDescriptorCount
         val max = os.getMaxFileDescriptorCount
         s"${open}~${max}".some
