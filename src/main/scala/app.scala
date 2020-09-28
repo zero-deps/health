@@ -25,7 +25,8 @@ object StatsApp extends App {
   }
   */
 
-  //todo: remove obsolete data (cleanup feeds)
+  //todo: mark old data to deletion (e.g. common errors)
+  //todo: cleanup feeds
   // import keys._
   // LazyList(
   //   `cpu_mem.live`, `cpu.hour`,

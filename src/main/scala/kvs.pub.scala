@@ -22,16 +22,11 @@ class KvsPub(kvs: Kvs) extends Actor with Stash with ActorLogging {
         self ! StatMsg(Metric("feature", s"${key.name}~$value"), time=time, host=host)
       }
     })
-    //todo: common errors (stacktrace is a key)
-    // // get unique errrors
-    // kvs.all(fid(fid.AllErrors())).map_(_.foldLeft(Map.empty[String, StatMsg]){
-    //   case (acc, Right(a)) => a.data.split('|') match {
-    //     case Array(exception, stacktrace) if !(acc contains stacktrace) =>
-    //       acc + (stacktrace -> StatMsg(Error(exception, stacktrace), StatMeta(a.time, a.host, a.ip)))
-    //     case _ => acc
-    //   }
-    //   case (acc, _) => acc
-    // }.values.to(Vector).sortBy(_.meta.time).takeRight(20).foreach(self ! _))
+    /* common errors */
+    kvs.all(fid(fid.CommonErrors())).map_(_.collect{ case Right(a) => en_id.str(a.key.id) -> extract(a)}.foreach{ case (st, en) =>
+      import en.{value, time, host}
+      self ! StatMsg(Error(exception=value, stacktrace=st), time=time, host=host)
+    })
   }
 
   def receive: Receive = {
