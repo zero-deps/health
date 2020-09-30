@@ -1,7 +1,7 @@
 package zero.stats
 
-import zero.ws._
+// import zero.ws._
 
 object StatsApp extends App {
-  new WebServer()
+  // new WebServer()
 }
