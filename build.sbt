@@ -126,7 +126,7 @@ lazy val app = project.in(file("app")).settings(
 
 lazy val frontier2 = project.in(file("frontier")).settings(
   skip in publish := true
-, libraryDependencies += "dev.zio" %% "zio" % "1.0.1"
+, libraryDependencies += "dev.zio" %% "zio-nio" % "1.0.0-RC9"
 )
 
 maintainer := ".core.be@.com"
