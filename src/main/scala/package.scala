@@ -3,7 +3,7 @@ package
 import java.time.{LocalDateTime, ZoneId, Instant}
 
 import zd.proto._, api._, macrosapi._
-import zd.proto.Bytes
+import zd.kvs._
 
 package object stats {
   def now_ms(): String = System.currentTimeMillis.toString
@@ -21,8 +21,16 @@ package object stats {
     }
   }
 
-  implicit val EnDataC = caseCodecAuto[EnData]
+  implicit object EnDataCodec extends DataCodec[EnData] {
+    implicit val c = caseCodecAuto[EnData]
+    def extract(xs: Bytes): EnData = decode[EnData](xs)
+    def insert(x: EnData): Bytes = encodeToBytes(x)
+  }
 
-  def extract(x: zd.kvs.en.`Key,En`): EnData = decode[EnData](x.en.data)
-  def insert(x: EnData): Bytes = encodeToBytes[EnData](x)
+  object as_str extends DataCodec[String] {
+    case class Str(@N(1) unwrap: String)
+    implicit val strc = caseCodecAuto[Str]
+    def extract(xs: Bytes): String = decode[Str](xs).unwrap
+    def insert(x: String): Bytes = encodeToBytes(Str(x))
+  }
 }
