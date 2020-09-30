@@ -47,23 +47,23 @@ object fid {
 }
 
 object en_id {
-  final case class Str(@N(1) x: String)
+  final case class Str(@N(1) unwrap: String)
   final case class Metric(@N(1) name: String)
-  final case class IntV(@N(1) x: Int)
+  final case class IntV(@N(1) unwrap: Int)
   final case class Feature(@N(1) name: String, @N(2) host: String, @N(3) i: Int)
   implicit val strc = caseCodecAuto[Str]
   implicit val metricc = caseCodecAuto[Metric]
   implicit val intc = caseCodecAuto[IntV]
   implicit val featurec = caseCodecAuto[Feature]
-  def str(x: String): Bytes = encodeToBytes(Str(x))
-  def int(x: Int): Bytes = encodeToBytes(IntV(x))
+  def str(x: String): ElKey = ElKey(encodeToBytes(Str(x)))
+  def int(x: Int): ElKey = ElKey(encodeToBytes(IntV(x)))
 
-  def apply(x: Feature): Bytes = encodeToBytes(x)
-  def apply(x: Metric): Bytes = encodeToBytes(x)
+  def apply(x: Feature): ElKey = ElKey(encodeToBytes(x))
+  def apply(x: Metric): ElKey = ElKey(encodeToBytes(x))
 
-  def feature(xs: Bytes): Feature = decode[Feature](xs)
-  def metric(xs: Bytes): Metric = decode[Metric](xs)
-  def str(xs: Bytes): String = decode[Str](xs).x
+  def feature(k: ElKey): Feature = decode[Feature](k.bytes)
+  def metric(k: ElKey): Metric = decode[Metric](k.bytes)
+  def str(k: ElKey): String = decode[Str](k.bytes).unwrap
 }
 
 object el_id {
@@ -111,11 +111,4 @@ object el_v {
   def long(x: Bytes): Long = decode[LongV](x).x
   def float(x: Float): Bytes = encodeToBytes(FloatV(x))
   def float(x: Bytes): Float = decode[FloatV](x).x
-}
-
-object en_v {
-  final case class Str(@N(1) x: String)
-  implicit val strc = caseCodecAuto[Str]
-  def str(x: String): Bytes = encodeToBytes(Str(x))
-  def str(x: Bytes): String = decode[Str](x).x
 }
