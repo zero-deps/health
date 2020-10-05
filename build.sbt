@@ -145,7 +145,7 @@ lazy val kvs = project.in(file("kvs/core")).settings(
 lazy val kvszio = project.in(file("kvs/core-zio")).settings(
   libraryDependencies ++= Seq(
     "dev.zio" %% "zio-nio" % zionio
-  , "dev.zio" %% "zio-akka-cluster" % "0.1.13" /* "0.2.0" */ excludeAll(ExclusionRule(organization = "dev.zio"))
+  , "dev.zio" %% "zio-akka-cluster" % "0.2.0" excludeAll(ExclusionRule(organization = "dev.zio"))
   )
 ).dependsOn(kvs)
 

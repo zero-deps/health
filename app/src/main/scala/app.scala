@@ -5,6 +5,7 @@ import zd.kvs.{Kvs=>_,Err=>KvsErr,_}
 import zero.kvs.kvszio._
 import zero.ws._, ws._
 import encoding._
+import com.typesafe.config.ConfigFactory
 
 sealed trait NewEvent
 case class UdpMsg() extends NewEvent
@@ -59,7 +60,14 @@ object StatsApp {
     } yield ()).provideLayer(Kvs.live ++ Blocking.live)
   }
   def main(args: Array[String]): Unit = {
-    Runtime.default.unsafeRun(app.provideLayer(actorSystem("Stats")).fold(
+    val actorSystemName = "Stats"
+    val cfg = s"""
+      |akka.remote.netty.tcp.hostname = 127.0.0.1
+      |akka.remote.netty.tcp.port = 4343
+      |akka.actor.provider = cluster
+      |akka.cluster.seed-nodes = [ "akka.tcp://$actorSystemName@127.0.0.1:4343" ]
+      |ring.leveldb.dir = rng_data_127.0.0.1_4343""".stripMargin
+    Runtime.default.unsafeRun(app.provideLayer(actorSystem(actorSystemName, ConfigFactory.parseString(cfg))).fold(
       err => { println(err); 1 },
       _   => {               0 }
     ))
