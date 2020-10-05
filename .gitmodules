@@ -1,0 +1,3 @@
+[submodule "kvs"]
+	path = kvs
+	url = git@github.com:zero-deps/kvs.git

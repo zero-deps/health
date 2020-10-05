@@ -1,7 +1,67 @@
-package zero.stats
+package .stats
 
-// import zero.ws._
+import zio._, blocking._, nio._, core._, core.channels._
+import zd.kvs.{Kvs=>_,Err=>KvsErr,_}
+import zero.kvs.kvszio._
+import zero.ws._, ws._
+import encoding._
 
-object StatsApp extends App {
-  // new WebServer()
+sealed trait NewEvent
+case class UdpMsg() extends NewEvent
+// case class WsMsg() extends NewEvent
+
+object StatsApp {
+  implicit object EnDataCodec extends DataCodec[EnData] {
+    import zd.proto._, macrosapi._
+    implicit val c = caseCodecAuto[EnData]
+    def extract(xs: Bytes): EnData = api.decode[EnData](xs)
+    def insert(x: EnData): Bytes = api.encodeToBytes(x)
+  }
+  val httpHandler: http.Request => ZIO[Kvs, Err, http.Response] = {
+    case UpgradeRequest(r) => upgrade(r)
+  }
+  def msgHandler(queue: Queue[NewEvent]): Pull => ZIO[Kvs with WsContext with Blocking, Err, Unit] = {
+    case ask: HealthAsk => ZIO.unit
+  }
+  def wsHandler(queue: Queue[NewEvent]): Msg => ZIO[WsContext with Kvs with Blocking, Err, Unit] = {
+    case msg: Binary =>
+      for {
+          message  <- decode[Pull](msg.v.toArray).mapError(ForeignErr(_))
+          _        <- msgHandler(queue)(message).catchAllCause(cause =>
+                          IO.effect(println(s"msg ${cause.failureOption} err ${cause.prettyPrint}"))
+                      ).fork.unit
+      } yield ()
+    case Open => ZIO.unit
+    case Close => ZIO.unit
+    case msg => Ws.close
+  }
+  def workerLoop(q: Queue[NewEvent]): ZIO[Kvs, Err, Unit] = q.take.flatMap{
+    case UdpMsg() =>
+      val host = "todo"
+      val ipaddr = "todo"
+      val time = 0 //todo
+      for {
+        _ <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host)).mapError(ForeignErr(_))
+      } yield ()
+  }
+  val app: ZIO[ActorSystem, Any, Unit] = {
+    (for {
+      q    <- Queue.unbounded[NewEvent]
+      _    <- workerLoop(q).forever.fork
+      addr <- SocketAddress.inetSocketAddress(8001)
+      kvs  <- ZIO.access[Kvs](_.get)
+      bl   <- ZIO.access[Blocking](_.get)
+      _    <- httpServer.bind(
+                addr,
+                IO.succeed(req => httpHandler(req).provideLayer(ZLayer.succeed(kvs))),
+                IO.succeed(msg => wsHandler(q)(msg).provideSomeLayer[WsContext](ZLayer.succeed(kvs) ++ ZLayer.succeed(bl)))
+              )
+    } yield ()).provideLayer(Kvs.live ++ Blocking.live)
+  }
+  def main(args: Array[String]): Unit = {
+    Runtime.default.unsafeRun(app.provideLayer(actorSystem("Stats")).fold(
+      err => { println(err); 1 },
+      _   => {               0 }
+    ))
+  }
 }
