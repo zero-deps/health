@@ -1,10 +1,13 @@
 val akka = "2.5.31"
-val ext = "2.1.1-2-gd0abdf9"
+val ext = "2.2.0.7.g8f0877e"
 val frontier = "2.0.2-1-gb7b0ec7"
-val kvs = "5.rc"
+val leveldb = "1.0.4"
+// val logback = "1.2.3"
 val proto = "1.8"
 val protopurs = "2.2"
+val scalatest = "3.1.1"
 val scalaV = "2.13.3"
+val zionio = "1.0.0-RC9"
 
 ThisBuild / organization := "com.."
 ThisBuild / scalaVersion := scalaV
@@ -31,22 +34,18 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 , "-Xlint:private-shadow"
 , "-Xlint:stars-align"
 , "-Xlint:type-parameter-shadow"
-, "-Ywarn-dead-code"
-, "-Ywarn-extra-implicit"
-, "-Ywarn-numeric-widen"
-, "-Ywarn-unused:implicits"
-, "-Ywarn-unused:imports"
-, "-Ywarn-unused:params"
-, "-Ywarn-value-discard"
+// , "-Ywarn-dead-code"
+// , "-Ywarn-extra-implicit"
+// , "-Ywarn-numeric-widen"
+// , "-Ywarn-unused:implicits"
+// , "-Ywarn-unused:imports"
+// , "-Ywarn-unused:params"
+// , "-Ywarn-value-discard"
 , "-Xmaxerrs", "1"
-, "-Xmaxwarns", "1"
+// , "-Xmaxwarns", "2"
+, "-Wconf:cat=deprecation&msg=Auto-application:silent"
 )
-ThisBuild / publishTo := Some(" Releases" at "https://nexus.mobile..com/nexus3/repository/releases")
-ThisBuild / credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
 ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.mobile..com", "", "")
-ThisBuild / publishArtifact := true
-ThisBuild / publishMavenStyle := true
-ThisBuild / isSnapshot := true
 ThisBuild / resolvers += " Releases" at "https://nexus.mobile..com/nexus3/repository/releases"
 ThisBuild / resolvers += "zero" at "https://nexus.mobile..com/nexus3/repository/zd"
 
@@ -59,9 +58,7 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 lazy val stats = project.in(file(".")).settings(
-  skip in publish := true
-, libraryDependencies += "com.." %% "ftier" % frontier
-, libraryDependencies += "io.github.zero-deps" %% "kvs-core" % kvs
+  libraryDependencies += "com.." %% "ftier" % frontier
 , libraryDependencies += "io.github.zero-deps" %% "ext" % ext
 , fork := true
 , deployConfigs ++= Seq(
@@ -103,7 +100,7 @@ lazy val stats = project.in(file(".")).settings(
       }
     }
   )
-).aggregate(client, api, app, frontier2).dependsOn(client, api).enablePlugins(JavaAppPackaging, DeploySSH)
+).aggregate(client, api, app, frontier2).dependsOn(client, api, kvszio).enablePlugins(JavaAppPackaging, DeploySSH)
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats"
@@ -111,22 +108,45 @@ lazy val client = project.in(file("client")).settings(
 , libraryDependencies += "io.github.zero-deps" %% "ext" % ext % Provided
 , libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto % Provided
 , libraryDependencies += "io.github.zero-deps" %% "proto-macros" % proto % Provided
+, publishTo := Some(" Releases" at "https://nexus.mobile..com/nexus3/repository/releases")
+, credentials += Credentials(Path.userHome / ".sbt" / ".credentials")
+, publishArtifact := true
+, publishMavenStyle := true
+, isSnapshot := true
 )
 
 lazy val api = project.in(file("api")).settings(
-  skip in publish := true
-, libraryDependencies += "io.github.zero-deps" %% "proto-purs" % protopurs
+  libraryDependencies += "io.github.zero-deps" %% "proto-purs" % protopurs
 , libraryDependencies += "io.github.zero-deps" %% "proto-macros" % proto % Compile
 , libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto
 )
 
-lazy val app = project.in(file("app")).settings(
-  skip in publish := true
-).dependsOn(frontier2)
+lazy val app = project.in(file("app")).dependsOn(client, frontier2, kvszio, api)
 
 lazy val frontier2 = project.in(file("frontier")).settings(
-  skip in publish := true
-, libraryDependencies += "dev.zio" %% "zio-nio" % "1.0.0-RC9"
+  libraryDependencies += "dev.zio" %% "zio-nio" % zionio
 )
+
+lazy val kvs = project.in(file("kvs/core")).settings(
+  libraryDependencies ++= Seq(
+    // "ch.qos.logback" % "logback-classic" % logback,
+    "com.typesafe.akka" %% "akka-cluster-sharding" % akka,
+    "com.typesafe.akka" %% "akka-slf4j"            % akka,
+    "io.github.zero-deps" %% "proto-macros"  % proto % Compile,
+    "io.github.zero-deps" %% "proto-runtime" % proto,
+    "io.github.zero-deps" %% "ext" % ext,
+    "io.github.zero-deps" %% "leveldb-jnr" % leveldb,
+
+    "com.typesafe.akka" %% "akka-testkit" % akka % Test,
+    "org.scalatest" %% "scalatest" % scalatest % Test,
+  )
+)
+
+lazy val kvszio = project.in(file("kvs/core-zio")).settings(
+  libraryDependencies ++= Seq(
+    "dev.zio" %% "zio-nio" % zionio
+  , "dev.zio" %% "zio-akka-cluster" % "0.1.13" /* "0.2.0" */ excludeAll(ExclusionRule(organization = "dev.zio"))
+  )
+).dependsOn(kvs)
 
 maintainer := ".core.be@.com"

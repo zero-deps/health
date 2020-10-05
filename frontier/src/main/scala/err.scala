@@ -17,3 +17,5 @@ object WsErr {
     case class WriteMessageErr(e: Throwable) extends RuntimeException(e) with HttpErr
     case class CloseErr(e: Throwable) extends RuntimeException(e) with HttpErr
 }
+
+case class ForeignErr[A](e: A) extends Err
