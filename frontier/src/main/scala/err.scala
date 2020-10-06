@@ -4,6 +4,7 @@ sealed trait Err
 
 case class ParseErr(o: String) extends Err
 case class TcpErr(e: Throwable) extends RuntimeException(e) with Err
+case class ThrowableErr(e: Throwable) extends Err
 
 sealed trait HttpErr extends Err
 object HttpErr {
@@ -19,3 +20,5 @@ object WsErr {
 }
 
 case class ForeignErr[A](e: A) extends Err
+
+case class BindFailed(addr: zio.nio.core.SocketAddress, e: Throwable) extends Err
