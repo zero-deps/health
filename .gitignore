@@ -3,8 +3,8 @@
 /.spago/
 /node_modules/
 /output/
-/rng_data*/
+rng_data*/
 /src/main/resources/application.conf
 /app/src/main/resources/application.conf
-/tmp/
+tmp/
 target/

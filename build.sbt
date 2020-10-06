@@ -121,7 +121,9 @@ lazy val api = project.in(file("api")).settings(
 , libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto
 )
 
-lazy val app = project.in(file("app")).dependsOn(client, frontier2, kvszio, api)
+lazy val app = project.in(file("app")).settings(
+  fork := true
+).dependsOn(client, frontier2, kvszio, api)
 
 lazy val frontier2 = project.in(file("frontier")).settings(
   libraryDependencies += "dev.zio" %% "zio-nio" % zionio

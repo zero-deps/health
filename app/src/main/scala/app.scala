@@ -1,6 +1,6 @@
 package .stats
 
-import zio._, blocking._, nio._, core._, core.channels._
+import zio._, nio._, core._, core.channels._, clock.Clock
 import zd.kvs.{Kvs=>_,Err=>KvsErr,_}
 import zero.kvs.kvszio._
 import zero.ws._, ws._
@@ -21,10 +21,10 @@ object StatsApp {
   val httpHandler: http.Request => ZIO[Kvs, Err, http.Response] = {
     case UpgradeRequest(r) => upgrade(r)
   }
-  def msgHandler(queue: Queue[NewEvent]): Pull => ZIO[Kvs with WsContext with Blocking, Err, Unit] = {
+  def msgHandler(queue: Queue[NewEvent]): Pull => ZIO[Kvs with WsContext, Err, Unit] = {
     case ask: HealthAsk => ZIO.unit
   }
-  def wsHandler(queue: Queue[NewEvent]): Msg => ZIO[WsContext with Kvs with Blocking, Err, Unit] = {
+  def wsHandler(queue: Queue[NewEvent]): Msg => ZIO[WsContext with Kvs, Err, Unit] = {
     case msg: Binary =>
       for {
           message  <- decode[Pull](msg.v.toArray).mapError(ForeignErr(_))
@@ -47,17 +47,26 @@ object StatsApp {
   }
   val app: ZIO[ActorSystem, Any, Unit] = {
     (for {
+      ucfg <- IO.effect(ConfigFactory.load().getConfig("stats.server"))
+      uhos <- IO.effect(ucfg.getString("host"))
+      upor <- IO.effect(ucfg.getInt("port"))
+      udpa <- SocketAddress.inetSocketAddress(uhos, upor)
+      _    <- udp.bind(udpa)(channel =>
+                (for {
+                  data <- channel.read
+                  _ <- ZIO.unit.map(_ => println(new String(data.toArray)))
+                } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex)))
+              ).use(ch => ZIO.never.ensuring(ch.close.ignore)).fork
       q    <- Queue.unbounded[NewEvent]
       _    <- workerLoop(q).forever.fork
       addr <- SocketAddress.inetSocketAddress(8001)
       kvs  <- ZIO.access[Kvs](_.get)
-      bl   <- ZIO.access[Blocking](_.get)
       _    <- httpServer.bind(
                 addr,
                 IO.succeed(req => httpHandler(req).provideLayer(ZLayer.succeed(kvs))),
-                IO.succeed(msg => wsHandler(q)(msg).provideSomeLayer[WsContext](ZLayer.succeed(kvs) ++ ZLayer.succeed(bl)))
+                IO.succeed(msg => wsHandler(q)(msg).provideSomeLayer[WsContext](ZLayer.succeed(kvs)))
               )
-    } yield ()).provideLayer(Kvs.live ++ Blocking.live)
+    } yield ()).provideLayer(Kvs.live ++ (Clock.live >>> udp.live(128))) //todo: get size from client conf + warn about size exceed
   }
   def main(args: Array[String]): Unit = {
     val actorSystemName = "Stats"

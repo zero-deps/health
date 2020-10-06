@@ -83,6 +83,10 @@ Error: `'error::<system-name>::<node-name>::<error-message>::<stack-trace>`
 
 Time is added automatically
 
+```
+nc -u 127.0.0.1 50123
+```
+
 Send: `echo -n "<data>" >/dev/udp/<stats-server>/<udp-port>`
 
 Examples:
