@@ -2,7 +2,7 @@ package .stats
 
 import zio._, nio._, core._, core.channels._, clock.Clock
 import zd.kvs.{Kvs=>_,Err=>KvsErr,_}
-import zero.kvs.kvszio._
+import zero.kvs.sec._
 import zero.ws._, ws._
 import encoding._
 import com.typesafe.config.ConfigFactory

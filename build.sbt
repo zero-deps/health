@@ -1,16 +1,10 @@
 val akka = "2.5.31"
 val ext = "2.2.0.7.g8f0877e"
-val frontier = "2.0.2-1-gb7b0ec7"
-val leveldb = "1.0.4"
-// val logback = "1.2.3"
 val proto = "1.8"
 val protopurs = "2.2"
-val scalatest = "3.1.1"
-val scalaV = "2.13.3"
-val zionio = "1.0.0-RC9"
 
 ThisBuild / organization := "com.."
-ThisBuild / scalaVersion := scalaV
+ThisBuild / scalaVersion := "2.13.3"
 ThisBuild / version := zero.ext.git.version
 ThisBuild / cancelable in Global := true
 ThisBuild / scalacOptions in Compile ++= Vector(
@@ -42,7 +36,7 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 // , "-Ywarn-unused:params"
 // , "-Ywarn-value-discard"
 , "-Xmaxerrs", "1"
-// , "-Xmaxwarns", "2"
+, "-Xmaxwarns", "2"
 , "-Wconf:cat=deprecation&msg=Auto-application:silent"
 )
 ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.mobile..com", "", "")
@@ -57,8 +51,9 @@ Global / onChangedBuildSource := ReloadOnSourceChanges
 
 import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
+
 lazy val stats = project.in(file(".")).settings(
-  libraryDependencies += "com.." %% "ftier" % frontier
+  libraryDependencies += "com.." %% "ftier" % "2.0.2-1-gb7b0ec7"
 , libraryDependencies += "io.github.zero-deps" %% "ext" % ext
 , fork := true
 , deployConfigs ++= Seq(
@@ -100,7 +95,7 @@ lazy val stats = project.in(file(".")).settings(
       }
     }
   )
-).aggregate(client, api, app, frontier2).dependsOn(client, api, kvszio).enablePlugins(JavaAppPackaging, DeploySSH)
+).aggregate(client, api, app, frontier2).dependsOn(client, api, kvs_core).enablePlugins(JavaAppPackaging, DeploySSH)
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats"
@@ -123,32 +118,12 @@ lazy val api = project.in(file("api")).settings(
 
 lazy val app = project.in(file("app")).settings(
   fork := true
-).dependsOn(client, frontier2, kvszio, api)
+).dependsOn(client, frontier2, kvs_sec, api)
 
-lazy val frontier2 = project.in(file("frontier")).settings(
-  libraryDependencies += "dev.zio" %% "zio-nio" % zionio
-)
+lazy val frontier2 = project.in(file("frontier"))
 
-lazy val kvs = project.in(file("kvs/core")).settings(
-  libraryDependencies ++= Seq(
-    // "ch.qos.logback" % "logback-classic" % logback,
-    "com.typesafe.akka" %% "akka-cluster-sharding" % akka,
-    "com.typesafe.akka" %% "akka-slf4j"            % akka,
-    "io.github.zero-deps" %% "proto-macros"  % proto % Compile,
-    "io.github.zero-deps" %% "proto-runtime" % proto,
-    "io.github.zero-deps" %% "ext" % ext,
-    "io.github.zero-deps" %% "leveldb-jnr" % leveldb,
+lazy val kvs_core = project.in(file("kvs/core"))
 
-    "com.typesafe.akka" %% "akka-testkit" % akka % Test,
-    "org.scalatest" %% "scalatest" % scalatest % Test,
-  )
-)
-
-lazy val kvszio = project.in(file("kvs/core-zio")).settings(
-  libraryDependencies ++= Seq(
-    "dev.zio" %% "zio-nio" % zionio
-  , "dev.zio" %% "zio-akka-cluster" % "0.2.0" excludeAll(ExclusionRule(organization = "dev.zio"))
-  )
-).dependsOn(kvs)
+lazy val kvs_sec = project.in(file("kvs/sec"))
 
 maintainer := ".core.be@.com"
