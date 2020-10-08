@@ -95,7 +95,7 @@ lazy val stats = project.in(file(".")).settings(
       }
     }
   )
-).aggregate(client, api, app, frontier2).dependsOn(client, api, kvs_core).enablePlugins(JavaAppPackaging, DeploySSH)
+).aggregate(client, api, app, frontier).dependsOn(client, api, kvs_core).enablePlugins(JavaAppPackaging, DeploySSH)
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats"
@@ -118,9 +118,9 @@ lazy val api = project.in(file("api")).settings(
 
 lazy val app = project.in(file("app")).settings(
   fork := true
-).dependsOn(client, frontier2, kvs_sec, api)
+).dependsOn(client, frontier, kvs_sec, api)
 
-lazy val frontier2 = project.in(file("frontier"))
+lazy val frontier = project.in(file("frontier"))
 
 lazy val kvs_core = project.in(file("kvs/core"))
 

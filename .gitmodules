@@ -1,3 +1,6 @@
 [submodule "kvs"]
 	path = kvs
 	url = git@github.com:zero-deps/kvs.git
+[submodule "frontier"]
+	path = frontier
+	url = git@github.com:zero-deps/frontier.git
