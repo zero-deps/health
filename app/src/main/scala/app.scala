@@ -1,15 +1,17 @@
 package .stats
 
 import zio._, nio._, core._, core.channels._, clock.Clock
-import zd.kvs.{Kvs=>_,Err=>KvsErr,_}
+import zd.kvs.{Kvs=>_,Err=>_,_}
 import zero.kvs.sec._
-import zero.ws._, ws._
+import zero.ftier._, ws._
 import encoding._
 import com.typesafe.config.ConfigFactory
 
 sealed trait NewEvent
 case class UdpMsg() extends NewEvent
 // case class WsMsg() extends NewEvent
+
+case class KvsErr(e: zd.kvs.Err) extends ForeignErr
 
 object StatsApp {
   implicit object EnDataCodec extends DataCodec[EnData] {
@@ -27,7 +29,7 @@ object StatsApp {
   def wsHandler(queue: Queue[NewEvent]): Msg => ZIO[WsContext with Kvs, Err, Unit] = {
     case msg: Binary =>
       for {
-          message  <- decode[Pull](msg.v.toArray).mapError(ForeignErr(_))
+          message  <- decode[Pull](msg.v.toArray)
           _        <- msgHandler(queue)(message).catchAllCause(cause =>
                           IO.effect(println(s"msg ${cause.failureOption} err ${cause.prettyPrint}"))
                       ).fork.unit
@@ -42,7 +44,7 @@ object StatsApp {
       val ipaddr = "todo"
       val time = 0 //todo
       for {
-        _ <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host)).mapError(ForeignErr(_))
+        _ <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host)).mapError(KvsErr)
       } yield ()
   }
   val app: ZIO[ActorSystem, Any, Unit] = {
