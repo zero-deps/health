@@ -2,7 +2,7 @@ package .stats
 
 import zd.proto.api
 import zio._
-import zero.ftier.Throwed
+import ftier.Throwed
 
 object encoding {
   type Codec[A] = api.MessageCodec[A]

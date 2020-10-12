@@ -3,7 +3,7 @@ package
 import java.time.{LocalDateTime, ZoneId, Instant}
 
 import zd.proto._, api._, macrosapi._
-import zd.kvs._
+import kvs._
 
 package object stats {
   def now_ms(): String = System.currentTimeMillis.toString

@@ -8,7 +8,7 @@ import akka.stream.{ClosedShape, FlowShape}
 import akka.util.ByteString
 import java.time.{LocalDateTime}
 import scala.util.Try
-import zd.kvs._
+import kvs._
 import zd.proto.api.{encode, decode}
 import zero.ext._, either._
 

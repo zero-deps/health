@@ -1,9 +1,11 @@
 package .stats
 
-import zio._, nio._, core._, core.channels._, clock.Clock
-import zd.kvs.{Kvs=>_,Err=>_,_}
-import zero.kvs.sec._
-import zero.ftier._, ws._
+import annotation.unused
+
+import zio._, nio._, core._, clock.Clock // core.channels._,
+import kvs.{Kvs=>_,Err=>_,_}
+import kvs.seq._
+import ftier._, ws._
 import encoding._
 import com.typesafe.config.ConfigFactory
 
@@ -11,7 +13,7 @@ sealed trait NewEvent
 case class UdpMsg() extends NewEvent
 // case class WsMsg() extends NewEvent
 
-case class KvsErr(e: zd.kvs.Err) extends ForeignErr
+case class KvsErr(e: kvs.Err) extends ForeignErr
 
 object StatsApp {
   implicit object EnDataCodec extends DataCodec[EnData] {
@@ -23,7 +25,7 @@ object StatsApp {
   val httpHandler: http.Request => ZIO[Kvs, Err, http.Response] = {
     case UpgradeRequest(r) => upgrade(r)
   }
-  def msgHandler(queue: Queue[NewEvent]): Pull => ZIO[Kvs with WsContext, Err, Unit] = {
+  def msgHandler(@unused queue: Queue[NewEvent]): Pull => ZIO[Kvs with WsContext, Err, Unit] = {
     case ask: HealthAsk => ZIO.unit
   }
   def wsHandler(queue: Queue[NewEvent]): Msg => ZIO[WsContext with Kvs, Err, Unit] = {
@@ -42,7 +44,7 @@ object StatsApp {
     case UdpMsg() =>
       val host = "todo"
       val ipaddr = "todo"
-      val time = 0 //todo
+      val time = 0L //todo
       for {
         _ <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host)).mapError(KvsErr)
       } yield ()
@@ -77,8 +79,8 @@ object StatsApp {
       |akka.remote.netty.tcp.port = 4343
       |akka.actor.provider = cluster
       |akka.cluster.seed-nodes = [ "akka.tcp://$actorSystemName@127.0.0.1:4343" ]
-      |ring.leveldb.dir = rng_data_127.0.0.1_4343""".stripMargin
-    Runtime.default.unsafeRun(app.provideLayer(actorSystem(actorSystemName, ConfigFactory.parseString(cfg))).fold(
+      |""".stripMargin
+    val _ = Runtime.default.unsafeRun(app.provideLayer(actorSystem(actorSystemName, ConfigFactory.parseString(cfg))).fold(
       err => { println(err); 1 },
       _   => {               0 }
     ))

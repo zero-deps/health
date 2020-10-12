@@ -3,14 +3,14 @@ package .stats
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import .ftier._
-import zd.kvs._
+import kvs._
 
 object StatsApp extends App {
   implicit val system = ActorSystem("Stats")
   implicit val materializer = ActorMaterializer()
 
   val ws = WsExtension(system)
-  val kvs = Kvs(system)
+  val kvs = Kvs.rng(system)
 
   /*
   val stats = client.StatsExtension(system)
