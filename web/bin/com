@@ -1,0 +1,8 @@
+npx spago build && npx purs bundle 'output/**/*.js' -o 'public/js/main.js' -m Main
+
+files=("css\/nucleo-icons.css" "css\/black-dashboard.css" "js\/require.js" "js\/main.js")
+for file in ${files[@]}; do
+  cmd="date -r public/$file +'%s'"
+  v=$(eval "$cmd")
+  sed -i '' "s/\($file?\)\([0-9]*\)/\1$v/" public/index.html;
+done
