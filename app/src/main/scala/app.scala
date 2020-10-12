@@ -87,13 +87,6 @@ object StatsApp extends zio.App {
   }
 
   def run(@unused args: List[String]): URIO[ZEnv, ExitCode] = {
-    val as = "Stats"
-    val cfg = s"""
-      |akka.remote.netty.tcp.hostname = 127.0.0.1
-      |akka.remote.netty.tcp.port = 4343
-      |akka.actor.provider = cluster
-      |akka.cluster.seed-nodes = [ "akka.tcp://$as@127.0.0.1:4343" ]
-      |""".stripMargin
-    app.provideLayer(actorSystem(as, ConfigFactory.parseString(cfg))).exitCode
+    app.provideLayer(actorSystem("Stats")).exitCode
   }
 }
