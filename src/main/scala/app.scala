@@ -1,50 +1,92 @@
 package .stats
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import .ftier._
-import kvs._
+import annotation.unused
 
-object StatsApp extends App {
-  implicit val system = ActorSystem("Stats")
-  implicit val materializer = ActorMaterializer()
+import zio._, nio._, core._, clock.Clock // core.channels._,
+import kvs.{Kvs=>_,Err=>_,_}
+import kvs.seq._
+import ftier._, ws._
+import encoding._
+import com.typesafe.config.ConfigFactory
 
-  val ws = WsExtension(system)
-  val kvs = Kvs.rng(system)
+sealed trait NewEvent
+case class UdpMsg() extends NewEvent
+// case class WsMsg() extends NewEvent
 
-  /*
-  val stats = client.StatsExtension(system)
-  import scala.concurrent.duration._
-  import system.dispatcher
-  val scheduler = system.scheduler
-  scheduler.schedule(1 second, 13 seconds) {
-    system.log.error(new Exception("exc"), s"error occured at ${now_ms()}")
+case class KvsErr(e: kvs.Err) extends ForeignErr
+
+object StatsApp extends zio.App {
+  implicit object EnDataCodec extends DataCodec[EnData] {
+    import zd.proto._, macrosapi._
+    implicit val c = caseCodecAuto[EnData]
+    def extract(xs: Bytes): EnData = api.decode[EnData](xs)
+    def insert(x: EnData): Bytes = api.encodeToBytes(x)
   }
-  scheduler.schedule(1 second, 7 seconds) {
-    stats.action(s"event ${now_ms()}")
+  
+  val httpHandler: http.Request => ZIO[Kvs, Err, http.Response] = {
+    case UpgradeRequest(r) => upgrade(r)
   }
-  */
 
-  //todo: mark old data to deletion (e.g. common errors)
-  //todo: cleanup feeds
-  // import keys._
-  // LazyList(
-  //   `cpu_mem.live`, `cpu.hour`,
-  //   `search.ts.latest`, `search.wc.latest`, `search.fs.latest`,
-  //   `static.gen.latest`,
-  //   `reindex.all.latest`,
-  //   `static.gen.year`,
-  //   `kvs.size.year`, `action.live`, `metrics`, `errors`,
-  //   `feature`
-  // ).foreach{ fid =>
-  //   kvs.all(fid).map_(_.collect{ case Right(a) => a.id -> extract(a) }.filter{ case (_, data) =>
-  //     val old = data.time.toLong.toLocalDataTime().isBefore(year_ago())
-  //     val blocklist = List("gitlab-ci-runner")
-  //     blocklist.exists(data.host.contains) || old
-  //   }.foreach{ case (id, _) => kvs.remove(fid, id) })
-  // }
+  def msgHandler(@unused queue: Queue[NewEvent]): Pull => ZIO[Kvs with WsContext, Err, Unit] = {
+    case ask: HealthAsk => ZIO.unit
+  }
 
-  Flows.udp(system, kvs).run()
+  def wsHandler(queue: Queue[NewEvent]): Msg => ZIO[WsContext with Kvs, Err, Unit] = {
+    case msg: Binary =>
+      for {
+          message  <- decode[Pull](msg.v.toArray)
+          _        <- msgHandler(queue)(message).catchAllCause(cause =>
+                          IO.effect(println(s"msg ${cause.failureOption} err ${cause.prettyPrint}"))
+                      ).fork.unit
+      } yield ()
+    case Open => ZIO.unit
+    case Close => ZIO.unit
+    case msg => Ws.close
+  }
 
-  ws.bindAndHandle
+  def workerLoop(q: Queue[NewEvent]): ZIO[Kvs, Err, Unit] = q.take.flatMap{
+    case UdpMsg() =>
+      val host = "todo"
+      val ipaddr = "todo"
+      val time = 0L //todo
+      for {
+        _ <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host)).mapError(KvsErr)
+      } yield ()
+  }
+
+  val leveldbConf =  _root_.kvs.Kvs.LeveldbConf("rng_data")
+  val conf = _root_.kvs.Kvs.RngConf(leveldbConf=leveldbConf)
+
+  type Stats = Has[client.Stats]
+  def stats(leveldbConf: _root_.kvs.Kvs.LeveldbConf): URLayer[ActorSystem, Stats] = {
+    ZLayer.fromService(client.Stats(leveldbConf.dir))
+  }
+
+  val app: ZIO[ActorSystem, Any, Unit] = {
+    (for {
+      ucfg <- IO.effect(ConfigFactory.load().getConfig("stats.server"))
+      uhos <- IO.effect(ucfg.getString("host"))
+      upor <- IO.effect(ucfg.getInt("port"))
+      udpa <- SocketAddress.inetSocketAddress(uhos, upor)
+      _    <- udp.bind(udpa)(channel =>
+                (for {
+                  data <- channel.read
+                  _ <- ZIO.unit.map(_ => println(new String(data.toArray)))
+                } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex)))
+              ).use(ch => ZIO.never.ensuring(ch.close.ignore)).fork
+      q    <- Queue.unbounded[NewEvent]
+      _    <- workerLoop(q).forever.fork
+      addr <- SocketAddress.inetSocketAddress(8001)
+      kvs  <- ZIO.access[Kvs](_.get)
+      _    <- httpServer.bind(
+                addr,
+                IO.succeed(req => httpHandler(req).provideLayer(ZLayer.succeed(kvs))),
+                IO.succeed(msg => wsHandler(q)(msg).provideSomeLayer[WsContext](ZLayer.succeed(kvs)))
+              )
+    } yield ()).provideLayer(stats(leveldbConf) ++ Kvs.live(conf) ++ (Clock.live >>> udp.live(128))) //todo: get size from client conf + warn about size exceed
+  }
+
+  def run(@unused args: List[String]): URIO[ZEnv, ExitCode] = {
+    app.provideLayer(actorSystem("Stats")).exitCode
+  }
 }

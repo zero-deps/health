@@ -52,9 +52,7 @@ import deployssh.DeploySSH.{ServerConfig, ArtifactSSH}
 import fr.janalyse.ssh.SSH
 
 lazy val stats = project.in(file(".")).settings(
-  libraryDependencies += "com.." %% "ftier" % "2.0.2-1-gb7b0ec7"
-, libraryDependencies += "io.github.zero-deps" %% "ext" % ext
-, fork := true
+  fork := true
 , deployConfigs ++= Seq(
     ServerConfig(name="mon", host="ua--monitoring.ee..corp", user=Some("")),
   )
@@ -94,7 +92,7 @@ lazy val stats = project.in(file(".")).settings(
       }
     }
   )
-).aggregate(client, api, app, frontier).dependsOn(client, api, kvs_core).enablePlugins(JavaAppPackaging, DeploySSH)
+).dependsOn(client, frontier, kvs_seq, api).enablePlugins(JavaAppPackaging, DeploySSH)
 
 lazy val client = project.in(file("client")).settings(
   organization := organization.value + ".stats"
@@ -114,10 +112,6 @@ lazy val api = project.in(file("api")).settings(
 , libraryDependencies += "io.github.zero-deps" %% "proto-macros" % proto % Compile
 , libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto
 )
-
-lazy val app = project.in(file("app")).settings(
-  fork := true
-).dependsOn(client, frontier, kvs_seq, api)
 
 lazy val frontier = project.in(file("deps/frontier"))
 
