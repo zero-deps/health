@@ -8,3 +8,4 @@ rng_data*/
 /app/src/main/resources/application.conf
 tmp/
 target/
+/app/logs/
