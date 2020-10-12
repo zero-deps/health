@@ -28,15 +28,15 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 , "-Xlint:private-shadow"
 , "-Xlint:stars-align"
 , "-Xlint:type-parameter-shadow"
-// , "-Ywarn-dead-code"
-// , "-Ywarn-extra-implicit"
-// , "-Ywarn-numeric-widen"
-// , "-Ywarn-unused:implicits"
-// , "-Ywarn-unused:imports"
-// , "-Ywarn-unused:params"
-// , "-Ywarn-value-discard"
+, "-Ywarn-dead-code"
+, "-Ywarn-extra-implicit"
+, "-Ywarn-numeric-widen"
+, "-Ywarn-unused:implicits"
+, "-Ywarn-unused:imports"
+, "-Ywarn-unused:params"
+, "-Ywarn-value-discard"
 , "-Xmaxerrs", "1"
-, "-Xmaxwarns", "2"
+, "-Xmaxwarns", "1"
 , "-Wconf:cat=deprecation&msg=Auto-application:silent"
 )
 ThisBuild / credentials += Credentials("Sonatype Nexus Repository Manager", "nexus.mobile..com", "", "")
@@ -118,12 +118,12 @@ lazy val api = project.in(file("api")).settings(
 
 lazy val app = project.in(file("app")).settings(
   fork := true
-).dependsOn(client, frontier, kvs_sec, api)
+).dependsOn(client, frontier, kvs_seq, api)
 
-lazy val frontier = project.in(file("frontier"))
+lazy val frontier = project.in(file("deps/frontier"))
 
-lazy val kvs_core = project.in(file("kvs/core"))
+lazy val kvs_core = project.in(file("deps/kvs/core"))
 
-lazy val kvs_sec = project.in(file("kvs/sec"))
+lazy val kvs_seq = project.in(file("deps/kvs/seq"))
 
 maintainer := ".core.be@.com"

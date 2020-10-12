@@ -1,7 +1,7 @@
 package .stats
 
 import akka.actor.{ActorLogging, Actor, ActorRef, Props, Stash}
-import zd.kvs.Kvs
+import kvs.Kvs
 import zero.ext._, either._
 
 object KvsPub {

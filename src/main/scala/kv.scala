@@ -1,7 +1,7 @@
 package .stats
 
 import zd.proto._, api._, macrosapi._
-import zd.kvs._
+import kvs._
 
 object fid {
   sealed trait Fid
