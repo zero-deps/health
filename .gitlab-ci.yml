@@ -7,6 +7,7 @@ variables:
   BUILD_RPM_IMAGE: "$CI_REGISTRY/docker-service-images/-cms-build-rpm:5.0.0"
   DOCKER_DIND_GIT_IMAGE: "$CI_REGISTRY/docker-service-images/docker-dind-git:1.0.1"
   SBT_OPTS: "-Dsbt.global.base=.sbt/ -XX:MaxMetaspaceSize=350m -Dsbt.override.build.repos=true -Dfile.encoding=UTF8 -Xms1024m -Xmx2048m -Xss10M -Dhttp.nonProxyHosts=localhost|127.0.0.1|nexus.mobile..com -Dhttps.nonProxyHosts=localhost|127.0.0.1|nexus.mobile..com|ua--nexus01.ee..corp -Dsbt.override.build.repos=true -Dsbt.boot.credentials=.sbt_credentials -Dsbt.repository.config=.sbt_repositories"
+  GIT_SUBMODULE_STRATEGY: normal
 
 .default_refs: &default_refs
   only:
