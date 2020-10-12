@@ -3,11 +3,11 @@ package .stats
 import annotation.unused
 
 import zio._, nio._, core._, clock.Clock // core.channels._,
-import kvs.{Kvs=>_,Err=>_,_}
+import kvs.{Kvs=>_,Err=>_,Throwed=>_,_}
 import kvs.seq._
 import ftier._, ws._
-import encoding._
 import com.typesafe.config.ConfigFactory
+import zd.proto._, api._
 
 sealed trait NewEvent
 case class UdpMsg() extends NewEvent
@@ -34,7 +34,7 @@ object StatsApp extends zio.App {
   def wsHandler(queue: Queue[NewEvent]): Msg => ZIO[WsContext with Kvs, Err, Unit] = {
     case msg: Binary =>
       for {
-          message  <- decode[Pull](msg.v.toArray)
+          message  <- IO.effect(decode[Pull](msg.v.toArray)).mapError(Throwed)
           _        <- msgHandler(queue)(message).catchAllCause(cause =>
                           IO.effect(println(s"msg ${cause.failureOption} err ${cause.prettyPrint}"))
                       ).fork.unit
@@ -71,7 +71,16 @@ object StatsApp extends zio.App {
       _    <- udp.bind(udpa)(channel =>
                 (for {
                   data <- channel.read
-                  _ <- ZIO.unit.map(_ => println(new String(data.toArray)))
+                  msg  <- IO.effect(decode[client.ClientMsg](data.toArray))
+                  time <- IO.succeed(System.currentTimeMillis) //todo: Clock.live
+                  _    <- Kvs.put(fid(fid.Nodes()), en_id.str(msg.host), EnData(value=msg.ipaddr, time=time, host=msg.host))
+                  //todo: send to websocket
+                  _    <- msg match {
+                    case x: client.MetricMsg  => ZIO.unit.map(_ => println(x))
+                    case x: client.MeasureMsg => ZIO.unit.map(_ => println(x))
+                    case x: client.ErrorMsg   => ZIO.unit.map(_ => println(x))
+                    case x: client.ActionMsg  => ZIO.unit.map(_ => println(x))
+                  }
                 } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex)))
               ).use(ch => ZIO.never.ensuring(ch.close.ignore)).fork
       q    <- Queue.unbounded[NewEvent]
