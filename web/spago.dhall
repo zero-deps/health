@@ -1,4 +1,4 @@
-{ name = "health"
+{ name = "static"
 , dependencies =
   [ "console"
   , "effect"
@@ -9,5 +9,5 @@
   , "web-socket"
   ]
 , packages = ./packages.dhall
-, sources = [ "src/main/purs/**/*.purs" ]
+, sources = [ "src/**/*.purs" ]
 }

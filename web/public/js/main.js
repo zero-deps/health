@@ -7797,8 +7797,8 @@ var PS = {};
       };
       return React.component()("Main")(function ($$this) {
           return function __do() {
-              var h = Data_Functor.map(Effect.functorEffect)(Data_Maybe.fromMaybe("127.0.0.1:8002"))(DomOps.host)();
-              var ws = WsOps.create("ws:/" + (h + "/stats/ws"))();
+              var h = Data_Functor.map(Effect.functorEffect)(Data_Maybe.fromMaybe("localhost:8001"))(DomOps.host)();
+              var ws = WsOps.create("ws://" + (h + "/ws"))();
               return {
                   state: {
                       menu: Nodes.value,

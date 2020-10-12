@@ -75,8 +75,8 @@ view = do
 
 reactClass :: ReactClass Props
 reactClass = component "Main" \this -> do
-  h <- map (fromMaybe "127.0.0.1:8002") DomOps.host 
-  ws <- WsOps.create $ "ws:/"<>h<>"/stats/ws"
+  h <- map (fromMaybe "localhost:8001") DomOps.host
+  ws <- WsOps.create $ "ws://"<>h<>"/ws"
   pure
     { state:
       { menu: Nodes
