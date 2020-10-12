@@ -1,11 +1,28 @@
 <configuration>
-  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%date{HH:mm:ss.SSS} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
+      <pattern>%date{mm:ss} %highlight(%level) %cyan(%logger{25}) %msg%n</pattern>
     </encoder>
   </appender>
 
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>logs/stats.log</file>
+    <encoder>
+      <pattern>%date{HH:mm:ss.SSS} %-5level %logger{36} %X{akkaSource} - %msg%n</pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>logs/stats-${HOSTNAME}-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
+      <maxFileSize>3GB</maxFileSize>
+      <maxHistory>32</maxHistory>
+      <cleanHistoryOnStart>true</cleanHistoryOnStart>
+    </rollingPolicy>
+  </appender>
+
+  <logger name="akka.cluster.sharding.DDataShardCoordinator" level="WARN"/>
+  <logger name="akka.cluster.singleton.ClusterSingletonManager" level="WARN"/>
+
   <root level="${logLevel:-INFO}">
-    <appender-ref ref="STDOUT"/>
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="FILE"/>
   </root>
 </configuration>
