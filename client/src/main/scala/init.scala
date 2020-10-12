@@ -1,20 +1,19 @@
 package .stats.client
 
-import akka.actor.{ActorRef, ActorSystem, ExtendedActorSystem, Extension, ExtensionId, ExtensionIdProvider}
+import akka.actor._
 import java.lang.management.ManagementFactory
-import java.nio.file.{FileSystems, Files}
+import java.io.File, java.nio.file.{FileSystems, Files}
 import javax.management.{NotificationBroadcaster, NotificationListener, Notification}
 import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 import scala.util.{Try, Success, Failure}
 import zero.ext._, int._
 
-object StatsExtension extends ExtensionId[Stats] with ExtensionIdProvider {
-  override def createExtension(system: ExtendedActorSystem): Stats = new Stats()(system)
-  override def lookup(): ExtensionId[Stats] = StatsExtension
+object Stats {
+  def apply(leveldbDir: String)(as: ActorSystem): Stats = new Stats(leveldbDir)(as)
 }
 
-class Stats(implicit system: ActorSystem) extends Extension {
+class Stats(leveldbDir: String)(implicit system: ActorSystem) {
   import system.dispatcher
   import system.log
   import .stats.client.Client._
@@ -135,11 +134,11 @@ class Stats(implicit system: ActorSystem) extends Extension {
   }
 
   scheduler.schedule(1 second, timeout.kvs) {
-    val size = getFolderSize(new java.io.File(cfg.getString("ring.leveldb.dir")))
+    val size = getFolderSize(new File(leveldbDir))
     metric("kvs.size", size.toString)
   }
 
-  def getFolderSize(f: java.io.File): Long = {
+  def getFolderSize(f: File): Long = {
     if (f.isDirectory) {
       f.listFiles.foldLeft(0L)((acc, x) => 
         acc + getFolderSize(x)
@@ -148,4 +147,6 @@ class Stats(implicit system: ActorSystem) extends Extension {
       f.length
     }
   }
+
+  log.info("Client is configured")
 }

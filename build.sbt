@@ -28,7 +28,6 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 , "-Xlint:private-shadow"
 , "-Xlint:stars-align"
 , "-Xlint:type-parameter-shadow"
-, "-Ywarn-dead-code"
 , "-Ywarn-extra-implicit"
 , "-Ywarn-numeric-widen"
 , "-Ywarn-unused:implicits"
