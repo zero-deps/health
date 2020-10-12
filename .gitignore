@@ -1,10 +1,9 @@
 .DS_Store
-/app/logs/
-/app/src/main/resources/application.conf
+/logs/
+/rng_data*/
 /src/main/resources/application.conf
+/tmp/
 /web/.spago/
 /web/node_modules/
 /web/output/
-rng_data*/
 target/
-tmp/
