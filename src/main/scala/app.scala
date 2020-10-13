@@ -92,7 +92,7 @@ object StatsApp extends zio.App {
                 (for {
                   data <- channel.read
                   msg  <- IO.effect(decode[client.ClientMsg](data.toArray))
-                  _    <- q offer HostEvent(host=msg.host, ipaddr=msg.host)
+                  _    <- q offer HostEvent(host=msg.host, ipaddr=msg.ipaddr)
                   _    <- msg match {
                     case x: client.MetricMsg  => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MeasureMsg => ZIO.unit.map(_ => println(x)) //todo: Console.live
