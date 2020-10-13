@@ -1,5 +1,4 @@
-package 
-package stats
+package .stats
 
 import zd.proto.api._
 import zd.proto.macrosapi.{caseCodecAuto, sealedTraitCodecAuto}
