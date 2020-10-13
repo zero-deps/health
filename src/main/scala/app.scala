@@ -39,7 +39,11 @@ object StatsApp extends zio.App {
                           IO.effect(println(s"msg ${cause.failureOption} err ${cause.prettyPrint}"))
                       ).fork.unit
       } yield ()
-    case Open => ZIO.unit
+    case Open => for {
+      nodeStream <- Kvs.stream[EnData](fid(fid.Nodes()), None)
+      _ <- nodeStream.map(_._2).mapError(KvsErr)
+              .foreach(en => Ws.send(Binary(Chunk.fromArray(encode[.stats.Push](.stats.HostMsg(host=en.host, ipaddr=en.value, time=en.time))))))
+    } yield ()
     case Close => ZIO.unit
     case msg => Ws.close
   }
