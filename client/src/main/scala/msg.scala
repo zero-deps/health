@@ -4,9 +4,9 @@ import zd.proto.api.{N, RestrictedN}
 
 sealed trait ClientMsg {
   val _host: Option[String]
-  val host: String = _host.getOrElse("")
+  val host: String = _host.getOrElse("N/A").stripSuffix(".pt..corp").split("-depl-").head
   val _ipaddr: Option[String]
-  val ipaddr: String = _ipaddr.getOrElse("")
+  val ipaddr: String = _ipaddr.getOrElse("N/A")
 }
 
 @N(1) @RestrictedN(3) final case class MetricMsg
