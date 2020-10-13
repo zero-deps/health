@@ -7826,9 +7826,9 @@ var PS = {};
       };
       return React.component()("Main")(function ($$this) {
           return function __do() {
-              var devHost = $foreign.devHost();
+              var devHost$prime = $foreign.devHost();
               var locationHost = DomOps.host();
-              var h = Data_Maybe.fromMaybe(Data_Maybe.fromMaybe("")(locationHost))(Data_Nullable.toMaybe(devHost));
+              var h = Data_Maybe.fromMaybe(Data_Maybe.fromMaybe("")(locationHost))(Data_Nullable.toMaybe(devHost$prime));
               var ws = WsOps.create(h + "/ws")();
               return {
                   state: {

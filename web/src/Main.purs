@@ -78,9 +78,9 @@ view = do
 
 reactClass :: ReactClass Props
 reactClass = component "Main" \this -> do
-  devHost <- devHost
+  devHost' <- devHost
   locationHost <- DomOps.host
-  h <- pure $ fromMaybe (fromMaybe "" locationHost) $ toMaybe devHost
+  h <- pure $ fromMaybe (fromMaybe "" locationHost) $ toMaybe devHost'
   ws <- WsOps.create $ h<>"/ws"
   pure
     { state:
@@ -285,7 +285,7 @@ reactClass = component "Main" \this -> do
         Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace'}, time, host }} -> do
           let exception = split (Pattern "~") exception'
           let stacktrace = split (Pattern "~") stacktrace'
-          let key = host<> (show time)
+          let key = host <> (show time)
           let err = { exception, stacktrace, time, host, key }
           updateWith
             { host: host
