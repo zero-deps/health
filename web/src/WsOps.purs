@@ -14,6 +14,9 @@ import Ops.ArrayBuffer (uint8Array)
 import Prelude hiding (div)
 import Web.Event.Event (Event)
 import Web.Event.EventTarget (addEventListener, eventListener)
+import Web.HTML (window) as DOM
+import Web.HTML.Location (protocol) as DOM
+import Web.HTML.Window (location) as DOM
 import Web.Socket.BinaryType (BinaryType(ArrayBuffer))
 import Web.Socket.Event.EventTypes (onOpen, onMessage) as WS
 import Web.Socket.Event.MessageEvent (MessageEvent, fromEvent, data_)
@@ -22,7 +25,11 @@ import Web.Socket.WebSocket (create, sendArrayBufferView, toEventTarget, setBina
 import Unsafe.Coerce (unsafeCoerce)
 
 create :: String -> Effect WebSocket
-create url = do
+create path = do
+  location <- DOM.window >>= DOM.location
+  protocol <- DOM.protocol location
+  let protocol' = if protocol == "https:" then "wss:" else "ws:"
+  let url = protocol' <> "//" <> path
   ws <- WS.create url []
   onOpen ws \_ -> WS.setBinaryType ws ArrayBuffer
   pure ws
