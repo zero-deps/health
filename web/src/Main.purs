@@ -12,6 +12,7 @@ import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
+import Data.Nullable(Nullable, toMaybe)
 import DomOps (cn)
 import DomOps as DomOps
 import Effect (Effect)
@@ -32,6 +33,8 @@ import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData, Feature)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
+
+foreign import devHost :: Effect (Nullable String)
 
 type State = 
   { menu :: Menu
@@ -75,8 +78,10 @@ view = do
 
 reactClass :: ReactClass Props
 reactClass = component "Main" \this -> do
-  h <- map (fromMaybe "localhost:8001") DomOps.host
-  ws <- WsOps.create $ "ws://"<>h<>"/ws"
+  devHost <- devHost
+  locationHost <- DomOps.host
+  h <- pure $ fromMaybe (fromMaybe "" locationHost) $ toMaybe devHost
+  ws <- WsOps.create $ h<>"/ws"
   pure
     { state:
       { menu: Nodes
