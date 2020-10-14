@@ -5582,7 +5582,8 @@ var PS = {};
           month: "2-digit",
           year: "numeric",
           hour: "2-digit",
-          minute: "2-digit"
+          minute: "2-digit",
+          second: "2-digit"
       })(d);
   };
   exports["dateTime"] = dateTime;
@@ -6936,7 +6937,7 @@ var PS = {};
                           return React.modifyState($$this)(function (s) {
                               return {
                                   menu: s.menu,
-                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($207) {
+                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($206) {
                                       return Data_Maybe.Just.create((function (v2) {
                                           return {
                                               historyLoaded: true,
@@ -6945,7 +6946,7 @@ var PS = {};
                                               lastUpdate_ms: v2.lastUpdate_ms,
                                               nodeData: v2.nodeData
                                           };
-                                      })($207));
+                                      })($206));
                                   })(host)(s.nodes),
                                   node: new Data_Maybe.Just(host),
                                   features: s.features,
@@ -7582,12 +7583,12 @@ var PS = {};
                                   return new Data_Maybe.Just({
                                       host: v.value0.val.value0.host,
                                       ipaddr: v.value0.val.value0.ipaddr,
-                                      lastUpdate_ms: v2.value0.lastUpdate_ms,
+                                      lastUpdate_ms: v.value0.val.value0.time,
                                       historyLoaded: v2.value0.historyLoaded,
                                       nodeData: v2.value0.nodeData
                                   });
                               };
-                              throw new Error("Failed pattern match at Main (line 234, column 52 - line 236, column 127): " + [ v2.constructor.name ]);
+                              throw new Error("Failed pattern match at Main (line 234, column 52 - line 236, column 118): " + [ v2.constructor.name ]);
                           })(v.value0.val.value0.host)(s.nodes),
                           node: s.node,
                           features: s.features,
@@ -7601,64 +7602,64 @@ var PS = {};
               };
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Metric)) {
                   var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $151 = v.value0.val.value0.stat.value0.name === "cpu_mem";
-                      if ($151) {
+                      var $150 = v.value0.val.value0.stat.value0.name === "cpu_mem";
+                      if ($150) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var cpu_hour = (function () {
-                      var $152 = v.value0.val.value0.stat.value0.name === "cpu.hour";
-                      if ($152) {
+                      var $151 = v.value0.val.value0.stat.value0.name === "cpu.hour";
+                      if ($151) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var uptime = (function () {
-                      var $153 = v.value0.val.value0.stat.value0.name === "uptime";
-                      if ($153) {
+                      var $152 = v.value0.val.value0.stat.value0.name === "uptime";
+                      if ($152) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var version = (function () {
-                      var $154 = v.value0.val.value0.stat.value0.name === "v";
-                      if ($154) {
+                      var $153 = v.value0.val.value0.stat.value0.name === "v";
+                      if ($153) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $155 = v.value0.val.value0.stat.value0.name === "fs./";
-                      if ($155) {
+                      var $154 = v.value0.val.value0.stat.value0.name === "fs./";
+                      if ($154) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $156 = v.value0.val.value0.stat.value0.name === "fd";
-                      if ($156) {
+                      var $155 = v.value0.val.value0.stat.value0.name === "fd";
+                      if ($155) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $157 = v.value0.val.value0.stat.value0.name === "thr";
-                      if ($157) {
+                      var $156 = v.value0.val.value0.stat.value0.name === "thr";
+                      if ($156) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var kvsSize_year = (function () {
-                      var $158 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
-                      if ($158) {
+                      var $157 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
+                      if ($157) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var feature = (function () {
-                      var $159 = v.value0.val.value0.stat.value0.name === "feature";
-                      if ($159) {
+                      var $158 = v.value0.val.value0.stat.value0.name === "feature";
+                      if ($158) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7685,78 +7686,78 @@ var PS = {};
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Measure)) {
                   var value$prime = Global.readInt(10)(v.value0.val.value0.stat.value0.value);
                   var searchTs = (function () {
-                      var $169 = v.value0.val.value0.stat.value0.name === "search.ts";
-                      if ($169) {
+                      var $168 = v.value0.val.value0.stat.value0.name === "search.ts";
+                      if ($168) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchTs_thirdQ = (function () {
-                      var $170 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
-                      if ($170) {
+                      var $169 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
+                      if ($169) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc = (function () {
-                      var $171 = v.value0.val.value0.stat.value0.name === "search.wc";
-                      if ($171) {
+                      var $170 = v.value0.val.value0.stat.value0.name === "search.wc";
+                      if ($170) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc_thirdQ = (function () {
-                      var $172 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
-                      if ($172) {
+                      var $171 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                      if ($171) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchFs = (function () {
-                      var $173 = v.value0.val.value0.stat.value0.name === "search.fs";
-                      if ($173) {
+                      var $172 = v.value0.val.value0.stat.value0.name === "search.fs";
+                      if ($172) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchFs_thirdQ = (function () {
-                      var $174 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
-                      if ($174) {
+                      var $173 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
+                      if ($173) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var staticGen = (function () {
-                      var $175 = v.value0.val.value0.stat.value0.name === "static.gen";
-                      if ($175) {
+                      var $174 = v.value0.val.value0.stat.value0.name === "static.gen";
+                      if ($174) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var staticGen_thirdQ = (function () {
-                      var $176 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
-                      if ($176) {
+                      var $175 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
+                      if ($175) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var staticGen_year = (function () {
-                      var $177 = v.value0.val.value0.stat.value0.name === "static.gen.year";
-                      if ($177) {
+                      var $176 = v.value0.val.value0.stat.value0.name === "static.gen.year";
+                      if ($176) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var reindexAll = (function () {
-                      var $178 = v.value0.val.value0.stat.value0.name === "reindex.all";
-                      if ($178) {
+                      var $177 = v.value0.val.value0.stat.value0.name === "reindex.all";
+                      if ($177) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var reindexAll_thirdQ = (function () {
-                      var $179 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
-                      if ($179) {
+                      var $178 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
+                      if ($178) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;

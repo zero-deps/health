@@ -127,11 +127,11 @@ object Flows {
       import GraphDSL.Implicits._
       val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
       val logIn = Flow[Push].map{ msg => system.log.debug("UDP: {}", msg); msg }
-      val save_host = Flow[Push].collect{
-        case msg: HostMsg =>
-          import msg.{host, ipaddr, time}
-          kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host))
-      }
+      // val save_host = Flow[Push].collect{
+      //   case msg: HostMsg =>
+      //     import msg.{host, ipaddr, time}
+      //     kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host))
+      // }
       val save_metric = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem"|"kvs.size"|"feature", _), _, _) =>
         case StatMsg(Metric(name, value), time, host) =>

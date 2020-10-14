@@ -17,7 +17,7 @@ formatLocal' o d = runEffectFn1 (formatLocal o) d
 dateTime :: Number -> Effect String
 dateTime ms = do
   let d = fromTime ms
-  formatLocal' { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" } d
+  formatLocal' { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit" } d
 
 duration :: String -> { value :: String, unit :: String }
 duration sec = let sec' = floor $ readInt 10 sec in

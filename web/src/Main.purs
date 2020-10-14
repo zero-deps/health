@@ -233,7 +233,7 @@ reactClass = component "Main" \this -> do
         Right { val: HostMsg { host, ipaddr, time }} -> do
           modifyState this \s -> s{ nodes = alter (case _ of
               Nothing -> Just { host, ipaddr, lastUpdate_ms: time, historyLoaded: false, nodeData: Nothing }
-              Just { lastUpdate_ms, historyLoaded, nodeData } -> Just { host, ipaddr, lastUpdate_ms, historyLoaded, nodeData }
+              Just { historyLoaded, nodeData } -> Just { host, ipaddr, lastUpdate_ms: time, historyLoaded, nodeData }
             ) host s.nodes }
         Right { val: StatMsg { stat: Metric { name, value}, time, host }} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
