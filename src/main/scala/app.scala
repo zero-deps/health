@@ -10,7 +10,7 @@ import zd.proto._, api._
 import java.util.concurrent.TimeUnit.{MILLISECONDS => in_ms}
 
 sealed trait NewEvent
-case class HostEvent(host: String, ipaddr: String) extends NewEvent
+case class Broadcast(msg: Push) extends NewEvent
 
 case class KvsErr(e: kvs.Err) extends ForeignErr
 
@@ -63,13 +63,8 @@ object StatsApp extends zio.App {
   }
 
   def workerLoop(q: Queue[NewEvent], @unused clients: Ref[Clients]): ZIO[Kvs with Clock, Err, Unit] = q.take.flatMap{
-    case x: HostEvent =>
-      import x.{host, ipaddr}
-      for {
-        time <- currentTime(in_ms)
-        _    <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host)).mapError(KvsErr)
-        _    <- broadcast(clients, HostMsg(host=host, ipaddr=ipaddr, time=time))
-      } yield ()
+    case Broadcast(x) =>
+      broadcast(clients, x)
   }
 
   val leveldbConf = _root_.kvs.Kvs.LeveldbConf("rng_data")
@@ -91,8 +86,10 @@ object StatsApp extends zio.App {
       _    <- udp.bind(udpa)(channel =>
                 (for {
                   data <- channel.read
-                  msg  <- IO.effect(decode[client.ClientMsg](data.toArray))
-                  _    <- q offer HostEvent(host=msg.host, ipaddr=msg.ipaddr)
+                  msg  <- IO.effect(decode[client.ClientMsg](data.toArray)).mapError(Throwed)
+                  time <- currentTime(in_ms)
+                  _    <- Kvs.put(fid(fid.Nodes()), en_id.str(msg.host), EnData(value=msg.ipaddr, time=time, host=msg.host))
+                  _    <- q offer Broadcast(HostMsg(host=msg.host, ipaddr=msg.ipaddr, time=time))
                   _    <- msg match {
                     case x: client.MetricMsg  => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MeasureMsg => ZIO.unit.map(_ => println(x)) //todo: Console.live
