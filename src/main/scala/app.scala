@@ -89,10 +89,13 @@ object StatsApp extends zio.App {
                   msg  <- IO.effect(decode[client.ClientMsg](data.toArray))
                   (host, ipaddr) = (msg.host, msg.ipaddr)
                   time <- currentTime(in_ms)
-                  _    <- Kvs.put(fid(fid.Nodes()), en_id.str(msg.host), EnData(value=msg.ipaddr, time=time, host=msg.host))
-                  _    <- q offer Broadcast(HostMsg(host=msg.host, ipaddr=msg.ipaddr, time=time))
+                  _    <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host))
+                  _    <- q offer Broadcast(HostMsg(host=host, ipaddr=ipaddr, time=time))
                   _    <- msg match {
-                    case x: client.MetricMsg if x.name == "cpu_mem"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
+                    case x: client.MetricMsg if x.name == "cpu_mem"  =>
+                      for {
+                        _ <- Kvs.array.put(fid(fid.CpuMemLive(host)), size=20, EnData(value=x.value, time=time, host=host))
+                      } yield ()
                     case x: client.MetricMsg if x.name == "kvs.size" => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MetricMsg if x.name == "feature"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MetricMsg =>

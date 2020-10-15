@@ -139,14 +139,14 @@ object Flows {
       // }
       val save_cpumem = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem", value), time, host) =>
-          { /* live */
-            val i = kvs.el.get(el_id(el_id.CpuMemLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
-            for {
-              _ <- kvs.put(fid(fid.CpuMemLive(host)), en_id.int(i), EnData(value=value, time=time, host=host))
-              i1 = (i + 1) % 20
-              _ <- kvs.el.put(el_id(el_id.CpuMemLiveIdx(host)), el_v.int(i1))
-            } yield ()
-          }
+          // { /* live */
+          //   val i = kvs.el.get(el_id(el_id.CpuMemLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
+          //   for {
+          //     _ <- kvs.put(fid(fid.CpuMemLive(host)), en_id.int(i), EnData(value=value, time=time, host=host))
+          //     i1 = (i + 1) % 20
+          //     _ <- kvs.el.put(el_id(el_id.CpuMemLiveIdx(host)), el_v.int(i1))
+          //   } yield ()
+          // }
           value.split('~') match {
             case Array(cpu, _, _, _) =>
               { /* hour */
