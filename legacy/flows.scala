@@ -132,11 +132,11 @@ object Flows {
       //     import msg.{host, ipaddr, time}
       //     kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host))
       // }
-      val save_metric = Flow[Push].collect{
-        case StatMsg(Metric("cpu_mem"|"kvs.size"|"feature", _), _, _) =>
-        case StatMsg(Metric(name, value), time, host) =>
-          kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(name)), EnData(value=value, time=time, host=host))
-      }
+      // val save_metric = Flow[Push].collect{
+      //   case StatMsg(Metric("cpu_mem"|"kvs.size"|"feature", _), _, _) =>
+      //   case StatMsg(Metric(name, value), time, host) =>
+      //     kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(name)), EnData(value=value, time=time, host=host))
+      // }
       val save_cpumem = Flow[Push].collect{
         case StatMsg(Metric("cpu_mem", value), time, host) =>
           { /* live */

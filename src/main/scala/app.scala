@@ -3,7 +3,7 @@ package .stats
 import annotation.unused
 
 import zio._, nio._, core._, clock._, stream._
-import kvs.{Kvs=>_,Err=>_,Throwed=>_,_}, seq._
+import kvs.{Err=>_,Throwed=>_,_}, seq._
 import ftier._, ws._, udp._
 import com.typesafe.config.ConfigFactory
 import zd.proto._, api._
@@ -44,7 +44,7 @@ object StatsApp extends zio.App {
       for {
         ctx   <- ZIO.access[WsContext](_.get)
         _     <- clients.update(_ + ctx)
-        nodes <- Kvs.stream[EnData](fid(fid.Nodes()))
+        nodes <- Kvs.all[EnData](fid(fid.Nodes()))
         _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, ipaddr=en.value, time=en.time)))
       } yield ()
     case Close =>
@@ -67,11 +67,11 @@ object StatsApp extends zio.App {
       broadcast(clients, x)
   }
 
-  val leveldbConf = _root_.kvs.Kvs.LeveldbConf("rng_data")
-  val conf = _root_.kvs.Kvs.RngConf(leveldbConf=leveldbConf)
+  val conf = store.RngConf()
+  val leveldbConf = conf.conf.leveldbConf
 
   type Stats = Has[client.Stats]
-  def stats(leveldbConf: _root_.kvs.Kvs.LeveldbConf): URLayer[ActorSystem, Stats] = {
+  def stats(leveldbConf: store.Rng.LvlConf): URLayer[ActorSystem, Stats] = {
     ZLayer.fromService(client.Stats(leveldbConf.dir))
   }
 
@@ -86,17 +86,24 @@ object StatsApp extends zio.App {
       _    <- udp.bind(udpa)(channel =>
                 (for {
                   data <- channel.read
-                  msg  <- IO.effect(decode[client.ClientMsg](data.toArray)).mapError(Throwed)
+                  msg  <- IO.effect(decode[client.ClientMsg](data.toArray))
+                  (host, ipaddr) = (msg.host, msg.ipaddr)
                   time <- currentTime(in_ms)
                   _    <- Kvs.put(fid(fid.Nodes()), en_id.str(msg.host), EnData(value=msg.ipaddr, time=time, host=msg.host))
                   _    <- q offer Broadcast(HostMsg(host=msg.host, ipaddr=msg.ipaddr, time=time))
                   _    <- msg match {
-                    case x: client.MetricMsg  => ZIO.unit.map(_ => println(x)) //todo: Console.live
+                    case x: client.MetricMsg if x.name == "cpu_mem"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
+                    case x: client.MetricMsg if x.name == "kvs.size" => ZIO.unit.map(_ => println(x)) //todo: Console.live
+                    case x: client.MetricMsg if x.name == "feature"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
+                    case x: client.MetricMsg =>
+                      for {
+                        _ <- Kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(x.name)), EnData(value=x.value, time=time, host=host))
+                      } yield ()
                     case x: client.MeasureMsg => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.ErrorMsg   => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.ActionMsg  => ZIO.unit.map(_ => println(x)) //todo: Console.live
                   }
-                } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex)))
+                } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex))) //todo: Logging.live
               ).use(ch => ZIO.never.ensuring(ch.close.ignore)).fork
       _    <- workerLoop(q, clients).forever.fork
       addr <- SocketAddress.inetSocketAddress(8001)
