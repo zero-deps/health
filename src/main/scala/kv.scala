@@ -68,20 +68,18 @@ object en_id {
 
 object el_id {
   sealed trait ElId
-  @N( 1) final case class CpuMemLiveIdx(@N(1) host: String) extends ElId
-  @N( 2) final case class CpuHourT(@N(1) host: String, @N(2) i: Int) extends ElId
-  @N( 3) final case class CpuHourN(@N(1) host: String, @N(2) i: Int) extends ElId
-  @N( 4) final case class CpuHourV(@N(1) host: String, @N(2) i: Int) extends ElId
-  @N( 5) final case class ActionLiveIdx(@N(1) host: String) extends ElId
-  @N( 6) final case class MeasureLatestIdx(@N(1) name: String, @N(2) host: String) extends ElId
-  @N( 7) final case class MeasureYearT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
-  @N( 8) final case class MeasureYearN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
-  @N( 9) final case class MeasureYearV(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
-  @N(10) final case class FeatureT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
-  @N(11) final case class FeatureN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
-  @N(12) final case class ErrorsIdx(@N(1) host: String) extends ElId
-  @N(13) final case class CommonErrorsIdx() extends ElId
-  implicit val cpumemliveidxc = caseCodecAuto[CpuMemLiveIdx]
+  @N( 1) final case class CpuHourT(@N(1) host: String, @N(2) i: Int) extends ElId
+  @N( 2) final case class CpuHourN(@N(1) host: String, @N(2) i: Int) extends ElId
+  @N( 3) final case class CpuHourV(@N(1) host: String, @N(2) i: Int) extends ElId
+  @N( 4) final case class ActionLiveIdx(@N(1) host: String) extends ElId
+  @N( 5) final case class MeasureLatestIdx(@N(1) name: String, @N(2) host: String) extends ElId
+  @N( 6) final case class MeasureYearT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N( 7) final case class MeasureYearN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N( 8) final case class MeasureYearV(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N( 9) final case class FeatureT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N(10) final case class FeatureN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
+  @N(11) final case class ErrorsIdx(@N(1) host: String) extends ElId
+  @N(12) final case class CommonErrorsIdx() extends ElId
   implicit val cpuhourtc = caseCodecAuto[CpuHourT]
   implicit val cpuhournc = caseCodecAuto[CpuHourN]
   implicit val cpuhourvc = caseCodecAuto[CpuHourV]
