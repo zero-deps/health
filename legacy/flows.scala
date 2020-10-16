@@ -137,38 +137,38 @@ object Flows {
       //   case StatMsg(Metric(name, value), time, host) =>
       //     kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(name)), EnData(value=value, time=time, host=host))
       // }
-      val save_cpumem = Flow[Push].collect{
-        case StatMsg(Metric("cpu_mem", value), time, host) =>
-          // { /* live */
-          //   val i = kvs.el.get(el_id(el_id.CpuMemLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
-          //   for {
-          //     _ <- kvs.put(fid(fid.CpuMemLive(host)), en_id.int(i), EnData(value=value, time=time, host=host))
-          //     i1 = (i + 1) % 20
-          //     _ <- kvs.el.put(el_id(el_id.CpuMemLiveIdx(host)), el_v.int(i1))
-          //   } yield ()
-          // }
-          // value.split('~') match {
-          //   case Array(cpu, _, _, _) =>
-          //     { /* hour */
-          //       val i = (((time / 1000 / 60) % 60) / 3).toInt /* [0, 19] */
-          //       val now = System.currentTimeMillis
-          //       val last = kvs.el.get(el_id(el_id.CpuHourT(host, i))).toOption.flatten.map(el_v.long).getOrElse(now)
-          //       val n =
-          //         if (now - last >= 3*60*1000) 0
-          //         else kvs.el.get(el_id(el_id.CpuHourN(host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
-          //       val v = kvs.el.get(el_id(el_id.CpuHourV(host, i))).toOption.flatten.map(el_v.float).getOrElse(0f)
-          //       val n1 = n + 1
-          //       val v1 = (v * n + cpu.toInt) / n1
-          //       kvs.el.put(el_id(el_id.CpuHourT(host, i)), el_v.long(time))
-          //       kvs.el.put(el_id(el_id.CpuHourN(host, i)), el_v.int(n1))
-          //       kvs.el.put(el_id(el_id.CpuHourV(host, i)), el_v.float(v1))
-          //       val time1 = ((time / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000
-          //       kvs.put(fid(fid.CpuHour(host)), en_id.int(i), EnData(value=v1.toInt.toString, time=time1, host=host))
-          //       system.eventStream.publish(StatMsg(Metric("cpu.hour", v1.toInt.toString), time=time1, host=host))
-          //     }
-          //   case _ =>
-          // }
-      }
+      // val save_cpumem = Flow[Push].collect{
+      //   case StatMsg(Metric("cpu_mem", value), time, host) =>
+      //     { /* live */
+      //       val i = kvs.el.get(el_id(el_id.CpuMemLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
+      //       for {
+      //         _ <- kvs.put(fid(fid.CpuMemLive(host)), en_id.int(i), EnData(value=value, time=time, host=host))
+      //         i1 = (i + 1) % 20
+      //         _ <- kvs.el.put(el_id(el_id.CpuMemLiveIdx(host)), el_v.int(i1))
+      //       } yield ()
+      //     }
+      //     value.split('~') match {
+      //       case Array(cpu, _, _, _) =>
+      //         { /* hour */
+      //           val i = (((time / 1000 / 60) % 60) / 3).toInt /* [0, 19] */
+      //           val now = System.currentTimeMillis
+      //           val last = kvs.el.get(el_id(el_id.CpuHourT(host, i))).toOption.flatten.map(el_v.long).getOrElse(now)
+      //           val n =
+      //             if (now - last >= 3*60*1000) 0
+      //             else kvs.el.get(el_id(el_id.CpuHourN(host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
+      //           val v = kvs.el.get(el_id(el_id.CpuHourV(host, i))).toOption.flatten.map(el_v.float).getOrElse(0f)
+      //           val n1 = n + 1
+      //           val v1 = (v * n + cpu.toInt) / n1
+      //           kvs.el.put(el_id(el_id.CpuHourT(host, i)), el_v.long(time))
+      //           kvs.el.put(el_id(el_id.CpuHourN(host, i)), el_v.int(n1))
+      //           kvs.el.put(el_id(el_id.CpuHourV(host, i)), el_v.float(v1))
+      //           val time1 = ((time / 1000 / 60 / 60 * 60) + i * 3) * 60 * 1000
+      //           kvs.put(fid(fid.CpuHour(host)), en_id.int(i), EnData(value=v1.toInt.toString, time=time1, host=host))
+      //           system.eventStream.publish(StatMsg(Metric("cpu.hour", v1.toInt.toString), time=time1, host=host))
+      //         }
+      //       case _ =>
+      //     }
+      // }
       val save_measure = Flow[Push].collect{
         case StatMsg(Measure(name, value), time, host) =>
           val limit = name match {

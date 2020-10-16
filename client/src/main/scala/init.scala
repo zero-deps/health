@@ -57,7 +57,7 @@ class Stats(leveldbDir: String)(implicit system: ActorSystem) {
   val scheduler = system.scheduler
   object timeout {
     val thr = 5 minutes
-    val cpu_mem = 30 seconds
+    val cpu_mem = 1 minute
     val fd = 5 minutes
     val fs = 1 hour
     val kvs = 1 day
