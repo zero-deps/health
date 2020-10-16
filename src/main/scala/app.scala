@@ -36,7 +36,12 @@ object StatsApp extends zio.App {
   }
 
   def msgHandler(@unused queue: Queue[NewEvent]): Pull => ZIO[Kvs with WsContext, Err, Unit] = {
-    case ask: HealthAsk => ZIO.unit
+    case ask: HealthAsk =>
+      import ask.host
+      for {
+        metrics <- Kvs.all[EnData](fid(fid.Metrics(host)))
+        _       <- metrics.mapError(KvsErr).foreach{ case (k, en) => send(StatMsg(stat=Metric(name=en_id.metric(k).name, value=en.value), time=en.time, host=host))}
+      } yield ()
   }
 
   def wsHandler(queue: Queue[NewEvent], clients: Ref[Clients]): Msg => ZIO[WsContext with Kvs, Err, Unit] = {
