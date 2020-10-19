@@ -99,9 +99,9 @@
         //     system.eventStream publish StatMsg(Measure("reindex.all", x.value), time=x.time, host=host)
         //   )
         // }
-        kvs.all(fid(fid.StaticGenYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
-          case EnData(value, time, host) => system.eventStream publish StatMsg(Measure("static.gen.year", value), time=time, host=host)
-        })
+        // kvs.all(fid(fid.StaticGenYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
+        //   case EnData(value, time, host) => system.eventStream publish StatMsg(Measure("static.gen.year", value), time=time, host=host)
+        // })
         // kvs.all(fid(fid.KvsSizeYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
         //   case EnData(value, time, host) => system.eventStream publish StatMsg(Metric("kvs.size.year", value), time=time, host=host)
         // })
@@ -190,32 +190,32 @@
       //     }
       // }
 
-      def saveYearValue(name: String, value: Long, time: Long, host: String): (Long, Long) = {
-        val date = time.toLocalDataTime()
-        val i = date.getMonthValue - 1
-        val now = LocalDateTime.now()
-        val last = kvs.el.get(el_id(el_id.MeasureYearT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
-        val n =
-          if (date.getYear != last.getYear) 0
-          else kvs.el.get(el_id(el_id.MeasureYearN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
-        val v = kvs.el.get(el_id(el_id.MeasureYearV(name=name, host=host, i))).toOption.flatten.map(el_v.long).getOrElse(0L)
-        val n1 = n + 1
-        val v1 = (v * n + value.toLong) / n1
-        kvs.el.put(el_id(el_id.MeasureYearT(name=name, host=host, i)), el_v.long(time))
-        kvs.el.put(el_id(el_id.MeasureYearN(name=name, host=host, i)), el_v.int(n1))
-        kvs.el.put(el_id(el_id.MeasureYearV(name=name, host=host, i)), el_v.long(v1))
-        val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
-        kvs.put(fid(fid.MeasureYear(name=name, host=host)), en_id.int(i), EnData(value=v1.toString, time=time1, host=host))
-        (v1, time1)
-      }
-      val save_year_value = Flow[Push].collect{
-        case StatMsg(Measure(name@("static.gen"), value), time, host) =>
-          val (v1, t1) = saveYearValue(name, value.toLong, time, host)
-          system.eventStream.publish(StatMsg(Measure(s"$name.year", v1.toString), time=t1, host=host))
+      // def saveYearValue(name: String, value: Long, time: Long, host: String): (Long, Long) = {
+      //   val date = time.toLocalDataTime()
+      //   val i = date.getMonthValue - 1
+      //   val now = LocalDateTime.now()
+      //   val last = kvs.el.get(el_id(el_id.MeasureYearT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
+      //   val n =
+      //     if (date.getYear != last.getYear) 0
+      //     else kvs.el.get(el_id(el_id.MeasureYearN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
+      //   val v = kvs.el.get(el_id(el_id.MeasureYearV(name=name, host=host, i))).toOption.flatten.map(el_v.long).getOrElse(0L)
+      //   val n1 = n + 1
+      //   val v1 = (v * n + value.toLong) / n1
+      //   kvs.el.put(el_id(el_id.MeasureYearT(name=name, host=host, i)), el_v.long(time))
+      //   kvs.el.put(el_id(el_id.MeasureYearN(name=name, host=host, i)), el_v.int(n1))
+      //   kvs.el.put(el_id(el_id.MeasureYearV(name=name, host=host, i)), el_v.long(v1))
+      //   val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
+      //   kvs.put(fid(fid.MeasureYear(name=name, host=host)), en_id.int(i), EnData(value=v1.toString, time=time1, host=host))
+      //   (v1, time1)
+      // }
+      // val save_year_value = Flow[Push].collect{
+      //   case StatMsg(Measure(name@("static.gen"), value), time, host) =>
+      //     val (v1, t1) = saveYearValue(name, value.toLong, time, host)
+          // system.eventStream.publish(StatMsg(Measure(s"$name.year", v1.toString), time=t1, host=host))
         // case StatMsg(Metric(name@"kvs.size", value), time, host) =>
         //   val (v1, t1) = saveYearValue(name, value.toLong/1024, time, host)
         //   system.eventStream.publish(StatMsg(Metric(s"$name.year", v1.toString), time=t1, host=host))
-      }
+      // }
       val save_feature = Flow[Push].collect{
         case StatMsg(Metric("feature", name), time, host) =>
           val date = time.toLocalDataTime()
