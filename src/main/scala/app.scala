@@ -28,6 +28,13 @@ object StatsApp extends zio.App {
     def extract(xs: Bytes): AvgData = decode[AvgData](xs)
     def insert(x: AvgData): Bytes = encodeToBytes(x)
   }
+  implicit object QDataCodec extends DataCodec[QData] {
+    import zd.proto._, api._, macrosapi._
+    implicit val tc = caseCodecAuto[Timed[Int]]
+    implicit val c = caseCodecAuto[QData]
+    def extract(xs: Bytes): QData = decode[QData](xs)
+    def insert(x: QData): Bytes = encodeToBytes(x)
+  }
 
   type Clients = Set[WsContextData]
   
@@ -45,6 +52,14 @@ object StatsApp extends zio.App {
         startl  <- cpumeml.mapError(KvsErr).map(en => {send(StatMsg(stat=Metric(name="cpu_mem", value=en.value), time=en.time, host=host)); en.time}).runHead
         actions <- Kvs.array.all[EnData](fid(fid.ActionLive(host)))
         _       <- actions.mapError(KvsErr).dropWhile(en => startl.exists(en.time < _)).foreach(en => send(StatMsg(stat=Action(en.value), time=en.time, host=host)))
+        measure <- Kvs.all[QData](fid(fid.Measures(host)))
+        _       <- measure.mapError(KvsErr).foreach{ case (k, en) =>
+                    val name = en_id.measure(k).name
+                    for {
+                      _ <- send(StatMsg(stat=Measure(s"$name.thirdQ", en.q_str), time=0, host=host))
+                      _ <- ZStream.fromIterable(en.xs.takeRight(5)).foreach(x => send(StatMsg(stat=Measure(name, x.value_str), time=x.time, host=host)))
+                    } yield ()
+                  }
       } yield ()
   }
 
@@ -113,24 +128,23 @@ object StatsApp extends zio.App {
                         /* live (cpu+mem) */
                         _ <- Kvs.array.add(fid(fid.CpuMemLive(host)), size=20, EnData(value=x.value, time=time))
                         /* day (cpu) */
-                        _ <- x.value.split('~').head.some.filter(_.nonEmpty).flatMap(_.toIntOption).cata(cpu => for {
-                          hours <- currentTime(`in hours`)
-                          hour   = (hours % 24) + 1 /* ∊ [1, 24] */
-                          old   <- Kvs.array.get[AvgData](fid(fid.CpuDay(host)), idx=hour)
-                          (value, n) = old.cata({
-                            case old if old.id == hours =>
-                              /* calculate new average */
-                              val n = old.n + 1
-                              val value = (old.value * old.n.toDouble + cpu.toDouble) / n.toDouble
-                              (value, n)
-                            case old =>
-                              /* save new average for new hour */
-                              (cpu.toDouble, 1L)
-                          }
-                          , (cpu.toDouble, 1L)
-                          )
-                          _ <- Kvs.array.put(fid(fid.CpuDay(host)), idx=hour, AvgData(value=value, id=hours, n=n))
-                        } yield (), IO.unit)
+                        cpu <- IO.fromOption(x.value.split('~').head.some.filter(_.nonEmpty).flatMap(_.toIntOption))
+                        hours <- currentTime(`in hours`)
+                        hour   = (hours % 24) + 1 /* ∊ [1, 24] */
+                        old   <- Kvs.array.get[AvgData](fid(fid.CpuDay(host)), idx=hour)
+                        (value, n) = old.cata({
+                          case old if old.id == hours =>
+                            /* calculate new average */
+                            val n = old.n + 1
+                            val value = (old.value * old.n.toDouble + cpu.toDouble) / n.toDouble
+                            (value, n)
+                          case old =>
+                            /* save new average for new hour */
+                            (cpu.toDouble, 1L)
+                        }
+                        , (cpu.toDouble, 1L)
+                        )
+                        _ <- Kvs.array.put(fid(fid.CpuDay(host)), idx=hour, AvgData(value=value, id=hours, n=n))
                       } yield ()
                     case x: client.MetricMsg if x.name == "kvs.size" => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MetricMsg if x.name == "feature"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
@@ -138,10 +152,19 @@ object StatsApp extends zio.App {
                       for {
                         _ <- Kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(x.name)), EnData(value=x.value, time=time))
                       } yield ()
-                    case x: client.MeasureMsg => ZIO.unit.map(_ => println(x)) //todo: Console.live
+                    case x: client.MeasureMsg =>
+                      for {
+                        v  <- IO.fromOption(x.value.toIntOption)
+                        qd <- Kvs.get[QData](fid(fid.Measures(host)), en_id(en_id.Measure(x.name)))
+                        xs  = (Timed(v, time) +: qd.cata(_.xs, Vector.empty)).take(20)
+                        q   = xs(Math.ceil(xs.size*0.9).toInt).value
+                        _  <- Kvs.put(fid(fid.Measures(host)), en_id(en_id.Measure(x.name)), QData(xs, q))
+                      } yield ()
                     case x: client.ErrorMsg   => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.ActionMsg  =>
-                      Kvs.array.add(fid(fid.ActionLive(host)), size=20, EnData(value=x.action, time=time))
+                      for {
+                        _ <- Kvs.array.add(fid(fid.ActionLive(host)), size=20, EnData(value=x.action, time=time))
+                      } yield ()
                   }
                 } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex))) //todo: Logging.live
               ).use(ch => ZIO.never.ensuring(ch.close.ignore)).fork
