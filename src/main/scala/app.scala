@@ -94,6 +94,7 @@ object StatsApp extends zio.App {
         _     <- clients.update(_ + ctx)
         nodes <- Kvs.all[Node](fid(fid.Nodes()))
         _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, ipaddr=en.ipaddr, time=en.time)))
+        //todo: common errors
       } yield ()
     case Close =>
       for {
@@ -163,7 +164,6 @@ object StatsApp extends zio.App {
                         )
                         _ <- Kvs.array.put(fid(fid.CpuDay(host)), idx=hour, AvgData(value=value, id=hours, n=n))
                       } yield ()
-                    case x: client.MetricMsg if x.name == "feature"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MetricMsg =>
                       for {
                         _ <- Kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(x.name)), Timed(value=x.value, time=time))

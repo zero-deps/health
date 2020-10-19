@@ -42,9 +42,9 @@
     //   FlowShape(msgIn.in, msgOut.out)
     // })
 
-  def wsHandler(system: ActorSystem, @annotation.unused kvs: Kvs) =
-    Flow[Pull].collect {
-      case HealthAsk(host) =>
+  // def wsHandler(system: ActorSystem, @annotation.unused kvs: Kvs) =
+  //   Flow[Pull].collect {
+  //     case HealthAsk(host) =>
         // val live_start = kvs.all(fid(fid.CpuMemLive(host))).toOption.flatMap(_.collect{ case Right((_, a)) => a }.sortBy(_.time).map{
         //   case EnData(value, time, host) =>
         //     system.eventStream publish StatMsg(Metric("cpu_mem", value), time=time, host=host); time
@@ -120,9 +120,9 @@
         //       case _ =>
         //     }
         // })
-    }
+    // }
 
-  def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
+  // def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
     // RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
     //   import GraphDSL.Implicits._
     //   val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
@@ -216,21 +216,21 @@
         //   val (v1, t1) = saveYearValue(name, value.toLong/1024, time, host)
         //   system.eventStream.publish(StatMsg(Metric(s"$name.year", v1.toString), time=t1, host=host))
       // }
-      val save_feature = Flow[Push].collect{
-        case StatMsg(Metric("feature", name), time, host) =>
-          val date = time.toLocalDataTime()
-          val i = date.getMonthValue - 1
-          val now = LocalDateTime.now()
-          val last = kvs.el.get(el_id(el_id.FeatureT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
-          val n =
-            if (date.getYear != last.getYear) 0
-            else kvs.el.get(el_id(el_id.FeatureN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
-          val n1 = n + 1
-          kvs.el.put(el_id(el_id.FeatureT(name=name, host=host, i)), el_v.long(time))
-          kvs.el.put(el_id(el_id.FeatureN(name=name, host=host, i)), el_v.int(n1))
-          val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
-          kvs.put(fid(fid.Feature()), en_id(en_id.Feature(name=name, host=host, i=i)), EnData(value=n1.toString, time=time1, host=host))
-      }
+      // val save_feature = Flow[Push].collect{
+      //   case StatMsg(Metric("feature", name), time, host) =>
+      //     val date = time.toLocalDataTime()
+      //     val i = date.getMonthValue - 1
+      //     val now = LocalDateTime.now()
+      //     val last = kvs.el.get(el_id(el_id.FeatureT(name=name, host=host, i))).toOption.flatten.map(el_v.long(_).toLocalDataTime()).getOrElse(now)
+      //     val n =
+      //       if (date.getYear != last.getYear) 0
+      //       else kvs.el.get(el_id(el_id.FeatureN(name=name, host=host, i))).toOption.flatten.map(el_v.int).getOrElse(0)
+      //     val n1 = n + 1
+      //     kvs.el.put(el_id(el_id.FeatureT(name=name, host=host, i)), el_v.long(time))
+      //     kvs.el.put(el_id(el_id.FeatureN(name=name, host=host, i)), el_v.int(n1))
+      //     val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
+      //     kvs.put(fid(fid.Feature()), en_id(en_id.Feature(name=name, host=host, i=i)), EnData(value=n1.toString, time=time1, host=host))
+      // }
       // val save_action = Flow[Push].collect{
       //   case StatMsg(Action(action), time, host) =>
       //     val i = kvs.el.get(el_id(el_id.ActionLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
