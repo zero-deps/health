@@ -1,54 +1,54 @@
-package .stats
+// package .stats
 
-import akka.actor.ActorSystem
-import akka.http.scaladsl.model.ws.{BinaryMessage, Message => WsMessage}
-import akka.NotUsed
-import akka.stream.scaladsl.{Flow, Sink, Source, Merge, GraphDSL, RunnableGraph, Broadcast}
-import akka.stream.{ClosedShape, FlowShape}
-import akka.util.ByteString
-import java.time.{LocalDateTime}
-import scala.util.Try
-import kvs._
-import zd.proto.api.{encode, decode}
-import zero.ext._, either._
+// import akka.actor.ActorSystem
+// import akka.http.scaladsl.model.ws.{BinaryMessage, Message => WsMessage}
+// import akka.NotUsed
+// import akka.stream.scaladsl.{Flow, Sink, Source, Merge, GraphDSL, RunnableGraph, Broadcast}
+// import akka.stream.{ClosedShape, FlowShape}
+// import akka.util.ByteString
+// import java.time.{LocalDateTime}
+// import scala.util.Try
+// import kvs._
+// import zd.proto.api.{encode, decode}
+// import zero.ext._, either._
 
-object Flows {
-  def ws(system: ActorSystem, kvs: Kvs): Flow[WsMessage, WsMessage, NotUsed] =
-    Flow.fromGraph(GraphDSL.create() { implicit b =>
-      import GraphDSL.Implicits._
+// object Flows {
+//   def ws(system: ActorSystem, kvs: Kvs): Flow[WsMessage, WsMessage, NotUsed] =
+//     Flow.fromGraph(GraphDSL.create() { implicit b =>
+//       import GraphDSL.Implicits._
 
-      val msgIn = b.add(Flow[WsMessage].collect[ByteString] { case BinaryMessage.Strict(bytes) => bytes })
-      val logIn = Flow[Pull].map{ msg => system.log.info(s"IN: ${msg}"); msg }
-      val logOut = Flow[Push].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
-      val kvspub = Source.fromGraph(new MsgSource(system.actorOf(KvsPub.props(kvs)))) //todo: created one time? closed?
-      val wspub = Source.fromGraph(new MsgSource(system.actorOf(WsPub.props)))
-      val pubStat = b.add(Merge[Push](2))
+//       val msgIn = b.add(Flow[WsMessage].collect[ByteString] { case BinaryMessage.Strict(bytes) => bytes })
+//       val logIn = Flow[Pull].map{ msg => system.log.info(s"IN: ${msg}"); msg }
+//       val logOut = Flow[Push].map{ msg => system.log.debug(s"OUT: ${msg}"); msg }
+//       val kvspub = Source.fromGraph(new MsgSource(system.actorOf(KvsPub.props(kvs)))) //todo: created one time? closed?
+//       val wspub = Source.fromGraph(new MsgSource(system.actorOf(WsPub.props)))
+//       val pubStat = b.add(Merge[Push](2))
 
-      val decodeMsg = b.add(
-        Flow[ByteString].
-          map[Either[Throwable, Pull]]{ bytes => Try(decode[Pull](bytes.toArray)).toEither.leftMap(l => {system.log.error(l.toString);l}) }.
-          collect[Pull] {
-            case Right(pull) => pull
-          }
-      )
+    //   val decodeMsg = b.add(
+    //     Flow[ByteString].
+    //       map[Either[Throwable, Pull]]{ bytes => Try(decode[Pull](bytes.toArray)).toEither.leftMap(l => {system.log.error(l.toString);l}) }.
+    //       collect[Pull] {
+    //         case Right(pull) => pull
+    //       }
+    //   )
 
-      val encodeMsg = b.add(Flow[Push].map{ case m: Push => encode[Push](m) })
-      val msgOut = b.add(Flow[Array[Byte]].map[BinaryMessage] { bytes => BinaryMessage.Strict(ByteString(bytes)) })
+    //   val encodeMsg = b.add(Flow[Push].map{ case m: Push => encode[Push](m) })
+    //   val msgOut = b.add(Flow[Array[Byte]].map[BinaryMessage] { bytes => BinaryMessage.Strict(ByteString(bytes)) })
 
-      msgIn ~> decodeMsg ~> logIn ~> wsHandler(system, kvs) ~> Sink.ignore
-      wspub  ~> pubStat
-      kvspub ~> pubStat ~> logOut ~> encodeMsg ~> msgOut
+    //   msgIn ~> decodeMsg ~> logIn ~> wsHandler(system, kvs) ~> Sink.ignore
+    //   wspub  ~> pubStat
+    //   kvspub ~> pubStat ~> logOut ~> encodeMsg ~> msgOut
 
-      FlowShape(msgIn.in, msgOut.out)
-    })
+    //   FlowShape(msgIn.in, msgOut.out)
+    // })
 
   def wsHandler(system: ActorSystem, @annotation.unused kvs: Kvs) =
     Flow[Pull].collect {
       case HealthAsk(host) =>
-        val live_start = kvs.all(fid(fid.CpuMemLive(host))).toOption.flatMap(_.collect{ case Right((_, a)) => a }.sortBy(_.time).map{
-          case EnData(value, time, host) =>
-            system.eventStream publish StatMsg(Metric("cpu_mem", value), time=time, host=host); time
-        }.force.headOption).getOrElse(0L);
+        // val live_start = kvs.all(fid(fid.CpuMemLive(host))).toOption.flatMap(_.collect{ case Right((_, a)) => a }.sortBy(_.time).map{
+        //   case EnData(value, time, host) =>
+        //     system.eventStream publish StatMsg(Metric("cpu_mem", value), time=time, host=host); time
+        // }.force.headOption).getOrElse(0L);
         {
           kvs.all(fid(fid.CpuHour(host))).map_{ xs =>
             val xs1 = xs.collect{ case Right((_, a)) => a }.sortBy(_.time)
@@ -108,10 +108,10 @@ object Flows {
         kvs.all(fid(fid.ActionLive(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time < live_start).foreach{
           case EnData(action, time, host) => system.eventStream publish StatMsg(Action(action), time=time, host=host)
         })
-        kvs.all(fid(fid.Metrics(host))).map_(_.collect{ case Right((k, a)) => en_id.metric(k) -> a }.foreach{
-          case (key, EnData(value, time, host)) =>
-            system.eventStream publish StatMsg(Metric(key.name, value), time=time, host=host)
-        })
+        // kvs.all(fid(fid.Metrics(host))).map_(_.collect{ case Right((k, a)) => en_id.metric(k) -> a }.foreach{
+        //   case (key, EnData(value, time, host)) =>
+        //     system.eventStream publish StatMsg(Metric(key.name, value), time=time, host=host)
+        // })
         kvs.all(fid(fid.Errors(host))).map_(_.collect{ case Right((_, a)) => a }.foreach{
           case EnData(value, time, host) =>
             value.split('|') match {
@@ -231,15 +231,15 @@ object Flows {
           val time1 = LocalDateTime.of(date.getYear, date.getMonthValue, 1, 12, 0).toMillis()
           kvs.put(fid(fid.Feature()), en_id(en_id.Feature(name=name, host=host, i=i)), EnData(value=n1.toString, time=time1, host=host))
       }
-      val save_action = Flow[Push].collect{
-        case StatMsg(Action(action), time, host) =>
-          val i = kvs.el.get(el_id(el_id.ActionLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
-          for {
-            _ <- kvs.put(fid(fid.ActionLive(host)), id=en_id.int(i), EnData(value=action, time=time, host=host))
-            i1 = (i + 1) % 20
-            _ <- kvs.el.put(el_id(el_id.ActionLiveIdx(host)), el_v.int(i1))
-          } yield ()
-      }
+      // val save_action = Flow[Push].collect{
+      //   case StatMsg(Action(action), time, host) =>
+      //     val i = kvs.el.get(el_id(el_id.ActionLiveIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
+      //     for {
+      //       _ <- kvs.put(fid(fid.ActionLive(host)), id=en_id.int(i), EnData(value=action, time=time, host=host))
+      //       i1 = (i + 1) % 20
+      //       _ <- kvs.el.put(el_id(el_id.ActionLiveIdx(host)), el_v.int(i1))
+      //     } yield ()
+      // }
       val save_error = Flow[Push].collect{
         case StatMsg(Error(exception, stacktrace), time, host) =>
           val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
@@ -293,24 +293,24 @@ object Flows {
           }
           res.leftMap(e => system.log.error(e.toString))
       }
-      def pub = Sink.foreach[Push]{ case msg =>
-        system.log.debug(s"pub=$msg")
-        system.eventStream.publish(msg)
-      }
-      val b1 = b.add(Broadcast[Push](10))
+      // def pub = Sink.foreach[Push]{ case msg =>
+      //   system.log.debug(s"pub=$msg")
+      //   system.eventStream.publish(msg)
+      // }
+      // val b1 = b.add(Broadcast[Push](10))
 
-      udppub ~> logIn ~> b1 ~> pub
-                         b1 ~> save_host         ~> Sink.ignore
-                         b1 ~> save_metric       ~> Sink.ignore
-                         b1 ~> save_cpumem       ~> Sink.ignore
-                         b1 ~> save_measure      ~> Sink.ignore
-                         b1 ~> save_year_value   ~> Sink.ignore
-                         b1 ~> save_action       ~> Sink.ignore
-                         b1 ~> save_error        ~> Sink.ignore
-                         b1 ~> save_common_error ~> Sink.ignore
-                         b1 ~> save_feature      ~> Sink.ignore
+      // udppub ~> logIn ~> b1 ~> pub
+      //                    b1 ~> save_host         ~> Sink.ignore
+      //                    b1 ~> save_metric       ~> Sink.ignore
+      //                    b1 ~> save_cpumem       ~> Sink.ignore
+      //                    b1 ~> save_measure      ~> Sink.ignore
+      //                    b1 ~> save_year_value   ~> Sink.ignore
+      //                    b1 ~> save_action       ~> Sink.ignore
+      //                    b1 ~> save_error        ~> Sink.ignore
+      //                    b1 ~> save_common_error ~> Sink.ignore
+      //                    b1 ~> save_feature      ~> Sink.ignore
 
-      ClosedShape
+      // ClosedShape
     })
   }
 }

@@ -41,6 +41,10 @@ object StatsApp extends zio.App {
       for {
         metrics <- Kvs.all[EnData](fid(fid.Metrics(host)))
         _       <- metrics.mapError(KvsErr).foreach{ case (k, en) => send(StatMsg(stat=Metric(name=en_id.metric(k).name, value=en.value), time=en.time, host=host))}
+        cpumeml <- Kvs.array.all[EnData](fid(fid.CpuMemLive(host)))
+        startl  <- cpumeml.mapError(KvsErr).map(en => {send(StatMsg(stat=Metric(name="cpu_mem", value=en.value), time=en.time, host=host)); en.time}).runHead
+        actions <- Kvs.array.all[EnData](fid(fid.ActionLive(host)))
+        _       <- actions.mapError(KvsErr).dropWhile(en => startl.exists(en.time < _)).foreach(en => send(StatMsg(stat=Action(en.value), time=en.time, host=host)))
       } yield ()
   }
 
@@ -125,7 +129,7 @@ object StatsApp extends zio.App {
                           }
                           , (cpu.toDouble, 1L)
                           )
-                          _     <- Kvs.array.put(fid(fid.CpuDay(host)), idx=hour, AvgData(value=value, id=hours, n=n))
+                          _ <- Kvs.array.put(fid(fid.CpuDay(host)), idx=hour, AvgData(value=value, id=hours, n=n))
                         } yield (), IO.unit)
                       } yield ()
                     case x: client.MetricMsg if x.name == "kvs.size" => ZIO.unit.map(_ => println(x)) //todo: Console.live
@@ -136,7 +140,8 @@ object StatsApp extends zio.App {
                       } yield ()
                     case x: client.MeasureMsg => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.ErrorMsg   => ZIO.unit.map(_ => println(x)) //todo: Console.live
-                    case x: client.ActionMsg  => ZIO.unit.map(_ => println(x)) //todo: Console.live
+                    case x: client.ActionMsg  =>
+                      Kvs.array.add(fid(fid.ActionLive(host)), size=20, EnData(value=x.action, time=time))
                   }
                 } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex))) //todo: Logging.live
               ).use(ch => ZIO.never.ensuring(ch.close.ignore)).fork
