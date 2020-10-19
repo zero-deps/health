@@ -112,14 +112,14 @@
         //   case (key, EnData(value, time, host)) =>
         //     system.eventStream publish StatMsg(Metric(key.name, value), time=time, host=host)
         // })
-        kvs.all(fid(fid.Errors(host))).map_(_.collect{ case Right((_, a)) => a }.foreach{
-          case EnData(value, time, host) =>
-            value.split('|') match {
-              case Array(exception, stacktrace) =>
-                system.eventStream publish StatMsg(Error(exception, stacktrace), time=time, host=host)
-              case _ =>
-            }
-        })
+        // kvs.all(fid(fid.Errors(host))).map_(_.collect{ case Right((_, a)) => a }.foreach{
+        //   case EnData(value, time, host) =>
+        //     value.split('|') match {
+        //       case Array(exception, stacktrace) =>
+        //         system.eventStream publish StatMsg(Error(exception, stacktrace), time=time, host=host)
+        //       case _ =>
+        //     }
+        // })
     }
 
   def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
@@ -240,15 +240,15 @@
       //       _ <- kvs.el.put(el_id(el_id.ActionLiveIdx(host)), el_v.int(i1))
       //     } yield ()
       // }
-      val save_error = Flow[Push].collect{
-        case StatMsg(Error(exception, stacktrace), time, host) =>
-          val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
-          for {
-            _ <- kvs.put(fid(fid.Errors(host)), en_id.int(i), EnData(value=s"$exception|$stacktrace", time=time, host=host))
-            i1 = (i + 1) % 10
-            _ <- kvs.el.put(el_id(el_id.ErrorsIdx(host)), el_v.int(i1))
-          } yield ()
-      }
+      // val save_error = Flow[Push].collect{
+      //   case StatMsg(Error(exception, stacktrace), time, host) =>
+      //     val i = kvs.el.get(el_id(el_id.ErrorsIdx(host))).toOption.flatten.map(el_v.int).getOrElse(0)
+      //     for {
+      //       _ <- kvs.put(fid(fid.Errors(host)), en_id.int(i), EnData(value=s"$exception|$stacktrace", time=time, host=host))
+      //       i1 = (i + 1) % 10
+      //       _ <- kvs.el.put(el_id(el_id.ErrorsIdx(host)), el_v.int(i1))
+      //     } yield ()
+      // }
       val save_common_error = Flow[Push].collect{
         case StatMsg(Error(exception, stacktrace), time, host) =>
           /* save unique errors (by stacktrace), 20 as maximum with latest host/time */

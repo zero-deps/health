@@ -76,14 +76,12 @@ object el_id {
   @N(4) final case class MeasureYearV(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
   @N(5) final case class FeatureT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
   @N(6) final case class FeatureN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
-  @N(7) final case class ErrorsIdx(@N(1) host: String) extends ElId
   @N(8) final case class CommonErrorsIdx() extends ElId
   implicit val measureyeartc = caseCodecAuto[MeasureYearT]
   implicit val measureyearnc = caseCodecAuto[MeasureYearN]
   implicit val measureyearvc = caseCodecAuto[MeasureYearV]
   implicit val featuretc = caseCodecAuto[FeatureT]
   implicit val featurenc = caseCodecAuto[FeatureN]
-  implicit val errorsidxc = caseCodecAuto[ErrorsIdx]
   implicit val commonerrorsidxc = caseCodecAuto[CommonErrorsIdx]
   implicit val elidc = sealedTraitCodecAuto[ElId]
   def apply(x: ElId): ElKey = ElKey(encodeToBytes[ElId](x))

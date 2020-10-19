@@ -41,6 +41,13 @@ object StatsApp extends zio.App {
     def extract(xs: Bytes): QData = decode[QData](xs)
     def insert(x: QData): Bytes = encodeToBytes(x)
   }
+  implicit object TimedErrCodec extends DataCodec[TimedErr] {
+    import zd.proto._, api._, macrosapi._
+    implicit val tc = caseCodecAuto[Timed[Int]]
+    implicit val c = caseCodecAuto[TimedErr]
+    def extract(xs: Bytes): TimedErr = decode[TimedErr](xs)
+    def insert(x: TimedErr): Bytes = encodeToBytes(x)
+  }
 
   type Clients = Set[WsContextData]
   
@@ -68,6 +75,8 @@ object StatsApp extends zio.App {
                       _ <- ZStream.fromIterable(en.xs.takeRight(5)).foreach(x => send(StatMsg(stat=Measure(name, x.value_str), time=x.time, host=host)))
                     } yield ()
                   }
+        errs    <- Kvs.array.all[TimedErr](fid(fid.Errors(host)))
+        _       <- errs.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(exception=en.ex, stacktrace=en.st), time=en.time, host=host)))
       } yield ()
   }
 
@@ -168,8 +177,14 @@ object StatsApp extends zio.App {
                         q   = xs(Math.ceil(xs.size*0.9).toInt).value
                         _  <- Kvs.put(fid(fid.Measures(host)), en_id(en_id.Measure(x.name)), QData(xs, q))
                       } yield ()
-                    case x: client.ErrorMsg   => ZIO.unit.map(_ => println(x)) //todo: Console.live
-                    case x: client.ActionMsg  =>
+                    case x: client.ErrorMsg =>
+                      import x.{exception=>ex, stacktrace=>st}
+                      for {
+                        /* error for host */
+                        _ <- Kvs.array.add(fid(fid.Errors(host)), size=10, TimedErr(ex=ex, st=st, time))
+                        //todo: common error
+                      } yield ()
+                    case x: client.ActionMsg =>
                       for {
                         _ <- Kvs.array.add(fid(fid.ActionLive(host)), size=20, Timed(value=x.action, time=time))
                       } yield ()
