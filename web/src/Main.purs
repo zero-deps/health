@@ -49,25 +49,23 @@ type Props =
   { menu :: Array Menu
   }
 
-data Menu = Nodes | Errors | Paper | Notice
+data Menu = Nodes | Errors | Paper
 derive instance eqMenu :: Eq Menu
 instance showMenu :: Show Menu where
   show Nodes = "Health"
   show Errors = "Errors"
   show Paper = "Paper"
-  show Notice = "Notice"
 
 menuIcon :: Menu -> String
 menuIcon Nodes = "icon-heart-2"
 menuIcon Errors = "icon-alert-circle-exc"
 menuIcon Paper = "icon-paper"
-menuIcon Notice = "icon-caps-small"
 
 view :: Effect Unit
 view = do
   container <- DomOps.byId "container"
   let props =
-        { menu: [ Nodes, Errors, Paper, Notice ]
+        { menu: [ Nodes, Errors, Paper ]
         }
   let element = createLeafElement reactClass props
   void $ ReactDOM.render element container
@@ -185,30 +183,11 @@ reactClass = component "Main" \this -> do
                 ]
               ]
             ]
-      menuContent { menu: Notice } =
-        pure $
-          div [ cn "row" ]
-            [ div [ cn "col-md-12" ]
-              [ div [ cn "card" ]
-                [ div [ cn "card-header" ]
-                  [ h5 [ cn "card-category" ] [ text "Notice" ]
-                  , h2 [ cn "card-title" ] [ text "MIT License" ]
-                  ]
-                , div [ cn "card-body" ]
-                  [ p [] [ text "Copyright (c) 2017 Creative Tim (https://www.creative-tim.com)" ]
-                  , p [] [ text "Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:" ]
-                  , p [] [ text "The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software." ]
-                  , p [] [ text "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE." ]
-                  ]
-                ]
-              ]
-            ]
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
       goto Errors = modifyState this _{ menu = Errors }
       goto Paper = modifyState this _{ menu = Paper }
-      goto Notice = modifyState this _{ menu = Notice }
 
       toggleLeftMenu :: Effect Unit
       toggleLeftMenu = modifyState this \s -> s{ leftMenu = not s.leftMenu }
