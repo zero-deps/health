@@ -7,12 +7,11 @@ import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
 import Data.Either (Either(..))
 import Data.Foldable (find)
-import Data.Map (Map, lookup, unionWith, insertWith, update, alter)
+import Data.Map (Map, lookup, update, alter)
 import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe, isNothing)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
-import Data.Tuple (Tuple(Tuple))
 import Data.Nullable(Nullable, toMaybe)
 import DomOps (cn)
 import DomOps as DomOps
@@ -20,18 +19,17 @@ import Effect (Effect)
 import Effect.Console (error)
 import Errors as ErrorsCom
 import Ext.String (startsWith)
-import Features as FeaturesCom
 import FormatOps (dateTime)
 import Global (readInt)
 import Node as NodeCom
 import Nodes as NodesCom
-import Prelude (class Eq, class Show, Unit, add, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=), (<<<))
+import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=), (<<<))
 import Proto.Uint8Array (Uint8Array)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
 import React.DOM (a, button, div, i, li, nav, p, p', span, text, ul, h5, h2, iframe)
 import React.DOM.Props (href, onClick, src, style)
 import ReactDOM as ReactDOM
-import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData, Feature)
+import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
 
@@ -41,7 +39,6 @@ type State =
   { menu :: Menu
   , nodes :: Map NodeAddr NodeInfo
   , node :: Maybe NodeAddr
-  , features :: Map Feature (Map Number Number)
   , errors :: Array ErrorInfo
   , ws :: WebSocket
   , leftMenu :: Boolean
@@ -52,18 +49,16 @@ type Props =
   { menu :: Array Menu
   }
 
-data Menu = Nodes | Features | Errors | Paper | Notice
+data Menu = Nodes | Errors | Paper | Notice
 derive instance eqMenu :: Eq Menu
 instance showMenu :: Show Menu where
   show Nodes = "Health"
-  show Features = "Features"
   show Errors = "Errors"
   show Paper = "Paper"
   show Notice = "Notice"
 
 menuIcon :: Menu -> String
 menuIcon Nodes = "icon-heart-2"
-menuIcon Features = "icon-bulb-63"
 menuIcon Errors = "icon-alert-circle-exc"
 menuIcon Paper = "icon-paper"
 menuIcon Notice = "icon-caps-small"
@@ -72,7 +67,7 @@ view :: Effect Unit
 view = do
   container <- DomOps.byId "container"
   let props =
-        { menu: [ Nodes, Features, Errors, Paper, Notice ]
+        { menu: [ Nodes, Errors, Paper, Notice ]
         }
   let element = createLeafElement reactClass props
   void $ ReactDOM.render element container
@@ -88,7 +83,6 @@ reactClass = component "Main" \this -> do
       { menu: Nodes
       , nodes: Map.empty
       , node: Nothing
-      , features: Map.empty
       , errors: []
       , ws: ws
       , leftMenu: false
@@ -174,8 +168,6 @@ reactClass = component "Main" \this -> do
                 , ws
                 , openNode: \host -> modifyState this \s -> s{ node = Just host, nodes = update (Just <<< _{ historyLoaded = true }) host s.nodes }
                 }
-      menuContent { menu: Features, features } =
-        pure $ createLeafElement FeaturesCom.reactClass { features: map (\x -> map (\(Tuple t y) -> { t, y }) $ Map.toUnfoldable x) features }
       menuContent { menu: Errors, errors } =
         pure $ createLeafElement ErrorsCom.reactClass { errors, showAddr: true, showTitle: false }
       menuContent { menu: Paper } =
@@ -214,7 +206,6 @@ reactClass = component "Main" \this -> do
 
       goto :: Menu -> Effect Unit
       goto Nodes = modifyState this _{ menu = Nodes, node = Nothing }
-      goto Features = modifyState this _{ menu = Features }
       goto Errors = modifyState this _{ menu = Errors }
       goto Paper = modifyState this _{ menu = Paper }
       goto Notice = modifyState this _{ menu = Notice }
@@ -244,7 +235,6 @@ reactClass = component "Main" \this -> do
           let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
           let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
           let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
-          let feature = if name == "feature" then Just value else Nothing
           updateWith
             { host: host
             , time: time
@@ -252,7 +242,6 @@ reactClass = component "Main" \this -> do
             , measure: Nothing
             , err: Nothing
             , action: Nothing
-            , feature
             }
         Right { val: StatMsg { stat: Measure { name, value }, time, host }} -> do
           let value' = readInt 10 value
@@ -276,7 +265,6 @@ reactClass = component "Main" \this -> do
               }
             , err: Nothing
             , action: Nothing
-            , feature: Nothing
             }
         Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace'}, time, host }} -> do
           let exception = split (Pattern "~") exception'
@@ -290,7 +278,6 @@ reactClass = component "Main" \this -> do
             , measure: Nothing
             , err: Just err
             , action: Nothing
-            , feature: Nothing
             }
         Right { val: StatMsg { stat: Action { action }, time, host }} -> updateWith
           { host: host
@@ -299,7 +286,6 @@ reactClass = component "Main" \this -> do
           , measure: Nothing
           , err: Nothing
           , action: Just action
-          , feature: Nothing
           }
         Left _ -> error "bad encoding"
       where
@@ -497,15 +483,6 @@ reactClass = component "Main" \this -> do
         
         case a.err of
           Just err -> modifyState this \s' -> s' { errors = err : (take 99 s'.errors) }
-          Nothing -> pure unit
-
-        case a.feature of
-          Just v ->
-            case split (Pattern "~") v of
-              [ name, num ] -> do
-                let v' = Map.singleton time' $ readInt 10 num
-                modifyState this \s' -> s'{ features = insertWith (unionWith add) name v' s'.features }
-              _ -> pure unit
           Nothing -> pure unit
 
     errHandler :: Array String -> Effect Unit

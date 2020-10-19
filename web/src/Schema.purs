@@ -4,7 +4,6 @@ import Data.Maybe (Maybe)
 import Prelude (class Eq)
 
 type NodeAddr = String
-type Feature = String
 
 type ErrorInfo =
   { exception :: Array String
@@ -21,7 +20,6 @@ type UpdateData =
   , measure :: Maybe MeasureUpdate
   , action :: Maybe String
   , err :: Maybe ErrorInfo
-  , feature :: Maybe String
   }
 
 type MetricsUpdate =
