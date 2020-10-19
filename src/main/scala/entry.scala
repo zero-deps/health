@@ -12,7 +12,9 @@ case class AvgData
   ( @N(1) value: Double
   , @N(2) id: Long
   , @N(3) n: Long
-  )
+  ) {
+  val value_str = value.toString
+}
 
 case class QData
   ( @N(1) xs: Vector[Timed[Int]]

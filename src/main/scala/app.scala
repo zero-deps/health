@@ -2,7 +2,7 @@ package .stats
 
 import annotation.unused
 
-import zero.ext.{seq=>_,_}, option._
+import zero.ext.{seq=>_,_}, option._, int._
 import zio._, nio._, core._, clock._, stream._
 import kvs.{Err=>_,Throwed=>_,_}, seq._
 import ftier._, ws._, udp._
@@ -58,6 +58,8 @@ object StatsApp extends zio.App {
         startl  <- cpumeml.mapError(KvsErr).map(en => {send(StatMsg(stat=Metric(name="cpu_mem", value=en.value), time=en.time, host=host)); en.time}).runHead
         actions <- Kvs.array.all[Timed[String]](fid(fid.ActionLive(host)))
         _       <- actions.mapError(KvsErr).dropWhile(en => startl.exists(en.time < _)).foreach(en => send(StatMsg(stat=Action(en.value), time=en.time, host=host)))
+        cpuday  <- Kvs.array.all[AvgData](fid(fid.CpuDay(host)))
+        _       <- cpuday.mapError(KvsErr).foreach(en => send(StatMsg(stat=Metric(name="cpu.day", value=en.value_str), time=en.id*i"3'600'000", host=host)))
         measure <- Kvs.all[QData](fid(fid.Measures(host)))
         _       <- measure.mapError(KvsErr).foreach{ case (k, en) =>
                     val name = en_id.measure(k).name

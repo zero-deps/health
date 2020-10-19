@@ -49,16 +49,16 @@
         //   case EnData(value, time, host) =>
         //     system.eventStream publish StatMsg(Metric("cpu_mem", value), time=time, host=host); time
         // }.force.headOption).getOrElse(0L);
-        {
-          kvs.all(fid(fid.CpuHour(host))).map_{ xs =>
-            val xs1 = xs.collect{ case Right((_, a)) => a }.sortBy(_.time)
-            val min = xs1.lastOption.map(_.time).getOrElse(0L)-60*60*1000 //todo: refactoring
-            xs1.dropWhile(_.time < min).foreach{
-              case EnData(value, time, host) =>
-                system.eventStream publish StatMsg(Metric("cpu.hour", value), time=time, host=host)
-            }
-          }
-        }
+        // {
+        //   kvs.all(fid(fid.CpuHour(host))).map_{ xs =>
+        //     val xs1 = xs.collect{ case Right((_, a)) => a }.sortBy(_.time)
+        //     val min = xs1.lastOption.map(_.time).getOrElse(0L)-60*60*1000 //todo: refactoring
+        //     xs1.dropWhile(_.time < min).foreach{
+        //       case EnData(value, time, host) =>
+        //         system.eventStream publish StatMsg(Metric("cpu.hour", value), time=time, host=host)
+        //     }
+        //   }
+        // }
         // kvs.all(fid(fid.SearchTs(host))).map_{ xs =>
         //   val xs1 = xs.collect{ case Right((_, a)) => a }
         //   val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
