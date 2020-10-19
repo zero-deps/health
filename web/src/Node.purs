@@ -5,9 +5,8 @@ module Node
 import BarChart as BarChart
 import BigChart as BigChart
 import CpuChart as CpuChart
-import Data.Array (filter)
-import Data.Foldable (find)
-import Data.Maybe (Maybe, fromMaybe, isNothing)
+import Data.Array (concatMap, singleton)
+import Data.Maybe (Maybe, fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
 import Errors as Errors
@@ -192,11 +191,13 @@ reactClass = component "Node" \this -> do
       , td [ cn "text-center", style { fontFamily: "Fira Code" }, colSpan 2 ]
         [ text $ fromMaybe "--" p.version ]
       ]
-    ] <> (map (\{ name, value } ->
-      tr []
-      [ td [] [ text name ]
-      , td [ cn "text-center", colSpan 2 ] [ text value ]
-      ]) $ filter (\x -> isNothing $ find (_ == x.name) [ "uptime", "thr", "fd", "fs./" ]) p.metrics)
+    ] <> (concatMap (case _ of
+        { name: "kvs.size", value } -> singleton $
+          tr []
+            [ td [] [ text "Database" ]
+            , td [ cn "text-center", colSpan 2 ] [ text value ]
+            ]
+        _ -> []) p.metrics)
   fsCard :: FsInfo -> ReactElement
   fsCard x = card "File System"
     [ th' [ text "" ]
