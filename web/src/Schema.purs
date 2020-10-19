@@ -32,7 +32,8 @@ type MetricsUpdate =
   , fs :: Maybe (Array String)
   , fd :: Maybe (Array String)
   , thr :: Maybe (Array String)
-  , kvsSize_year :: Maybe String
+  , name :: String
+  , value :: String
   }
 
 type MeasureUpdate =
@@ -83,8 +84,8 @@ type NodeData =
   , staticGen_points :: Array { t :: String, y :: Number }
   , staticGenYear_points :: Array NumPoint
   , staticGen_thirdQ :: Maybe String
-  , kvsSizeYearPoints :: Array NumPoint
   , importLog :: Array { t :: String, msg :: String }
+  , metrics :: Array { name :: String, value :: String }
   }
 
 data ChartRange = Live | Hour

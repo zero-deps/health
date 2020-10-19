@@ -13,7 +13,7 @@ import Errors as Errors
 import FormatOps (duration, formatNum, milliseconds)
 import Prelude (bind, map, pure, ($), (<>), (==))
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, createLeafElement, modifyState)
-import React.DOM (div, div', h2, h3, h5, label, span, text, i, table, thead, tbody', th', th, tr', td', td)
+import React.DOM (div, div', h2, h3, h5, label, span, text, i, table, thead, tbody', th', th, tr', tr, td', td)
 import React.DOM.Props (style, colSpan, onClick)
 import Schema (FdInfo, FsInfo, NodeData, ThrInfo, ChartRange(Live, Hour))
 
@@ -97,17 +97,6 @@ reactClass = component "Node" \this -> do
           ]
         ]
       , div [ cn "row" ]
-        [ div [ cn "col-12" ]
-          [ div [ cn "card card-chart" ]
-            [ div [ cn "card-header" ] [ h5 [ cn "card-category" ] [ text "Storage" ] ]
-            , div [ cn "card-body" ]
-              [ div [ cn "chart-area" ]
-                [ createLeafElement YearChart.reactClass { points: p.kvsSizeYearPoints, label: "KB" } ]
-              ]
-            ]
-          ]
-        ]
-      , div [ cn "row" ]
         [ fromMaybe (div' []) (map fsCard p.fs)
         , fromMaybe (div' []) (map fdCard p.fd)
         ]
@@ -178,7 +167,7 @@ reactClass = component "Node" \this -> do
     [ th' [ text "Name" ]
     , th [ cn "text-right" ] [ text "Value" ]
     , th' [ text "Unit" ]
-    ]
+    ] $
     [ tr'
       [ td' [ text "Uptime" ]
       , td [ cn "text-right", style { fontFamily: "Fira Code" } ]
@@ -214,7 +203,11 @@ reactClass = component "Node" \this -> do
       , td [ cn "text-center", style { fontFamily: "Fira Code" }, colSpan 2 ]
         [ text $ fromMaybe "--" p.version ]
       ]
-    ]
+    ] <> map (\{ name, value } ->
+      tr []
+      [ td [] [ text name ]
+      , td [ cn "text-right", style { fontFamily: "Fira Code" } ] [ text value ]
+      ]) p.metrics
   fsCard :: FsInfo -> ReactElement
   fsCard x = card "File System"
     [ th' [ text "" ]

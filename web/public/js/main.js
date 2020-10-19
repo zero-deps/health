@@ -654,10 +654,24 @@ var PS = {};
   var foldMap = function (dict) {
       return dict.foldMap;
   };
+  var find = function (dictFoldable) {
+      return function (p) {
+          var go = function (v) {
+              return function (v1) {
+                  if (v instanceof Data_Maybe.Nothing && p(v1)) {
+                      return new Data_Maybe.Just(v1);
+                  };
+                  return v;
+              };
+          };
+          return foldl(dictFoldable)(go)(Data_Maybe.Nothing.value);
+      };
+  };
   exports["Foldable"] = Foldable;
   exports["foldr"] = foldr;
   exports["foldl"] = foldl;
   exports["foldMap"] = foldMap;
+  exports["find"] = find;
   exports["maximum"] = maximum;
   exports["foldableArray"] = foldableArray;
 })(PS);
@@ -6121,6 +6135,7 @@ var PS = {};
   var Data_Eq = $PS["Data.Eq"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_Maybe = $PS["Data.Maybe"];
+  var Data_Semigroup = $PS["Data.Semigroup"];
   var DomOps = $PS["DomOps"];
   var Errors = $PS["Errors"];
   var FormatOps = $PS["FormatOps"];
@@ -6165,7 +6180,7 @@ var PS = {};
       };
       var othCard = function (p) {
           var uptime = Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.duration)(p.uptime);
-          return card("Other Metrics")([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+          return card("Other Metrics")([ React_DOM["th'"]([ React_DOM.text("Name") ]), React_DOM.th([ DomOps.cn("text-right") ])([ React_DOM.text("Value") ]), React_DOM["th'"]([ React_DOM.text("Unit") ]) ])(Data_Semigroup.append(Data_Semigroup.semigroupArray)([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Uptime") ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
               fontFamily: "Fira Code"
           }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
               return v.value;
@@ -6181,7 +6196,11 @@ var PS = {};
               fontFamily: "Fira Code"
           }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memTotal))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Version") ]), React_DOM.td([ DomOps.cn("text-center"), React_DOM_Props.style({
               fontFamily: "Fira Code"
-          }), React_DOM_Props.colSpan(2) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(p.version)) ]) ]) ]);
+          }), React_DOM_Props.colSpan(2) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(p.version)) ]) ]) ])(Data_Functor.map(Data_Functor.functorArray)(function (v) {
+              return React_DOM.tr([  ])([ React_DOM.td([  ])([ React_DOM.text(v.name) ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
+                  fontFamily: "Fira Code"
+              }) ])([ React_DOM.text(v.value) ]) ]);
+          })(p.metrics)));
       };
       var thrCard = function (x) {
           return card("Threads")([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Count") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("All") ]), React_DOM.td([ React_DOM_Props.style({
@@ -6215,8 +6234,8 @@ var PS = {};
               var p = React.getProps($$this)();
               var s = React.getState($$this)();
               return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(p.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                  var $12 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
-                  if ($12) {
+                  var $16 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
+                  if ($16) {
                       return " active";
                   };
                   return "";
@@ -6227,8 +6246,8 @@ var PS = {};
                       };
                   });
               }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                  var $13 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
-                  if ($13) {
+                  var $17 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
+                  if ($17) {
                       return " active";
                   };
                   return "";
@@ -6239,8 +6258,8 @@ var PS = {};
                       };
                   });
               }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Day") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("D") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area" + (function () {
-                  var $14 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
-                  if ($14) {
+                  var $18 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
+                  if ($18) {
                       return "";
                   };
                   return " d-none";
@@ -6257,8 +6276,8 @@ var PS = {};
                       return v.label;
                   })(p.actPoints)
               }) ]), React_DOM.div([ DomOps.cn("chart-area" + (function () {
-                  var $15 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
-                  if ($15) {
+                  var $19 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
+                  if ($19) {
                       return "";
                   };
                   return " d-none";
@@ -6267,9 +6286,6 @@ var PS = {};
               }) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ barChart("Search: Translations")(p.searchTs_thirdQ)(p.searchTs_points), barChart("Search: Contents")(p.searchWc_thirdQ)(p.searchWc_points), barChart("Search: Files")(p.searchFs_thirdQ)(p.searchFs_points), barChart("Static: Generation")(p.staticGen_thirdQ)(p.staticGen_points), barChart("Reindex")(p.reindexAll_thirdQ)(p.reindexAll_points) ]), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Static: Generation") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(YearChart.reactClass)({
                   points: p.staticGenYear_points,
                   label: "ms"
-              }) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Storage") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area") ])([ React.createLeafElement()(YearChart.reactClass)({
-                  points: p.kvsSizeYearPoints,
-                  label: "KB"
               }) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("row") ])([ Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fsCard)(p.fs)), Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(fdCard)(p.fd)) ]), React_DOM.div([ DomOps.cn("row") ])([ Data_Maybe.fromMaybe(React_DOM["div'"]([  ]))(Data_Functor.map(Data_Maybe.functorMaybe)(thrCard)(p.thr)), othCard(p) ]), React_DOM.div([ DomOps.cn("row") ])([ importCard(p) ]), React.createLeafElement()(Errors.reactClass)({
                   errors: p.errs,
                   showAddr: false,
@@ -6756,6 +6772,7 @@ var PS = {};
   var Data_Array = $PS["Data.Array"];
   var Data_Either = $PS["Data.Either"];
   var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_Map_Internal = $PS["Data.Map.Internal"];
   var Data_Maybe = $PS["Data.Maybe"];
@@ -6834,7 +6851,7 @@ var PS = {};
       if (v instanceof Notice) {
           return "Notice";
       };
-      throw new Error("Failed pattern match at Main (line 56, column 1 - line 61, column 25): " + [ v.constructor.name ]);
+      throw new Error("Failed pattern match at Main (line 57, column 1 - line 62, column 25): " + [ v.constructor.name ]);
   });
   var menuIcon = function (v) {
       if (v instanceof Nodes) {
@@ -6852,7 +6869,7 @@ var PS = {};
       if (v instanceof Notice) {
           return "icon-caps-small";
       };
-      throw new Error("Failed pattern match at Main (line 63, column 1 - line 63, column 27): " + [ v.constructor.name ]);
+      throw new Error("Failed pattern match at Main (line 64, column 1 - line 64, column 27): " + [ v.constructor.name ]);
   };
   var eqMenu = new Data_Eq.Eq(function (x) {
       return function (y) {
@@ -6927,7 +6944,7 @@ var PS = {};
                   if (v1 instanceof Data_Maybe.Nothing) {
                       return Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.div([  ])([ React_DOM.text("Node doesn't exist anymore.") ]));
                   };
-                  throw new Error("Failed pattern match at Main (line 166, column 9 - line 169, column 74): " + [ v1.constructor.name ]);
+                  throw new Error("Failed pattern match at Main (line 167, column 9 - line 170, column 74): " + [ v1.constructor.name ]);
               };
               if (v.menu instanceof Nodes) {
                   return Control_Applicative.pure(Effect.applicativeEffect)(React.createLeafElement()(Nodes_1.reactClass)({
@@ -6937,7 +6954,7 @@ var PS = {};
                           return React.modifyState($$this)(function (s) {
                               return {
                                   menu: s.menu,
-                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($206) {
+                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($208) {
                                       return Data_Maybe.Just.create((function (v2) {
                                           return {
                                               historyLoaded: true,
@@ -6946,7 +6963,7 @@ var PS = {};
                                               lastUpdate_ms: v2.lastUpdate_ms,
                                               nodeData: v2.nodeData
                                           };
-                                      })($206));
+                                      })($208));
                                   })(host)(s.nodes),
                                   node: new Data_Maybe.Just(host),
                                   features: s.features,
@@ -6987,7 +7004,7 @@ var PS = {};
               if (v.menu instanceof Notice) {
                   return Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Notice") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.text("MIT License") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.p([  ])([ React_DOM.text("Copyright (c) 2017 Creative Tim (https://www.creative-tim.com)") ]), React_DOM.p([  ])([ React_DOM.text("Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:") ]), React_DOM.p([  ])([ React_DOM.text("The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.") ]), React_DOM.p([  ])([ React_DOM.text("THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.") ]) ]) ]) ]) ]));
               };
-              throw new Error("Failed pattern match at Main (line 164, column 7 - line 164, column 50): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 165, column 7 - line 165, column 50): " + [ v.constructor.name ]);
           };
           var $$goto = function (v) {
               if (v instanceof Nodes) {
@@ -7065,7 +7082,7 @@ var PS = {};
                       };
                   });
               };
-              throw new Error("Failed pattern match at Main (line 214, column 7 - line 214, column 34): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 215, column 7 - line 215, column 34): " + [ v.constructor.name ]);
           };
           return function __do() {
               var s = React.getState($$this)();
@@ -7078,8 +7095,8 @@ var PS = {};
                   return "";
               })()) ])([ React_DOM.div([ DomOps.cn("sidebar") ])([ React_DOM.div([ DomOps.cn("sidebar-wrapper") ])([ React_DOM.ul([ DomOps.cn("nav") ])(Data_Functor.map(Data_Functor.functorArray)(function (x) {
                   return React_DOM.li((function () {
-                      var $94 = Data_Eq.eq(eqMenu)(x)(s.menu);
-                      if ($94) {
+                      var $93 = Data_Eq.eq(eqMenu)(x)(s.menu);
+                      if ($93) {
                           return [ DomOps.cn("active") ];
                       };
                       return [  ];
@@ -7149,14 +7166,18 @@ var PS = {};
                       })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
                           return v.cpu_hour;
                       }));
-                      var kvsSizeYearPoint = Data_Functor.map(Data_Maybe.functorMaybe)(function (b) {
-                          return {
-                              t: a.time,
-                              y: Global.readInt(10)(b)
+                      var metrics = (function () {
+                          if (a.metrics instanceof Data_Maybe.Just) {
+                              return Data_Array.singleton({
+                                  name: a.metrics.value0.name,
+                                  value: a.metrics.value0.value
+                              });
                           };
-                      })(Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v) {
-                          return v.kvsSize_year;
-                      }));
+                          if (a.metrics instanceof Data_Maybe.Nothing) {
+                              return [  ];
+                          };
+                          throw new Error("Failed pattern match at Main (line 321, column 23 - line 323, column 28): " + [ a.metrics.constructor.name ]);
+                      })();
                       var mem = (function () {
                           if (cpu_mem instanceof Data_Maybe.Just && cpu_mem.value0.length === 4) {
                               var free = Global.readInt(10)(cpu_mem["value0"][1]);
@@ -7178,7 +7199,7 @@ var PS = {};
                           if (cpu_mem instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 322, column 16 - line 330, column 34): " + [ cpu_mem.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 325, column 16 - line 333, column 34): " + [ cpu_mem.constructor.name ]);
                       })();
                       var memUsed = Data_Functor.map(Data_Maybe.functorMaybe)(function (v) {
                           return v.used;
@@ -7217,7 +7238,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 336, column 15 - line 343, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 339, column 15 - line 346, column 34): " + [ v.constructor.name ]);
                       })();
                       var fd = (function () {
                           var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
@@ -7239,7 +7260,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 345, column 15 - line 351, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 348, column 15 - line 354, column 34): " + [ v.constructor.name ]);
                       })();
                       var thr = (function () {
                           var v = Control_Bind.bind(Data_Maybe.bindMaybe)(a.metrics)(function (v1) {
@@ -7267,7 +7288,7 @@ var PS = {};
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Nothing.value;
                           };
-                          throw new Error("Failed pattern match at Main (line 353, column 16 - line 362, column 34): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 356, column 16 - line 365, column 34): " + [ v.constructor.name ]);
                       })();
                       var action = Data_Maybe.fromMaybe([  ])(Data_Functor.map(Data_Maybe.functorMaybe)(function (label) {
                           return [ {
@@ -7375,11 +7396,6 @@ var PS = {};
                                       return y.t !== x.t && y.t >= x.t - 60.0 * 60.0 * 1000.0;
                                   })(v.value0.nodeData.value0.cpuHourPoints))(x);
                               })(cpuHourPoint);
-                              var kvsSizeYearPoints$prime = Data_Maybe.maybe(v.value0.nodeData.value0.kvsSizeYearPoints)(function (x) {
-                                  return Data_Array.snoc(Data_Array.filter(function (y) {
-                                      return y.t !== x.t && y.t >= x.t - 365.0 * 24.0 * 3600.0 * 1000.0;
-                                  })(v.value0.nodeData.value0.kvsSizeYearPoints))(x);
-                              })(kvsSizeYearPoint);
                               var searchTs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.searchTs_points)(searchTs_points));
                               var searchWc_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.searchWc_points)(searchWc_points));
                               var searchFs_points$prime = Data_Array.takeEnd(5)(Data_Semigroup.append(Data_Semigroup.semigroupArray)(v.value0.nodeData.value0.searchFs_points)(searchFs_points));
@@ -7420,7 +7436,11 @@ var PS = {};
                                       staticGen_points: staticGen_points$prime,
                                       staticGenYear_points: staticGenYear_points$prime,
                                       staticGen_thirdQ: Control_Alt.alt(Data_Maybe.altMaybe)(staticGen_thirdQ)(v.value0.nodeData.value0.staticGen_thirdQ),
-                                      kvsSizeYearPoints: kvsSizeYearPoints$prime,
+                                      metrics: Data_Semigroup.append(Data_Semigroup.semigroupArray)(metrics)(Data_Array.filter(function (x) {
+                                          return Data_Maybe.isNothing(Data_Foldable.find(Data_Foldable.foldableArray)(function (x$prime) {
+                                              return x$prime.name === x.name;
+                                          })(metrics));
+                                      })(v.value0.nodeData.value0.metrics)),
                                       importLog: importLog$prime
                                   }),
                                   historyLoaded: v.value0.historyLoaded,
@@ -7457,7 +7477,7 @@ var PS = {};
                                       staticGen_points: staticGen_points,
                                       staticGenYear_points: Data_Maybe.maybe([  ])(Data_Array.singleton)(staticGenYearPoint),
                                       staticGen_thirdQ: staticGen_thirdQ,
-                                      kvsSizeYearPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(kvsSizeYearPoint),
+                                      metrics: metrics,
                                       importLog: importLog
                                   }),
                                   historyLoaded: v.value0.historyLoaded,
@@ -7497,12 +7517,12 @@ var PS = {};
                                       staticGen_points: staticGen_points,
                                       staticGenYear_points: Data_Maybe.maybe([  ])(Data_Array.singleton)(staticGenYearPoint),
                                       staticGen_thirdQ: staticGen_thirdQ,
-                                      kvsSizeYearPoints: Data_Maybe.maybe([  ])(Data_Array.singleton)(kvsSizeYearPoint),
+                                      metrics: metrics,
                                       importLog: importLog
                                   })
                               });
                           };
-                          throw new Error("Failed pattern match at Main (line 385, column 29 - line 512, column 18): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 388, column 29 - line 514, column 18): " + [ v.constructor.name ]);
                       })(a.host)(s.nodes);
                       React.modifyState($$this)(function (v) {
                           return {
@@ -7536,7 +7556,7 @@ var PS = {};
                           if (a.err instanceof Data_Maybe.Nothing) {
                               return Data_Unit.unit;
                           };
-                          throw new Error("Failed pattern match at Main (line 515, column 9 - line 517, column 31): " + [ a.err.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 517, column 9 - line 519, column 31): " + [ a.err.constructor.name ]);
                       })();
                       if (a.feature instanceof Data_Maybe.Just) {
                           var v1 = Data_String_Common.split("~")(a.feature.value0);
@@ -7561,7 +7581,7 @@ var PS = {};
                       if (a.feature instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 519, column 9 - line 526, column 31): " + [ a.feature.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 521, column 9 - line 528, column 31): " + [ a.feature.constructor.name ]);
                   };
               };
               var v = Api_Push.decodePush(bytes);
@@ -7588,7 +7608,7 @@ var PS = {};
                                       nodeData: v2.value0.nodeData
                                   });
                               };
-                              throw new Error("Failed pattern match at Main (line 234, column 52 - line 236, column 118): " + [ v2.constructor.name ]);
+                              throw new Error("Failed pattern match at Main (line 235, column 52 - line 237, column 118): " + [ v2.constructor.name ]);
                           })(v.value0.val.value0.host)(s.nodes),
                           node: s.node,
                           features: s.features,
@@ -7602,64 +7622,57 @@ var PS = {};
               };
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Metric)) {
                   var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $150 = v.value0.val.value0.stat.value0.name === "cpu_mem";
-                      if ($150) {
+                      var $153 = v.value0.val.value0.stat.value0.name === "cpu_mem";
+                      if ($153) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var cpu_hour = (function () {
-                      var $151 = v.value0.val.value0.stat.value0.name === "cpu.day";
-                      if ($151) {
+                      var $154 = v.value0.val.value0.stat.value0.name === "cpu.day";
+                      if ($154) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var uptime = (function () {
-                      var $152 = v.value0.val.value0.stat.value0.name === "uptime";
-                      if ($152) {
+                      var $155 = v.value0.val.value0.stat.value0.name === "uptime";
+                      if ($155) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var version = (function () {
-                      var $153 = v.value0.val.value0.stat.value0.name === "v";
-                      if ($153) {
+                      var $156 = v.value0.val.value0.stat.value0.name === "v";
+                      if ($156) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $154 = v.value0.val.value0.stat.value0.name === "fs./";
-                      if ($154) {
+                      var $157 = v.value0.val.value0.stat.value0.name === "fs./";
+                      if ($157) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $155 = v.value0.val.value0.stat.value0.name === "fd";
-                      if ($155) {
+                      var $158 = v.value0.val.value0.stat.value0.name === "fd";
+                      if ($158) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $156 = v.value0.val.value0.stat.value0.name === "thr";
-                      if ($156) {
+                      var $159 = v.value0.val.value0.stat.value0.name === "thr";
+                      if ($159) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
-                  var kvsSize_year = (function () {
-                      var $157 = v.value0.val.value0.stat.value0.name === "kvs.size.year";
-                      if ($157) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
                   var feature = (function () {
-                      var $158 = v.value0.val.value0.stat.value0.name === "feature";
-                      if ($158) {
+                      var $160 = v.value0.val.value0.stat.value0.name === "feature";
+                      if ($160) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7675,7 +7688,8 @@ var PS = {};
                           fs: fs,
                           fd: fd,
                           thr: thr,
-                          kvsSize_year: kvsSize_year
+                          name: v.value0.val.value0.stat.value0.name,
+                          value: v.value0.val.value0.stat.value0.value
                       }),
                       measure: Data_Maybe.Nothing.value,
                       err: Data_Maybe.Nothing.value,
@@ -7686,78 +7700,78 @@ var PS = {};
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Measure)) {
                   var value$prime = Global.readInt(10)(v.value0.val.value0.stat.value0.value);
                   var searchTs = (function () {
-                      var $168 = v.value0.val.value0.stat.value0.name === "search.ts";
-                      if ($168) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var searchTs_thirdQ = (function () {
-                      var $169 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
-                      if ($169) {
-                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
-                      };
-                      return Data_Maybe.Nothing.value;
-                  })();
-                  var searchWc = (function () {
-                      var $170 = v.value0.val.value0.stat.value0.name === "search.wc";
+                      var $170 = v.value0.val.value0.stat.value0.name === "search.ts";
                       if ($170) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var searchWc_thirdQ = (function () {
-                      var $171 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                  var searchTs_thirdQ = (function () {
+                      var $171 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
                       if ($171) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var searchFs = (function () {
-                      var $172 = v.value0.val.value0.stat.value0.name === "search.fs";
+                  var searchWc = (function () {
+                      var $172 = v.value0.val.value0.stat.value0.name === "search.wc";
                       if ($172) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var searchFs_thirdQ = (function () {
-                      var $173 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
+                  var searchWc_thirdQ = (function () {
+                      var $173 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
                       if ($173) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen = (function () {
-                      var $174 = v.value0.val.value0.stat.value0.name === "static.gen";
+                  var searchFs = (function () {
+                      var $174 = v.value0.val.value0.stat.value0.name === "search.fs";
                       if ($174) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen_thirdQ = (function () {
-                      var $175 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
+                  var searchFs_thirdQ = (function () {
+                      var $175 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
                       if ($175) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var staticGen_year = (function () {
-                      var $176 = v.value0.val.value0.stat.value0.name === "static.gen.year";
+                  var staticGen = (function () {
+                      var $176 = v.value0.val.value0.stat.value0.name === "static.gen";
                       if ($176) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexAll = (function () {
-                      var $177 = v.value0.val.value0.stat.value0.name === "reindex.all";
+                  var staticGen_thirdQ = (function () {
+                      var $177 = v.value0.val.value0.stat.value0.name === "static.gen.thirdQ";
                       if ($177) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
-                  var reindexAll_thirdQ = (function () {
-                      var $178 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
+                  var staticGen_year = (function () {
+                      var $178 = v.value0.val.value0.stat.value0.name === "static.gen.year";
                       if ($178) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })();
+                  var reindexAll = (function () {
+                      var $179 = v.value0.val.value0.stat.value0.name === "reindex.all";
+                      if ($179) {
+                          return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
+                      };
+                      return Data_Maybe.Nothing.value;
+                  })();
+                  var reindexAll_thirdQ = (function () {
+                      var $180 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
+                      if ($180) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7819,7 +7833,7 @@ var PS = {};
               if (v instanceof Data_Either.Left) {
                   return Effect_Console.error("bad encoding");
               };
-              throw new Error("Failed pattern match at Main (line 232, column 7 - line 308, column 39): " + [ v.constructor.name ]);
+              throw new Error("Failed pattern match at Main (line 233, column 7 - line 308, column 39): " + [ v.constructor.name ]);
           };
       };
       var errHandler = function (xs) {

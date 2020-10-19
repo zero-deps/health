@@ -6,9 +6,10 @@ import Api.Push (Push(StatMsg, HostMsg), Stat(Metric, Measure, Error, Action), d
 import Control.Alt ((<|>))
 import Data.Array (dropEnd, filter, fromFoldable, head, last, singleton, snoc, take, takeEnd, (:))
 import Data.Either (Either(..))
+import Data.Foldable (find)
 import Data.Map (Map, lookup, unionWith, insertWith, update, alter)
 import Data.Map as Map
-import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe)
+import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe, isNothing)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
 import Data.Tuple (Tuple(Tuple))
@@ -243,12 +244,11 @@ reactClass = component "Main" \this -> do
           let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing
           let fd = map (split (Pattern "~")) $ if name == "fd" then Just value else Nothing
           let thr = map (split (Pattern "~")) $ if name == "thr" then Just value else Nothing
-          let kvsSize_year = if name == "kvs.size.year" then Just value else Nothing
           let feature = if name == "feature" then Just value else Nothing
           updateWith
             { host: host
             , time: time
-            , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, kvsSize_year }
+            , metrics: Just { cpu_mem, cpu_hour, uptime, version, fs, fd, thr, name, value }
             , measure: Nothing
             , err: Nothing
             , action: Nothing
@@ -317,7 +317,10 @@ reactClass = component "Main" \this -> do
         let cpu = cpu_mem >>= head
         let cpuPoints = fromMaybe [] $ map (\b -> [{ t: time', y: readInt 10 b }]) cpu
         let cpuHourPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.cpu_hour
-        let kvsSizeYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.metrics >>= _.kvsSize_year
+
+        let metrics = case a.metrics of
+              Just { name, value } -> singleton { name, value }
+              Nothing -> []
         
         mem <- case cpu_mem of
           Just ([ _, free', total', heap' ]) -> do
@@ -396,7 +399,6 @@ reactClass = component "Main" \this -> do
                 let actPoints'' = filter (\x -> x.t > minTime) actPoints'
 
                 let cpuHourPoints' = maybe node.cpuHourPoints (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 60.0*60.0*1000.0) node.cpuHourPoints) x) cpuHourPoint
-                let kvsSizeYearPoints' = maybe node.kvsSizeYearPoints (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 365.0*24.0*3600.0*1000.0) node.kvsSizeYearPoints) x) kvsSizeYearPoint
 
                 let searchTs_points'  = takeEnd 5 $ node.searchTs_points  <> searchTs_points
                 let searchWc_points'  = takeEnd 5 $ node.searchWc_points  <> searchWc_points
@@ -439,7 +441,7 @@ reactClass = component "Main" \this -> do
                     , staticGen_points = staticGen_points'
                     , staticGenYear_points = staticGenYear_points'
                     , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
-                    , kvsSizeYearPoints = kvsSizeYearPoints'
+                    , metrics = metrics <> (filter (\x -> isNothing $ find (\x' -> x'.name == x.name) metrics) node.metrics)
                     , importLog = importLog'
                     }
                   }
@@ -471,7 +473,7 @@ reactClass = component "Main" \this -> do
                   , staticGen_points: staticGen_points
                   , staticGenYear_points: maybe [] singleton staticGenYearPoint
                   , staticGen_thirdQ: staticGen_thirdQ
-                  , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
+                  , metrics
                   , importLog: importLog
                   }
                 }
@@ -506,7 +508,7 @@ reactClass = component "Main" \this -> do
                   , staticGen_points: staticGen_points
                   , staticGenYear_points: maybe [] singleton staticGenYearPoint
                   , staticGen_thirdQ: staticGen_thirdQ
-                  , kvsSizeYearPoints: maybe [] singleton kvsSizeYearPoint
+                  , metrics
                   , importLog: importLog
                   }
                 }) a.host s.nodes

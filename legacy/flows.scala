@@ -102,9 +102,9 @@
         kvs.all(fid(fid.StaticGenYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
           case EnData(value, time, host) => system.eventStream publish StatMsg(Measure("static.gen.year", value), time=time, host=host)
         })
-        kvs.all(fid(fid.KvsSizeYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
-          case EnData(value, time, host) => system.eventStream publish StatMsg(Metric("kvs.size.year", value), time=time, host=host)
-        })
+        // kvs.all(fid(fid.KvsSizeYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
+        //   case EnData(value, time, host) => system.eventStream publish StatMsg(Metric("kvs.size.year", value), time=time, host=host)
+        // })
         // kvs.all(fid(fid.ActionLive(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time < live_start).foreach{
         //   case EnData(action, time, host) => system.eventStream publish StatMsg(Action(action), time=time, host=host)
         // })
@@ -212,9 +212,9 @@
         case StatMsg(Measure(name@("static.gen"), value), time, host) =>
           val (v1, t1) = saveYearValue(name, value.toLong, time, host)
           system.eventStream.publish(StatMsg(Measure(s"$name.year", v1.toString), time=t1, host=host))
-        case StatMsg(Metric(name@"kvs.size", value), time, host) =>
-          val (v1, t1) = saveYearValue(name, value.toLong/1024, time, host)
-          system.eventStream.publish(StatMsg(Metric(s"$name.year", v1.toString), time=t1, host=host))
+        // case StatMsg(Metric(name@"kvs.size", value), time, host) =>
+        //   val (v1, t1) = saveYearValue(name, value.toLong/1024, time, host)
+        //   system.eventStream.publish(StatMsg(Metric(s"$name.year", v1.toString), time=t1, host=host))
       }
       val save_feature = Flow[Push].collect{
         case StatMsg(Metric("feature", name), time, host) =>
