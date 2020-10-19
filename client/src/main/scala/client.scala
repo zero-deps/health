@@ -29,7 +29,12 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
   }
 
   def send(udp: ActorRef)(msg: ClientMsg): Unit = {
-    udp ! Udp.Send(ByteString(encode[ClientMsg](msg)), remote)
+    val encoded = encode[ClientMsg](msg)
+    val len = encoded.length
+    if (len > conf.msgSize)
+      log.error(s"message has length $len")
+    else
+      udp ! Udp.Send(ByteString(encoded), remote)
   }
 
   def ready(udp: ActorRef): Receive = {

@@ -1,5 +1,5 @@
 package .stats.client
 
 object conf {
-  val msgSize = 128
+  val msgSize = 128 /* bytes */
 }
