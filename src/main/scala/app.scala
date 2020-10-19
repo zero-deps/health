@@ -3,7 +3,7 @@ package .stats
 import annotation.unused
 
 import zero.ext.{seq=>_,_}, option._, int._
-import zio._, nio._, core._, clock._, stream._
+import zio._, nio._, core._, clock._, stream._, console._
 import kvs.{Err=>_,Throwed=>_,_}, seq._
 import ftier._, ws._, udp._
 import com.typesafe.config.ConfigFactory
@@ -62,9 +62,9 @@ object StatsApp extends zio.App {
         metrics <- Kvs.all[Timed[String]](fid(fid.Metrics(host)))
         _       <- metrics.mapError(KvsErr).foreach{ case (k, en) => send(StatMsg(stat=Metric(name=en_id.metric(k).name, value=en.value), time=en.time, host=host))}
         cpumeml <- Kvs.array.all[Timed[String]](fid(fid.CpuMemLive(host)))
-        startl  <- cpumeml.mapError(KvsErr).map(en => {send(StatMsg(stat=Metric(name="cpu_mem", value=en.value), time=en.time, host=host)); en.time}).runHead
+        _       <- cpumeml.mapError(KvsErr).foreach(en => send(StatMsg(stat=Metric(name="cpu_mem", value=en.value), time=en.time, host=host)))
         actions <- Kvs.array.all[Timed[String]](fid(fid.ActionLive(host)))
-        _       <- actions.mapError(KvsErr).dropWhile(en => startl.exists(en.time < _)).foreach(en => send(StatMsg(stat=Action(en.value), time=en.time, host=host)))
+        _       <- actions.mapError(KvsErr).foreach(en => send(StatMsg(stat=Action(en.value), time=en.time, host=host)))
         cpuday  <- Kvs.array.all[AvgData](fid(fid.CpuDay(host)))
         _       <- cpuday.mapError(KvsErr).foreach(en => send(StatMsg(stat=Metric(name="cpu.day", value=en.value_str), time=en.id*i"3'600'000", host=host)))
         measure <- Kvs.all[QData](fid(fid.Measures(host)))
@@ -140,7 +140,8 @@ object StatsApp extends zio.App {
                   (host, ipaddr) = (msg.host, msg.ipaddr)
                   time <- currentTime(`in ms`)
                   _    <- Kvs.put(fid(fid.Nodes()), en_id(en_id.Host(host)), Node(ipaddr=ipaddr, time=time, host=host))
-                  _    <- q offer Broadcast(HostMsg(host=host, ipaddr=ipaddr, time=time))
+                  // _    <- q offer Broadcast(HostMsg(host=host, ipaddr=ipaddr, time=time))
+                  _ <- putStrLn(msg.toString)
                   _    <- msg match {
                     case x: client.MetricMsg if x.name == "cpu_mem" =>
                       for {
@@ -200,7 +201,7 @@ object StatsApp extends zio.App {
                 IO.succeed(req => httpHandler(req).provideLayer(ZLayer.succeed(kvs))),
                 IO.succeed(msg => wsHandler(q, clients)(msg).provideSomeLayer[WsContext](ZLayer.succeed(kvs)))
               )
-    } yield ()).provideLayer(Clock.live ++ stats(leveldbConf) ++ Kvs.live(conf) ++ Udp.live(client.conf.msgSize))
+    } yield ()).provideLayer(ZEnv.live ++ stats(leveldbConf) ++ Kvs.live(conf) ++ Udp.live(client.conf.msgSize))
   }
 
   def run(@unused args: List[String]): URIO[ZEnv, ExitCode] = {
