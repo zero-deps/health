@@ -66,7 +66,7 @@ object StatsApp extends zio.App {
         actions <- Kvs.array.all[Timed[String]](fid(fid.ActionLive(host)))
         _       <- actions.mapError(KvsErr).foreach(en => send(StatMsg(stat=Action(en.value), time=en.time, host=host)))
         cpuday  <- Kvs.array.all[AvgData](fid(fid.CpuDay(host)))
-        _       <- cpuday.mapError(KvsErr).foreach(en => send(StatMsg(stat=Metric(name="cpu.day", value=en.value_str), time=en.id*i"3'600'000", host=host)))
+        _       <- cpuday.mapError(KvsErr).foreach(en => send(StatMsg(stat=Metric(name="cpu.day", value=en.value.toInt.toString), time=en.id*i"3'600'000", host=host)))
         measure <- Kvs.all[QData](fid(fid.Measures(host)))
         _       <- measure.mapError(KvsErr).foreach{ case (k, en) =>
                     val name = en_id.measure(k).name
