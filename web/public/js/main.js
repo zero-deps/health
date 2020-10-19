@@ -5713,7 +5713,9 @@ var PS = {};
   var BarChart = $PS["BarChart"];
   var BigChart = $PS["BigChart"];
   var CpuChart = $PS["CpuChart"];
+  var Data_Array = $PS["Data.Array"];
   var Data_Eq = $PS["Data.Eq"];
+  var Data_Foldable = $PS["Data.Foldable"];
   var Data_Functor = $PS["Data.Functor"];
   var Data_Maybe = $PS["Data.Maybe"];
   var Data_Semigroup = $PS["Data.Semigroup"];
@@ -5777,10 +5779,12 @@ var PS = {};
           }) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memTotal))) ]), React_DOM["td'"]([ React_DOM.text("MB") ]) ]), React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("Version") ]), React_DOM.td([ DomOps.cn("text-center"), React_DOM_Props.style({
               fontFamily: "Fira Code"
           }), React_DOM_Props.colSpan(2) ])([ React_DOM.text(Data_Maybe.fromMaybe("--")(p.version)) ]) ]) ])(Data_Functor.map(Data_Functor.functorArray)(function (v) {
-              return React_DOM.tr([  ])([ React_DOM.td([  ])([ React_DOM.text(v.name) ]), React_DOM.td([ DomOps.cn("text-right"), React_DOM_Props.style({
-                  fontFamily: "Fira Code"
-              }) ])([ React_DOM.text(v.value) ]) ]);
-          })(p.metrics)));
+              return React_DOM.tr([  ])([ React_DOM.td([  ])([ React_DOM.text(v.name) ]), React_DOM.td([ DomOps.cn("text-center"), React_DOM_Props.colSpan(2) ])([ React_DOM.text(v.value) ]) ]);
+          })(Data_Array.filter(function (x) {
+              return Data_Maybe.isNothing(Data_Foldable.find(Data_Foldable.foldableArray)(function (v) {
+                  return v === x.name;
+              })([ "uptime", "thr", "fd", "fs./" ]));
+          })(p.metrics))));
       };
       var thrCard = function (x) {
           return card("Threads")([ React_DOM["th'"]([ React_DOM.text("") ]), React_DOM["th'"]([ React_DOM.text("Count") ]) ])([ React_DOM["tr'"]([ React_DOM["td'"]([ React_DOM.text("All") ]), React_DOM.td([ React_DOM_Props.style({
@@ -5814,8 +5818,8 @@ var PS = {};
               var p = React.getProps($$this)();
               var s = React.getState($$this)();
               return React_DOM["div'"]([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-12") ])([ React_DOM.div([ DomOps.cn("card card-chart") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-7 col-sm-6 text-left") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Performance") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.i([ DomOps.cn("tim-icons icon-spaceship text-primary") ])([  ]), React_DOM.text(" " + (Data_Maybe.fromMaybe("--")(p.cpuLast) + ("% / " + (Data_Maybe.fromMaybe("--")(Data_Functor.map(Data_Maybe.functorMaybe)(FormatOps.formatNum)(p.memLast)) + " MB")))) ]) ]), React_DOM.div([ DomOps.cn("col-5 col-sm-6") ])([ React_DOM.div([ DomOps.cn("btn-group btn-group-toggle float-right") ])([ React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                  var $16 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
-                  if ($16) {
+                  var $17 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
+                  if ($17) {
                       return " active";
                   };
                   return "";
@@ -5826,8 +5830,8 @@ var PS = {};
                       };
                   });
               }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Live") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("L") ]) ]), React_DOM.label([ DomOps.cn("btn btn-sm btn-primary btn-simple" + (function () {
-                  var $17 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
-                  if ($17) {
+                  var $18 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
+                  if ($18) {
                       return " active";
                   };
                   return "";
@@ -5838,8 +5842,8 @@ var PS = {};
                       };
                   });
               }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Day") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("D") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area" + (function () {
-                  var $18 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
-                  if ($18) {
+                  var $19 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
+                  if ($19) {
                       return "";
                   };
                   return " d-none";
@@ -5856,8 +5860,8 @@ var PS = {};
                       return v.label;
                   })(p.actPoints)
               }) ]), React_DOM.div([ DomOps.cn("chart-area" + (function () {
-                  var $19 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
-                  if ($19) {
+                  var $20 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Hour.value);
+                  if ($20) {
                       return "";
                   };
                   return " d-none";
