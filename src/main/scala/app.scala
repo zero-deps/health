@@ -94,7 +94,8 @@ object StatsApp extends zio.App {
         _     <- clients.update(_ + ctx)
         nodes <- Kvs.all[Node](fid(fid.Nodes()))
         _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, ipaddr=en.ipaddr, time=en.time)))
-        //todo: common errors
+        errsc <- Kvs.array.all[TimeErr](fid(fid.CommonErrors()))
+        _     <- errsc.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(exception=en.ex, stacktrace=en.st), time=en.time, host="N/A")))
       } yield ()
     case Close =>
       for {
@@ -181,7 +182,8 @@ object StatsApp extends zio.App {
                       for {
                         /* error for host */
                         _ <- Kvs.array.add(fid(fid.Errors(host)), size=10, TimedErr(ex=ex, st=st, time))
-                        //todo: common error
+                        /* common error */
+                        _ <- Kvs.array.add(fid(fid.CommonErrors()), size=20, TimedErr(ex=ex, st=st, time))
                       } yield ()
                     case x: client.ActionMsg =>
                       for {
