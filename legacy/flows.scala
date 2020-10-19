@@ -59,55 +59,55 @@
             }
           }
         }
-        kvs.all(fid(fid.SearchTs(host))).map_{ xs =>
-          val xs1 = xs.collect{ case Right((_, a)) => a }
-          val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
-          system.eventStream publish StatMsg(Measure(s"search.ts.thirdQ", thirdQ), time=0, host=host)
-          xs1.sortBy(_.time).takeRight(5).foreach(x =>
-            system.eventStream publish StatMsg(Measure("search.ts", x.value), time=x.time, host=host)
-          )
-        }
-        kvs.all(fid(fid.SearchWc(host))).map_{ xs =>
-          val xs1 = xs.collect{ case Right((_, a)) => a }
-          val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
-          system.eventStream publish StatMsg(Measure(s"search.wc.thirdQ", thirdQ), time=0, host=host)
-          xs1.sortBy(_.time).takeRight(5).foreach(x =>
-            system.eventStream publish StatMsg(Measure("search.wc", x.value), time=x.time, host=host)
-          )
-        }
-        kvs.all(fid(fid.SearchFs(host))).map_{ xs =>
-          val xs1 = xs.collect{ case Right((_, a)) => a }
-          val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
-          system.eventStream publish StatMsg(Measure(s"search.fs.thirdQ", thirdQ), time=0, host=host)
-          xs1.sortBy(_.time).takeRight(5).foreach(x =>
-            system.eventStream publish StatMsg(Measure("search.fs", x.value), time=x.time, host=host)
-          )
-        }
-        kvs.all(fid(fid.StaticGen(host))).map_{ xs =>
-          val xs1 = xs.collect{ case Right((_, a)) => a }
-          val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
-          system.eventStream publish StatMsg(Measure(s"static.gen.thirdQ", thirdQ), time=0, host=host)
-          xs1.sortBy(_.time).takeRight(5).foreach(x =>
-            system.eventStream publish StatMsg(Measure("static.gen", x.value), time=x.time, host=host)
-          )
-        }
-        kvs.all(fid(fid.ReindexAll(host))).map_{ xs =>
-          val xs1 = xs.collect{ case Right((_, a)) => a }
-          val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
-          system.eventStream publish StatMsg(Measure(s"reindex.all.thirdQ", thirdQ), time=0, host=host)
-          xs1.sortBy(_.time).takeRight(5).foreach(x =>
-            system.eventStream publish StatMsg(Measure("reindex.all", x.value), time=x.time, host=host)
-          )
-        }
+        // kvs.all(fid(fid.SearchTs(host))).map_{ xs =>
+        //   val xs1 = xs.collect{ case Right((_, a)) => a }
+        //   val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
+        //   system.eventStream publish StatMsg(Measure(s"search.ts.thirdQ", thirdQ), time=0, host=host)
+        //   xs1.sortBy(_.time).takeRight(5).foreach(x =>
+        //     system.eventStream publish StatMsg(Measure("search.ts", x.value), time=x.time, host=host)
+        //   )
+        // }
+        // kvs.all(fid(fid.SearchWc(host))).map_{ xs =>
+        //   val xs1 = xs.collect{ case Right((_, a)) => a }
+        //   val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
+        //   system.eventStream publish StatMsg(Measure(s"search.wc.thirdQ", thirdQ), time=0, host=host)
+        //   xs1.sortBy(_.time).takeRight(5).foreach(x =>
+        //     system.eventStream publish StatMsg(Measure("search.wc", x.value), time=x.time, host=host)
+        //   )
+        // }
+        // kvs.all(fid(fid.SearchFs(host))).map_{ xs =>
+        //   val xs1 = xs.collect{ case Right((_, a)) => a }
+        //   val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
+        //   system.eventStream publish StatMsg(Measure(s"search.fs.thirdQ", thirdQ), time=0, host=host)
+        //   xs1.sortBy(_.time).takeRight(5).foreach(x =>
+        //     system.eventStream publish StatMsg(Measure("search.fs", x.value), time=x.time, host=host)
+        //   )
+        // }
+        // kvs.all(fid(fid.StaticGen(host))).map_{ xs =>
+        //   val xs1 = xs.collect{ case Right((_, a)) => a }
+        //   val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
+        //   system.eventStream publish StatMsg(Measure(s"static.gen.thirdQ", thirdQ), time=0, host=host)
+        //   xs1.sortBy(_.time).takeRight(5).foreach(x =>
+        //     system.eventStream publish StatMsg(Measure("static.gen", x.value), time=x.time, host=host)
+        //   )
+        // }
+        // kvs.all(fid(fid.ReindexAll(host))).map_{ xs =>
+        //   val xs1 = xs.collect{ case Right((_, a)) => a }
+        //   val thirdQ = xs1.sortBy(_.value.toInt).apply((xs1.length*0.7).toInt).value
+        //   system.eventStream publish StatMsg(Measure(s"reindex.all.thirdQ", thirdQ), time=0, host=host)
+        //   xs1.sortBy(_.time).takeRight(5).foreach(x =>
+        //     system.eventStream publish StatMsg(Measure("reindex.all", x.value), time=x.time, host=host)
+        //   )
+        // }
         kvs.all(fid(fid.StaticGenYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
           case EnData(value, time, host) => system.eventStream publish StatMsg(Measure("static.gen.year", value), time=time, host=host)
         })
         kvs.all(fid(fid.KvsSizeYear(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time.toLocalDataTime().isBefore(year_ago())).foreach{
           case EnData(value, time, host) => system.eventStream publish StatMsg(Metric("kvs.size.year", value), time=time, host=host)
         })
-        kvs.all(fid(fid.ActionLive(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time < live_start).foreach{
-          case EnData(action, time, host) => system.eventStream publish StatMsg(Action(action), time=time, host=host)
-        })
+        // kvs.all(fid(fid.ActionLive(host))).map_(_.collect{ case Right((_, a)) => a }.sortBy(_.time).dropWhile(_.time < live_start).foreach{
+        //   case EnData(action, time, host) => system.eventStream publish StatMsg(Action(action), time=time, host=host)
+        // })
         // kvs.all(fid(fid.Metrics(host))).map_(_.collect{ case Right((k, a)) => en_id.metric(k) -> a }.foreach{
         //   case (key, EnData(value, time, host)) =>
         //     system.eventStream publish StatMsg(Metric(key.name, value), time=time, host=host)
@@ -123,10 +123,10 @@
     }
 
   def udp(system: ActorSystem, kvs: Kvs): RunnableGraph[NotUsed] = {
-    RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
-      import GraphDSL.Implicits._
-      val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
-      val logIn = Flow[Push].map{ msg => system.log.debug("UDP: {}", msg); msg }
+    // RunnableGraph.fromGraph(GraphDSL.create() { implicit b =>
+    //   import GraphDSL.Implicits._
+    //   val udppub = Source.fromGraph(new MsgSource(system.actorOf(UdpPub.props)))
+    //   val logIn = Flow[Push].map{ msg => system.log.debug("UDP: {}", msg); msg }
       // val save_host = Flow[Push].collect{
       //   case msg: HostMsg =>
       //     import msg.{host, ipaddr, time}
@@ -169,26 +169,26 @@
       //       case _ =>
       //     }
       // }
-      val save_measure = Flow[Push].collect{
-        case StatMsg(Measure(name, value), time, host) =>
-          val limit = name match {
-            case "reindex.all" => 100
-            case _ => 20
-          }
-          val i = kvs.el.get(el_id(el_id.MeasureLatestIdx(name=name, host=host))).toOption.flatten.map(el_v.int).getOrElse(0)
-          for {
-            _ <- kvs.put(fid(fid.MeasureLatest(name=name, host=host)), en_id.int(i), EnData(value=value, time=time, host=host))
-            i1 = (i + 1) % limit
-            _ <- kvs.el.put(el_id(el_id.MeasureLatestIdx(name=name, host=host)), el_v.int(i1))
-          } yield ()
-          /* calculate new quartile */
-          kvs.all(fid(fid.MeasureLatest(name=name, host=host))).map_{ xs =>
-            val xs1 = xs.collect{ case Right((_, a)) => a}.toVector.sortBy(_.value.toInt)
-            val thirdQ = xs1((xs1.length*0.7).toInt).value
-            val msg = StatMsg(Measure(s"${name}.thirdQ", thirdQ), time=0, host=host)
-            system.eventStream.publish(msg)
-          }
-      }
+      // val save_measure = Flow[Push].collect{
+      //   case StatMsg(Measure(name, value), time, host) =>
+      //     val limit = name match {
+      //       case "reindex.all" => 100
+      //       case _ => 20
+      //     }
+      //     val i = kvs.el.get(el_id(el_id.MeasureLatestIdx(name=name, host=host))).toOption.flatten.map(el_v.int).getOrElse(0)
+      //     for {
+      //       _ <- kvs.put(fid(fid.MeasureLatest(name=name, host=host)), en_id.int(i), EnData(value=value, time=time, host=host))
+      //       i1 = (i + 1) % limit
+      //       _ <- kvs.el.put(el_id(el_id.MeasureLatestIdx(name=name, host=host)), el_v.int(i1))
+      //     } yield ()
+      //     /* calculate new quartile */
+      //     kvs.all(fid(fid.MeasureLatest(name=name, host=host))).map_{ xs =>
+      //       val xs1 = xs.collect{ case Right((_, a)) => a}.toVector.sortBy(_.value.toInt)
+      //       val thirdQ = xs1((xs1.length*0.7).toInt).value
+      //       val msg = StatMsg(Measure(s"${name}.thirdQ", thirdQ), time=0, host=host)
+      //       system.eventStream.publish(msg)
+      //     }
+      // }
 
       def saveYearValue(name: String, value: Long, time: Long, host: String): (Long, Long) = {
         val date = time.toLocalDataTime()
@@ -311,6 +311,6 @@
       //                    b1 ~> save_feature      ~> Sink.ignore
 
       // ClosedShape
-    })
-  }
-}
+//     })
+//   }
+// }

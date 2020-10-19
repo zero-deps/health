@@ -17,7 +17,7 @@ object fid {
   @N(10) final case class ActionLive(@N(1) host: String) extends Fid
   @N(11) final case class Metrics(@N(1) host: String) extends Fid
   @N(12) final case class Nodes() extends Fid
-  @N(13) final case class MeasureLatest(@N(1) name: String, @N(2) host: String) extends Fid
+  @N(13) final case class Measures(@N(1) host: String) extends Fid
   @N(14) final case class MeasureYear(@N(1) name: String, @N(2) host: String) extends Fid
   @N(15) final case class Feature() extends Fid
   @N(16) final case class Errors(@N(1) host: String) extends Fid
@@ -35,40 +35,42 @@ object fid {
   implicit val actionlivec = caseCodecAuto[ActionLive]
   implicit val metricsc = caseCodecAuto[Metrics]
   implicit val nodesc = caseCodecAuto[Nodes]
-  implicit val measurelatestc = caseCodecAuto[MeasureLatest]
+  implicit val measuresc = caseCodecAuto[Measures]
   implicit val measureyearc = caseCodecAuto[MeasureYear]
   implicit val featurec = caseCodecAuto[Feature]
   implicit val errorsc = caseCodecAuto[Errors]
   implicit val commonerrorsc = caseCodecAuto[CommonErrors]
   implicit val commonerrorsstacksc = caseCodecAuto[CommonErrorsStacks]
   implicit val fidc = sealedTraitCodecAuto[Fid]
-
   def apply(x: Fid): FdKey = FdKey(encodeToBytes[Fid](x))
 }
 
 object en_id {
   final case class Str(@N(1) unwrap: String)
   final case class Metric(@N(1) name: String)
+  final case class Measure(@N(1) name: String)
   final case class IntV(@N(1) unwrap: Int)
   final case class Feature(@N(1) name: String, @N(2) host: String, @N(3) i: Int)
   implicit val strc = caseCodecAuto[Str]
   implicit val metricc = caseCodecAuto[Metric]
+  implicit val measurec = caseCodecAuto[Measure]
   implicit val intc = caseCodecAuto[IntV]
   implicit val featurec = caseCodecAuto[Feature]
   def str(x: String): ElKey = ElKey(encodeToBytes(Str(x)))
   def int(x: Int): ElKey = ElKey(encodeToBytes(IntV(x)))
 
   def apply(x: Feature): ElKey = ElKey(encodeToBytes(x))
-  def apply(x: Metric): ElKey = ElKey(encodeToBytes(x))
+  def apply(x: Metric ): ElKey = ElKey(encodeToBytes(x))
+  def apply(x: Measure): ElKey = ElKey(encodeToBytes(x))
 
   def feature(k: ElKey): Feature = decode[Feature](k.bytes)
-  def metric(k: ElKey): Metric = decode[Metric](k.bytes)
+  def metric (k: ElKey): Metric  = decode[Metric] (k.bytes)
+  def measure(k: ElKey): Measure = decode[Measure](k.bytes)
   def str(k: ElKey): String = decode[Str](k.bytes).unwrap
 }
 
 object el_id {
   sealed trait ElId
-  @N(1) final case class MeasureLatestIdx(@N(1) name: String, @N(2) host: String) extends ElId
   @N(2) final case class MeasureYearT(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
   @N(3) final case class MeasureYearN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
   @N(4) final case class MeasureYearV(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
@@ -76,7 +78,6 @@ object el_id {
   @N(6) final case class FeatureN(@N(1) name: String, @N(2) host: String, @N(3) i: Int) extends ElId
   @N(7) final case class ErrorsIdx(@N(1) host: String) extends ElId
   @N(8) final case class CommonErrorsIdx() extends ElId
-  implicit val measurelatestidxc = caseCodecAuto[MeasureLatestIdx]
   implicit val measureyeartc = caseCodecAuto[MeasureYearT]
   implicit val measureyearnc = caseCodecAuto[MeasureYearN]
   implicit val measureyearvc = caseCodecAuto[MeasureYearV]
