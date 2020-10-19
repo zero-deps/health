@@ -94,7 +94,7 @@ object StatsApp extends zio.App {
         _     <- clients.update(_ + ctx)
         nodes <- Kvs.all[Node](fid(fid.Nodes()))
         _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, ipaddr=en.ipaddr, time=en.time)))
-        errsc <- Kvs.array.all[TimeErr](fid(fid.CommonErrors()))
+        errsc <- Kvs.array.all[TimedErr](fid(fid.CommonErrors()))
         _     <- errsc.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(exception=en.ex, stacktrace=en.st), time=en.time, host="N/A")))
       } yield ()
     case Close =>
@@ -139,7 +139,7 @@ object StatsApp extends zio.App {
                   msg  <- IO.effect(decode[client.ClientMsg](data.toArray))
                   (host, ipaddr) = (msg.host, msg.ipaddr)
                   time <- currentTime(`in ms`)
-                  _    <- Kvs.put(fid(fid.Nodes()), en_id.str(host), Node(ipaddr=ipaddr, time=time, host=host))
+                  _    <- Kvs.put(fid(fid.Nodes()), en_id(en_id.Host(host)), Node(ipaddr=ipaddr, time=time, host=host))
                   _    <- q offer Broadcast(HostMsg(host=host, ipaddr=ipaddr, time=time))
                   _    <- msg match {
                     case x: client.MetricMsg if x.name == "cpu_mem" =>
