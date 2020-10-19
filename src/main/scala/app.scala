@@ -16,11 +16,17 @@ case class Broadcast(msg: Push) extends NewEvent
 case class KvsErr(e: kvs.Err) extends ForeignErr
 
 object StatsApp extends zio.App {
-  implicit object EnDataCodec extends DataCodec[EnData] {
+  implicit object NodeCodec extends DataCodec[Node] {
     import zd.proto._, api._, macrosapi._
-    implicit val c = caseCodecAuto[EnData]
-    def extract(xs: Bytes): EnData = decode[EnData](xs)
-    def insert(x: EnData): Bytes = encodeToBytes(x)
+    implicit val c = caseCodecAuto[Node]
+    def extract(xs: Bytes): Node = decode[Node](xs)
+    def insert(x: Node): Bytes = encodeToBytes(x)
+  }
+  implicit object TimedStringCodec extends DataCodec[Timed[String]] {
+    import zd.proto._, api._, macrosapi._
+    implicit val c = caseCodecAuto[Timed[String]]
+    def extract(xs: Bytes): Timed[String] = decode[Timed[String]](xs)
+    def insert(x: Timed[String]): Bytes = encodeToBytes(x)
   }
   implicit object AvgDataCodec extends DataCodec[AvgData] {
     import zd.proto._, api._, macrosapi._
@@ -46,11 +52,11 @@ object StatsApp extends zio.App {
     case ask: HealthAsk =>
       import ask.host
       for {
-        metrics <- Kvs.all[EnData](fid(fid.Metrics(host)))
+        metrics <- Kvs.all[Timed[String]](fid(fid.Metrics(host)))
         _       <- metrics.mapError(KvsErr).foreach{ case (k, en) => send(StatMsg(stat=Metric(name=en_id.metric(k).name, value=en.value), time=en.time, host=host))}
-        cpumeml <- Kvs.array.all[EnData](fid(fid.CpuMemLive(host)))
+        cpumeml <- Kvs.array.all[Timed[String]](fid(fid.CpuMemLive(host)))
         startl  <- cpumeml.mapError(KvsErr).map(en => {send(StatMsg(stat=Metric(name="cpu_mem", value=en.value), time=en.time, host=host)); en.time}).runHead
-        actions <- Kvs.array.all[EnData](fid(fid.ActionLive(host)))
+        actions <- Kvs.array.all[Timed[String]](fid(fid.ActionLive(host)))
         _       <- actions.mapError(KvsErr).dropWhile(en => startl.exists(en.time < _)).foreach(en => send(StatMsg(stat=Action(en.value), time=en.time, host=host)))
         measure <- Kvs.all[QData](fid(fid.Measures(host)))
         _       <- measure.mapError(KvsErr).foreach{ case (k, en) =>
@@ -75,8 +81,8 @@ object StatsApp extends zio.App {
       for {
         ctx   <- ZIO.access[WsContext](_.get)
         _     <- clients.update(_ + ctx)
-        nodes <- Kvs.all[EnData](fid(fid.Nodes()))
-        _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host.getOrElse(""), ipaddr=en.value, time=en.time)))
+        nodes <- Kvs.all[Node](fid(fid.Nodes()))
+        _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, ipaddr=en.ipaddr, time=en.time)))
       } yield ()
     case Close =>
       for {
@@ -120,13 +126,13 @@ object StatsApp extends zio.App {
                   msg  <- IO.effect(decode[client.ClientMsg](data.toArray))
                   (host, ipaddr) = (msg.host, msg.ipaddr)
                   time <- currentTime(`in ms`)
-                  _    <- Kvs.put(fid(fid.Nodes()), en_id.str(host), EnData(value=ipaddr, time=time, host=host))
+                  _    <- Kvs.put(fid(fid.Nodes()), en_id.str(host), Node(ipaddr=ipaddr, time=time, host=host))
                   _    <- q offer Broadcast(HostMsg(host=host, ipaddr=ipaddr, time=time))
                   _    <- msg match {
                     case x: client.MetricMsg if x.name == "cpu_mem" =>
                       for {
                         /* live (cpu+mem) */
-                        _ <- Kvs.array.add(fid(fid.CpuMemLive(host)), size=20, EnData(value=x.value, time=time))
+                        _ <- Kvs.array.add(fid(fid.CpuMemLive(host)), size=20, Timed(value=x.value, time=time))
                         /* day (cpu) */
                         cpu <- IO.fromOption(x.value.split('~').head.some.filter(_.nonEmpty).flatMap(_.toIntOption))
                         hours <- currentTime(`in hours`)
@@ -150,7 +156,7 @@ object StatsApp extends zio.App {
                     case x: client.MetricMsg if x.name == "feature"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MetricMsg =>
                       for {
-                        _ <- Kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(x.name)), EnData(value=x.value, time=time))
+                        _ <- Kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(x.name)), Timed(value=x.value, time=time))
                       } yield ()
                     case x: client.MeasureMsg =>
                       for {
@@ -163,7 +169,7 @@ object StatsApp extends zio.App {
                     case x: client.ErrorMsg   => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.ActionMsg  =>
                       for {
-                        _ <- Kvs.array.add(fid(fid.ActionLive(host)), size=20, EnData(value=x.action, time=time))
+                        _ <- Kvs.array.add(fid(fid.ActionLive(host)), size=20, Timed(value=x.action, time=time))
                       } yield ()
                   }
                 } yield ()).catchAll(ex => ZIO.unit.map(_ => println(ex))) //todo: Logging.live
