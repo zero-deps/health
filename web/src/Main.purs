@@ -237,7 +237,7 @@ reactClass = component "Main" \this -> do
             ) host s.nodes }
         Right { val: StatMsg { stat: Metric { name, value}, time, host }} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
-          let cpu_hour = if name == "cpu.hour" then Just value else Nothing
+          let cpu_hour = if name == "cpu.day" then Just value else Nothing
           let uptime = if name == "uptime" then Just value else Nothing
           let version = if name == "v" then Just value else Nothing
           let fs = map (split (Pattern "~")) $ if name == "fs./" then Just value else Nothing

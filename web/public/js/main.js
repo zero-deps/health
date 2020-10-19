@@ -6238,7 +6238,7 @@ var PS = {};
                           bigChartRange: Schema.Hour.value
                       };
                   });
-              }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Hour") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("H") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area" + (function () {
+              }) ])([ React_DOM.span([ DomOps.cn("d-none d-sm-block d-md-block d-lg-block d-xl-block") ])([ React_DOM.text("Day") ]), React_DOM.span([ DomOps.cn("d-block d-sm-none") ])([ React_DOM.text("D") ]) ]) ]) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("chart-area" + (function () {
                   var $14 = Data_Eq.eq(Schema.eqChartRange)(s.bigChartRange)(Schema.Live.value);
                   if ($14) {
                       return "";
@@ -7609,7 +7609,7 @@ var PS = {};
                       return Data_Maybe.Nothing.value;
                   })());
                   var cpu_hour = (function () {
-                      var $151 = v.value0.val.value0.stat.value0.name === "cpu.hour";
+                      var $151 = v.value0.val.value0.stat.value0.name === "cpu.day";
                       if ($151) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
