@@ -262,9 +262,6 @@ reactClass = component "Main" \this -> do
           let searchWc_thirdQ = if name == "search.wc.thirdQ" then Just value else Nothing
           let searchFs = if name == "search.fs" then Just value else Nothing
           let searchFs_thirdQ = if name == "search.fs.thirdQ" then Just value else Nothing
-          let staticGen = if name == "static.gen" then Just value else Nothing
-          let staticGen_thirdQ = if name == "static.gen.thirdQ" then Just value else Nothing
-          let staticGen_year = if name == "static.gen.year" then Just value else Nothing
           let reindexAll = if name == "reindex.all" then Just value else Nothing
           let reindexAll_thirdQ = if name == "reindex.all.thirdQ" then Just value else Nothing
           updateWith
@@ -275,7 +272,6 @@ reactClass = component "Main" \this -> do
               { searchTs, searchTs_thirdQ
               , searchWc, searchWc_thirdQ
               , searchFs, searchFs_thirdQ
-              , staticGen, staticGen_thirdQ, staticGen_year
               , reindexAll, reindexAll_thirdQ
               }
             , err: Nothing
@@ -372,9 +368,6 @@ reactClass = component "Main" \this -> do
         let searchWc_thirdQ = a.measure >>= _.searchWc_thirdQ
         let searchFs_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.searchFs
         let searchFs_thirdQ = a.measure >>= _.searchFs_thirdQ
-        let staticGen_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.staticGen
-        let staticGen_thirdQ = a.measure >>= _.staticGen_thirdQ
-        let staticGenYearPoint = map (\b -> { t: time', y: readInt 10 b }) $ a.measure >>= _.staticGen_year
         let reindexAll_points = fromMaybe [] $ map (\y -> [{t:dt,y:readInt 10 y}]) $ a.measure >>= _.reindexAll
         let reindexAll_thirdQ = a.measure >>= _.reindexAll_thirdQ
 
@@ -403,9 +396,6 @@ reactClass = component "Main" \this -> do
                 let searchTs_points'  = takeEnd 5 $ node.searchTs_points  <> searchTs_points
                 let searchWc_points'  = takeEnd 5 $ node.searchWc_points  <> searchWc_points
                 let searchFs_points'  = takeEnd 5 $ node.searchFs_points  <> searchFs_points
-                let staticGen_points' = takeEnd 5 $ node.staticGen_points <> staticGen_points
-
-                let staticGenYear_points' = maybe node.staticGenYear_points (\x -> snoc (filter (\y -> y.t /= x.t && y.t >= x.t - 365.0*24.0*3600.0*1000.0) node.staticGenYear_points) x) staticGenYearPoint
                 
                 let reindexAll_points' = takeEnd 5 $ node.reindexAll_points <> reindexAll_points
 
@@ -438,9 +428,6 @@ reactClass = component "Main" \this -> do
                     , searchFs_thirdQ = searchFs_thirdQ <|> node.searchFs_thirdQ
                     , reindexAll_points = reindexAll_points'
                     , reindexAll_thirdQ = reindexAll_thirdQ <|> node.reindexAll_thirdQ
-                    , staticGen_points = staticGen_points'
-                    , staticGenYear_points = staticGenYear_points'
-                    , staticGen_thirdQ = staticGen_thirdQ <|> node.staticGen_thirdQ
                     , metrics = metrics <> (filter (\x -> isNothing $ find (\x' -> x'.name == x.name) metrics) node.metrics)
                     , importLog = importLog'
                     }
@@ -470,9 +457,6 @@ reactClass = component "Main" \this -> do
                   , searchFs_thirdQ: searchFs_thirdQ
                   , reindexAll_points: reindexAll_points
                   , reindexAll_thirdQ: reindexAll_thirdQ
-                  , staticGen_points: staticGen_points
-                  , staticGenYear_points: maybe [] singleton staticGenYearPoint
-                  , staticGen_thirdQ: staticGen_thirdQ
                   , metrics
                   , importLog: importLog
                   }
@@ -505,9 +489,6 @@ reactClass = component "Main" \this -> do
                   , searchFs_thirdQ: searchFs_thirdQ
                   , reindexAll_points: reindexAll_points
                   , reindexAll_thirdQ: reindexAll_thirdQ
-                  , staticGen_points: staticGen_points
-                  , staticGenYear_points: maybe [] singleton staticGenYearPoint
-                  , staticGen_thirdQ: staticGen_thirdQ
                   , metrics
                   , importLog: importLog
                   }

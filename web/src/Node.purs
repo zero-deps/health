@@ -5,7 +5,6 @@ module Node
 import BarChart as BarChart
 import BigChart as BigChart
 import CpuChart as CpuChart
-import YearChart as YearChart
 import Data.Maybe (Maybe, fromMaybe)
 import DomOps (cn)
 import Effect (Effect)
@@ -82,19 +81,7 @@ reactClass = component "Node" \this -> do
         [ barChart "Search: Translations" p.searchTs_thirdQ   p.searchTs_points
         , barChart "Search: Contents"     p.searchWc_thirdQ   p.searchWc_points
         , barChart "Search: Files"        p.searchFs_thirdQ   p.searchFs_points
-        , barChart "Static: Generation"   p.staticGen_thirdQ  p.staticGen_points
         , barChart "Reindex"              p.reindexAll_thirdQ p.reindexAll_points
-        ]
-      , div [cn "row" ]
-        [ div [ cn "col-12" ]
-          [ div [ cn "card card-chart" ]
-            [ div [ cn "card-header" ] [ h5 [ cn "card-category" ] [ text "Static: Generation" ] ]
-            , div [ cn "card-body" ]
-              [ div [ cn "chart-area" ]
-                [ createLeafElement YearChart.reactClass { points: p.staticGenYear_points, label: "ms" } ]
-              ]
-            ]
-          ]
         ]
       , div [ cn "row" ]
         [ fromMaybe (div' []) (map fsCard p.fs)

@@ -43,9 +43,6 @@ type MeasureUpdate =
   , searchWc_thirdQ :: Maybe String
   , searchFs :: Maybe String
   , searchFs_thirdQ :: Maybe String
-  , staticGen :: Maybe String
-  , staticGen_thirdQ :: Maybe String
-  , staticGen_year :: Maybe String
   , reindexAll :: Maybe String
   , reindexAll_thirdQ :: Maybe String
   }
@@ -81,9 +78,6 @@ type NodeData =
   , searchFs_thirdQ :: Maybe String
   , reindexAll_points :: Array { t :: String, y :: Number }
   , reindexAll_thirdQ :: Maybe String
-  , staticGen_points :: Array { t :: String, y :: Number }
-  , staticGenYear_points :: Array NumPoint
-  , staticGen_thirdQ :: Maybe String
   , importLog :: Array { t :: String, msg :: String }
   , metrics :: Array { name :: String, value :: String }
   }
