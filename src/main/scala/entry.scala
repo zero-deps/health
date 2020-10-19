@@ -29,3 +29,9 @@ case class Timed[A]
   ) {
   val value_str = value.toString
 }
+
+case class TimedErr
+  ( @N(1) ex: String
+  , @N(2) st: String
+  , @N(3) time: Long
+  )
