@@ -163,7 +163,6 @@ object StatsApp extends zio.App {
                         )
                         _ <- Kvs.array.put(fid(fid.CpuDay(host)), idx=hour, AvgData(value=value, id=hours, n=n))
                       } yield ()
-                    case x: client.MetricMsg if x.name == "kvs.size" => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MetricMsg if x.name == "feature"  => ZIO.unit.map(_ => println(x)) //todo: Console.live
                     case x: client.MetricMsg =>
                       for {
