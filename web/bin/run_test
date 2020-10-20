@@ -1,0 +1,1 @@
+php -S ua--monitoring.ee..corp:8002 -t public/
