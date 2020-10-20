@@ -1,11 +1,4 @@
-module DomOps
-  ( byId
-  , host
-  , openUrl
-  , cn
-  , onClickEff
-  , onChangeValue
-  ) where
+module DomOps where
 
 import Data.Maybe (Maybe(Nothing, Just))
 import Data.String (null)
@@ -18,7 +11,7 @@ import Web.DOM.NonElementParentNode (NonElementParentNode, getElementById)
 import React.SyntheticEvent (preventDefault, stopPropagation)
 import Web.HTML (window)
 import Web.HTML.HTMLDocument (HTMLDocument, toNonElementParentNode)
-import Web.HTML.Location (host, setHref) as DOM
+import Web.HTML.Location (hostname, setHref) as DOM
 import Web.HTML.Window (document, location)
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -33,10 +26,10 @@ byId id = do
 doc :: Effect HTMLDocument
 doc = window >>= document
 
-host :: Effect (Maybe String)
-host = do
+hostname :: Effect (Maybe String)
+hostname = do
   l <- window >>= location
-  h <- DOM.host l
+  h <- DOM.hostname l
   pure $ if null h then Nothing else Just h
 
 openUrl :: String -> Effect Unit

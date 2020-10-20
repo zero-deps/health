@@ -31,7 +31,8 @@ case class Timed[A]
 }
 
 case class TimedErr
-  ( @N(1) ex: String
-  , @N(2) st: String
-  , @N(3) time: Long
+  ( @N(1) msg: Option[String]
+  , @N(2) cause: String
+  , @N(3) st: Seq[String]
+  , @N(4) time: Long
   )

@@ -6,10 +6,10 @@ import Prelude (class Eq)
 type NodeAddr = String
 
 type ErrorInfo =
-  { exception :: Array String
-  , stacktrace :: Array String
+  { msg :: Maybe String
+  , cause :: String
+  , st :: Array String
   , time :: Number
-  , host :: String
   , key :: String -- for React
   }
 

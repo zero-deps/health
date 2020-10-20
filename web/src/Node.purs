@@ -93,7 +93,7 @@ reactClass = component "Node" \this -> do
         , othCard p
         ]
       , div [ cn "row" ] [ importCard p ]
-      , createLeafElement Errors.reactClass { errors: p.errs, showAddr: false, showTitle: true }
+      , createLeafElement Errors.reactClass { errors: p.errs, showTitle: true }
       ]
   barChart :: String -> Maybe String -> Array {t::String,y::Number} -> ReactElement
   barChart title thirdQ values =
