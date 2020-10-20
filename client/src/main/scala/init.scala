@@ -47,14 +47,17 @@ class Stats(leveldbDir: String)(implicit system: ActorSystem) {
     cpu_mem().foreach(metric("cpu_mem", _))
   }
 
-  def error(exception: String, stacktrace: String): Unit = {
-    client ! ErrorStat(exception, stacktrace)
+  def error(msg: Option[String], cause: Throwable): Unit = {
+    client ! toErrorStat(msg, cause)
   }
 
   val gc = ManagementFactory.getGarbageCollectorMXBeans
   val thr = ManagementFactory.getThreadMXBean
 
   val scheduler = system.scheduler
+  // scheduler.schedule(1 second, 5 seconds) {
+  //   error(Some("hello"), new Exception("ex"))
+  // }
   object timeout {
     val thr = 5 minutes
     val cpu_mem = 1 minute

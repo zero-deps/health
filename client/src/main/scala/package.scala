@@ -36,6 +36,15 @@ package object client {
     }
   }
 
+  def toErrorStat(msg: Option[String], cause: Throwable): Client.ErrorStat = {
+    Client.ErrorStat(
+      msg = msg
+    , cause = cause.getMessage
+    , st = cause.getStackTrace.filter(_.getClassName.startsWith("cms")).take(2).map(_.toString).toList
+    // , st = cause.getStackTrace.take(2).map(_.toString).toList
+    )
+  }
+
   implicit val ClientMsgCodec: MessageCodec[ClientMsg] = {
     implicit val MetricMsgCodec: MessageCodec[MetricMsg] = caseCodecAuto[MetricMsg]
     implicit val MeasureMsgCodec: MessageCodec[MeasureMsg] = caseCodecAuto[MeasureMsg]

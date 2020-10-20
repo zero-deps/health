@@ -12,7 +12,6 @@ import Data.Map as Map
 import Data.Maybe (Maybe(Just, Nothing), fromMaybe, maybe, isNothing)
 import Data.String (Pattern(Pattern), split)
 import Data.Traversable (sequence)
-import Data.Nullable(Nullable, toMaybe)
 import DomOps (cn)
 import DomOps as DomOps
 import Effect (Effect)
@@ -32,8 +31,6 @@ import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
 import WsOps as WsOps
-
-foreign import devHost :: Effect (Nullable String)
 
 type State = 
   { menu :: Menu
@@ -72,9 +69,8 @@ view = do
 
 reactClass :: ReactClass Props
 reactClass = component "Main" \this -> do
-  devHost' <- devHost
-  locationHost <- DomOps.host
-  h <- pure $ fromMaybe (fromMaybe "" locationHost) $ toMaybe devHost'
+  locationHost <- DomOps.hostname
+  h <- pure $ (fromMaybe "" locationHost) <> ":8001"
   ws <- WsOps.create $ h<>"/ws"
   pure
     { state:
@@ -167,7 +163,7 @@ reactClass = component "Main" \this -> do
                 , openNode: \host -> modifyState this \s -> s{ node = Just host, nodes = update (Just <<< _{ historyLoaded = true }) host s.nodes }
                 }
       menuContent { menu: Errors, errors } =
-        pure $ createLeafElement ErrorsCom.reactClass { errors, showAddr: true, showTitle: false }
+        pure $ createLeafElement ErrorsCom.reactClass { errors, showTitle: false }
       menuContent { menu: Paper } =
         pure $
           div [ cn "row" ]
@@ -245,11 +241,9 @@ reactClass = component "Main" \this -> do
             , err: Nothing
             , action: Nothing
             }
-        Right { val: StatMsg { stat: Error { exception: exception', stacktrace: stacktrace'}, time, host }} -> do
-          let exception = split (Pattern "~") exception'
-          let stacktrace = split (Pattern "~") stacktrace'
-          let key = host <> (show time)
-          let err = { exception, stacktrace, time, host, key }
+        Right { val: StatMsg { stat: Error e, time, host }} -> do
+          let key = e.cause <> (show time)
+          let err = { msg: e.msg, cause: e.cause, st: e.st, time, key }
           updateWith
             { host: host
             , time: time

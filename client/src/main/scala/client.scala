@@ -15,7 +15,7 @@ object Client {
   sealed trait Stat
   final case class MetricStat(name: String, value: String) extends Stat
   final case class MeasureStat(name: String, value: Long) extends Stat
-  final case class ErrorStat(exception: String, stacktrace: String) extends Stat
+  final case class ErrorStat(msg: Option[String], cause: String, st: Seq[String]) extends Stat
   final case class ActionStat(action: String) extends Stat
 }
 
@@ -32,7 +32,7 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
     val encoded = encode[ClientMsg](msg)
     val len = encoded.length
     if (len > conf.msgSize)
-      log.error(s"message has length $len")
+      println(s"message has length $len")
     else
       udp ! Udp.Send(ByteString(encoded), remote)
   }
@@ -46,9 +46,10 @@ class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
       val ia = InetAddress.getLocalHost
       send(udp)(MeasureMsg(name, value.toString, ia.getHostName.some, ia.getHostAddress.some))
     
-    case ErrorStat(exception, stacktrace) =>
+    case x: ErrorStat =>
+      import x._
       val ia = InetAddress.getLocalHost
-      send(udp)(ErrorMsg(exception, stacktrace, ia.getHostName.some, ia.getHostAddress.some))
+      send(udp)(ErrorMsg(msg=msg, cause=cause, st=st, host=ia.getHostName, ipaddr=ia.getHostAddress))
     
     case ActionStat(action) =>
       val ia = InetAddress.getLocalHost

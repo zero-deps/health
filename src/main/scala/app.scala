@@ -3,7 +3,7 @@ package .stats
 import annotation.unused
 
 import zero.ext.{seq=>_,_}, option._, int._
-import zio._, nio._, core._, clock._, stream._, console._
+import zio._, nio._, core._, clock._, stream._//, console._
 import kvs.{Err=>_,Throwed=>_,_}, seq._
 import ftier._, ws._, udp._
 import com.typesafe.config.ConfigFactory
@@ -76,7 +76,7 @@ object StatsApp extends zio.App {
                     } yield ()
                   }
         errs    <- Kvs.array.all[TimedErr](fid(fid.Errors(host)))
-        _       <- errs.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(exception=en.ex, stacktrace=en.st), time=en.time, host=host)))
+        _       <- errs.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(msg=en.msg, cause=en.cause, st=en.st), time=en.time, host=host)))
       } yield ()
   }
 
@@ -95,7 +95,7 @@ object StatsApp extends zio.App {
         nodes <- Kvs.all[Node](fid(fid.Nodes()))
         _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, ipaddr=en.ipaddr, time=en.time)))
         errsc <- Kvs.array.all[TimedErr](fid(fid.CommonErrors()))
-        _     <- errsc.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(exception=en.ex, stacktrace=en.st), time=en.time, host="N/A")))
+        _     <- errsc.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(msg=en.msg, cause=en.cause, st=en.st), time=en.time, host="N/A")))
       } yield ()
     case Close =>
       for {
@@ -137,7 +137,7 @@ object StatsApp extends zio.App {
                 for {
                   data <- channel.read
                   msg  <- IO.effect(decode[client.ClientMsg](data.toArray)).mapError(Throwed)
-                  _    <- putStrLn(msg.toString)
+                  // _    <- putStrLn(msg.toString)
                   (host, ipaddr) = (msg.host, msg.ipaddr)
                   time <- currentTime(`in ms`)
                   _    <- Kvs.put(fid(fid.Nodes()), en_id(en_id.Host(host)), Node(ipaddr=ipaddr, time=time, host=host)).mapError(KvsErr)
@@ -175,16 +175,13 @@ object StatsApp extends zio.App {
                         v  <- parseInt(x.value)
                         qd <- Kvs.get[QData](fid(fid.Measures(host)), en_id(en_id.Measure(x.name))).mapError(KvsErr)
                         xs  = (Timed(v, time) +: qd.cata(_.xs, Vector.empty)).take(20)
-                        q   = xs(Math.ceil(xs.size*0.9).toInt).value
+                        q   = xs(Math.ceil(xs.size*0.9).toInt-1).value
                         _  <- Kvs.put(fid(fid.Measures(host)), en_id(en_id.Measure(x.name)), QData(xs, q)).mapError(KvsErr)
                       } yield ()
                     case x: client.ErrorMsg =>
-                      import x.{exception=>ex, stacktrace=>st}
                       for {
-                        /* error for host */
-                        _ <- Kvs.array.add(fid(fid.Errors(host)), size=10, TimedErr(ex=ex, st=st, time)).mapError(KvsErr)
-                        /* common error */
-                        _ <- Kvs.array.add(fid(fid.CommonErrors()), size=20, TimedErr(ex=ex, st=st, time)).mapError(KvsErr)
+                        _ <- Kvs.array.add(fid(fid.Errors(host)),   size=10, TimedErr(msg=x.msg, cause=x.cause, st=x.st, time)).mapError(KvsErr)
+                        _ <- Kvs.array.add(fid(fid.CommonErrors()), size=20, TimedErr(msg=x.msg, cause=x.cause, st=x.st, time)).mapError(KvsErr)
                       } yield ()
                     case x: client.ActionMsg =>
                       for {

@@ -2,36 +2,38 @@ package .stats.client
 
 import zd.proto.api.{N, RestrictedN}
 
+@RestrictedN(3)
 sealed trait ClientMsg {
-  val _host: Option[String]
+  val _host: Option[String] = Some(host)
   val host: String = _host.getOrElse("N/A").stripSuffix(".pt..corp").split("-depl-").head
-  val _ipaddr: Option[String]
+  val _ipaddr: Option[String] = Some(ipaddr)
   val ipaddr: String = _ipaddr.getOrElse("N/A")
 }
 
-@N(1) @RestrictedN(3) final case class MetricMsg
+@N(1) @RestrictedN(3) case class MetricMsg
   ( @N(1) name: String
   , @N(2) value: String
-  , @N(4) _host: Option[String]
-  , @N(5) _ipaddr: Option[String]
+  , @N(4) override val _host: Option[String]
+  , @N(5) override val _ipaddr: Option[String]
   ) extends ClientMsg
 
-@N(2) @RestrictedN(3) final case class MeasureMsg
+@N(2) @RestrictedN(3) case class MeasureMsg
   ( @N(1) name: String
   , @N(2) value: String
-  , @N(4) _host: Option[String]
-  , @N(5) _ipaddr: Option[String]
+  , @N(4) override val _host: Option[String]
+  , @N(5) override val _ipaddr: Option[String]
   ) extends ClientMsg
 
-@N(3) @RestrictedN(3, 4) final case class ErrorMsg
-  ( @N(1) exception: String
-  , @N(2) stacktrace: String
-  , @N(5) _host: Option[String]
-  , @N(6) _ipaddr: Option[String]
-  ) extends ClientMsg
-
-@N(4) @RestrictedN(2) final case class ActionMsg
+@N(4) @RestrictedN(2) case class ActionMsg
   ( @N(1) action: String
-  , @N(3) _host: Option[String]
-  , @N(4) _ipaddr: Option[String]
+  , @N(3) override val _host: Option[String]
+  , @N(4) override val _ipaddr: Option[String]
+  ) extends ClientMsg
+
+@N(5) case class ErrorMsg
+  ( @N(1) msg: Option[String]
+  , @N(2) cause: String
+  , @N(3) st: Seq[String]
+  , @N(4) override val host: String
+  , @N(5) override val ipaddr: String
   ) extends ClientMsg
