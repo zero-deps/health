@@ -1,11 +1,11 @@
-package .stats.client
+package metrics.client
 
 import zd.proto.api.{N, RestrictedN}
 
 @RestrictedN(3)
 sealed trait ClientMsg {
   val _host: Option[String] = Some(host)
-  val host: String = _host.getOrElse("N/A").stripSuffix(".pt..corp").split("-depl-").head
+  val host: String = _host.getOrElse("N/A")
   val _ipaddr: Option[String] = Some(ipaddr)
   val ipaddr: String = _ipaddr.getOrElse("N/A")
 }

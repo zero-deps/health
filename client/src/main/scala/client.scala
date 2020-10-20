@@ -1,4 +1,4 @@
-package .stats.client
+package metrics.client
 
 import akka.actor.{Actor, ActorRef, ActorLogging, Props}
 import akka.io.{IO, Udp}
@@ -21,7 +21,7 @@ object Client {
 
 class Client(remote: InetSocketAddress) extends Actor with ActorLogging {
   import context.system
-  import .stats.client.Client._
+  import Client._
   IO(Udp) ! Udp.SimpleSender
 
   def receive: Receive = {

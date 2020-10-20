@@ -1,4 +1,4 @@
-package .stats
+package metrics
 
 import zd.proto.api.N
 

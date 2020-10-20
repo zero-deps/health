@@ -1,4 +1,4 @@
-package .stats
+package metrics
 
 import zd.proto._, api._, macrosapi._
 import kvs._

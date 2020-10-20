@@ -1,4 +1,4 @@
-package .stats.client
+package metrics.client
 
 object id {
   val uptime = "uptime"

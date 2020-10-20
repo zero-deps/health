@@ -1,0 +1,214 @@
+\input{article}
+
+\begin{document}
+% HEVEA \begin{divstyle}{pure-g}
+% HEVEA \begin{divstyle}{pure-u-4-5 content}
+
+\title{Monitoring and Management}
+\authors
+\maketitle
+
+\begin{rawhtml}
+<a id="start"></a>
+\end{rawhtml}
+
+\section*{}
+\paragraph{}
+The important part of the highly available distributed system is to make sure that the system is actually available and still distributed.
+Monitoring of the system health, checking the cluster integrity, node status, data replication health, detecting the network and other issues
+along with with notification about problems and analysis of various metrics in production become more important when the system itself.
+
+\paragraph{}
+Events logging is not efficient way of doing a monitoring because its hard to keep the appropriate level and analyse the incidents.
+Besides that having the ONLY logging capabilities of different components is not enought, its also performance heavy because of many I/O operation.
+
+Having only the file logging of the events and metrics limit the system analisys capabilities.
+The failure can't be detected with just logging so every time every fail is reported by the client.
+The log files can only be parsed manually, have not flexible data store strategy. So either you overflow the disk or loose the data in time when rotate the files.
+
+\paragraph{}
+
+\section*{Monitoring solutions}
+
+\paragraph{}
+The monitoring and management solution should extend the current system health checking capabilities with the additional functionality.
+Information from different sources which can be treated as a metrics are send to the external monitoring application through the UDP channel.
+
+UDP does the bare necessities of the transport protocol and nothing more. Its fast and flexible to the destination IP address.
+
+\paragraph{}
+All monitoring data is sampled locally by the cluster management on each node. Sampling is optimized for minimal resource consumption.
+
+\section*{Metric sources}
+\paragraph{}
+The metrics sources can be separated into some categories.
+Figure shows the basic structure of the component been monitored and the monitoring application structure.
+\svg{img/metrics}{The system components as metrics sources for the monitoring application.}
+
+\subsection*{Log}
+\paragraph{}
+The logging should be limited to the level of information which can be used by product operation or developers only.
+Proposed log level is ERROR only. This will help to investigate the system crash and will not contains the gigabytes of useless info.
+
+\paragraph{}
+The level should be changed by the JMX at the runtime to prevent the system from restarting and unnecesarry maintanance shutdown.
+
+\paragraph{}
+This kind of logging level doesn't assume the immidiate reaction so different optimization techniques can be used, async appenders,
+buffering queues, inter-thread messaging techniques for further optimization.
+
+\paragraph{}
+So basically the only two log files will be maintained:
+\begin{itemize}
+\item error.log \\
+From the application side it should handle the errors it can emmit and have all the errors documented here.
+\item crash.log
+\end{itemize}
+
+\paragraph{}
+Its also possible to make the correlation between the logs and metrics events to automatically notify the logged information to the monitoring system.
+
+\subsection*{\footahref{http://doc.akka.io/docs/akka/2.3.14/common/cluster.html}{Akka Cluster Metrics}}
+\paragraph{}
+The Application Server is based on Akka framework. By its distributed nature with actor gossip protocol, fault tolerance strategy, techniques used for cluster creation and load-balancing purposes akka already collects different cluster metrics so we have a lot of information out of box.
+
+\paragraph{}
+With the Cluster Metrics Extension we have the various Metrics Collectors implemented, Metrics Events created from the OS and JVM level sources, akka nodes cluster health status.
+
+\paragraph{}
+All the OS and JVM relates metrics can be collected with native JMX collector or more advanced \footahref{https://support.hyperic.com}{Sigar} collector:
+
+\begin{itemize}
+\item OS - forks, process count, running processes, uptime
+\item System load average
+\item Disk - free space, used space, I/O performance, SMART data
+\item Memory - free memory, used memory, free swap space, used swap space, buffer memory, cache memory
+\item JVM heap memory
+\item CPU speed, idle time, user time, system time, wait time
+\item CPU utilization in percentage
+\item Combines  heap, cpu and load. Weights based on mean of remaining capacity of the combined selectors
+\item Nodes membership status
+\item Partitioning of actors to the nodes in the cluster
+\item Naming service that keeps tracks of the location of the actor partitions
+\item Handoff when an actor is moved from one node to another
+\item Hook up death watch and supervision with the failure detector
+\item Cluster aware routers
+\item Subscription to cluster domain events via event bus
+\item etc.
+\end{itemize}
+
+Akka also provide the cluster management mechanism via JMX, so its easy to take the manual control over the nodes to make the maintanance and updates.
+
+\paragraph{}
+Akka also provides a good testing infrastructure with multi-jvm testkits and support for major xUnit/BDD/specs2 test styles available
+(Flat Spec, Fun Spec, Word Spec, Free Spec, Props Spec, Feature Spec).
+
+%{KVS/RING Data Metrics}
+\input{kvs/ring_health}
+
+\subsection*{Web Server Metrics}
+\paragraph{}
+Application Server is powered by highly performed akka strem based Frontrier Web server.
+Its allow to manage HTTP connection and websocket connection in asyncronous manner and collect different kind of metrics with no impact on
+the overall system performance.
+
+\paragraph{}
+The server provide the number of metics which can be used to analyze the HTTP protocol utilzation, resource access logging, etc.
+
+\begin{itemize}
+\item Distributed Transaction Tracing - find slow HTTP calls
+\item Packets Received/sec- the rate at which packets are received on the network interfaces
+\item Packets Sent/sec - the rate at which packets are sent on the network interfaces
+\item Bytes received/sec - the rate at which data is received on the network interfaces
+\item Bytes sent/sec  - the rate at which data is sent on the network interfaces
+\item Packets Sent/Received Errors
+\item Collisions/sec
+\item Connections Established - the number of TCP connections for which the current state is either ESTABLISHED or CLOSE-WAIT.
+\item Connection Failures - the number of times TCP connections have gone from SYN-SENT or SYN-RCVD to CLOSED.
+\end{itemize}
+
+\subsection*{Application Server Status}
+\paragraph{}
+\begin{itemize}
+\item Availability of services.
+\item Job distribution.
+\item Current workload.
+\item Running jobs, queued jobs, failed jobs, completed jobs, estimated delay, average job duration, average expansion factor.
+\item Actor mailboxes
+\item User tracking information based on the services used.
+\end{itemize}
+
+\section*{Monitor application}
+
+\paragraph{}
+There are many monitoring and management solution novadays but there are couple of reasons to not use them for our purposes.
+
+\paragraph{}
+Most of the system which can be used are too generic and has 90\% of usseless functionality.
+\footahref{http://kamon.io}{Kamon} as example.
+
+\paragraph{}
+Almost all open source, self-hosted, and service-based solutions acually based on the same wel know opensource products.
+Among them \footahref{https://github.com/hyperic/sigar}{Sigar} and \footahref{http://metrics.dropwizard.io}{Metrics}.
+The akka uses the same applications.
+
+\paragraph{}
+Once you collect all of this data you have to make sense of it, this mens ad-hoc analysis (reporting, graphing, dashboarding),
+which all monitoring tools do to different extents.
+Very few tools actually provide insights (machine driven analytics) this is where monitoring tools of the future will go.
+
+\paragraph{}
+So the logical path of progressing in this project is not in the visualization plane.
+The main question to solve here may be for example:
+
+\begin{description}
+\item[How long to keep metrics data]
+You may not be interested in disk performance metrics older than 3 months, but you may be interested in cluster load values over the lifetime of the cluster.
+\item[How to consolidate metrics over time]
+Keep used space values of nodes in the category "large" over the lifetime of the system, but values of the last 10 days should not be
+consolidated, but values older than 10 days may be average per hour, and values older than 30 days may be average per day.
+\end{description}
+
+\paragraph{}
+For security reason we're not expose the data to the external providers.
+All the metrics data is stored on the monitor node with RING data storage for futher visualization, real-time graphs with zooming and panning.
+The most solution proposes simpy the gui interface, which we are not limited to use any of them.
+d3js,graphana any visualization solution can be used for this puprosed and included in the React Dashboard application.
+
+\paragraph{}
+Most of existing stats application and agents doesn't have a sence for us because the implementation is based on aspectj injections and manipulations with the interfaces,classes, methods on runtime.
+This can be point of academic interest for the language researchers, but has absolutelly no value for the completed and tested codebase.
+
+\paragraph{}
+Its rather unwanted behavior to have some library who can modify the code since we use more powerfull functional programming paradigms with functions and function compositions to achieve the desired results. The less magic and more math.
+
+\subsection*{Protocol}
+The monitoring system use the simple string based protocol but its costs nothing to extend the protocol to the level we need.
+\paragraph{}
+metric : system-name : node-name : param : timestamp : value
+\paragraph{}
+message : casino : user : msg : timestamp
+
+\paragraph{}
+With \footahref{http://metrics.dropwizard.io}{Metrics} library can add to the system more complex metrics like Gauges, Counters and Historgams.
+The logical path of progressing in this project is not in the visualization plane.
+
+\subsection*{Application Stack and Deployment scheme}
+\paragraph{}
+Monitoring application receives the metrics, stores and display them in the dashboard.
+With some basic analyse and triggers the monitor can notify the interested parties in the specific events
+(application crash, node down, specific user event occurs, etc).
+
+\paragraph{}
+The motitor application created with set of application (Frontier Web Server, KVS/RING data storage) used widely in products.
+
+\paragraph{}
+\svg{img/scheme}{Nodes cluster and Monitor application deployment.}
+
+\section*{Visualization and Reporting}
+\paragraph{}
+Visualization and performance reporting - topic to invest in the future.
+
+% HEVEA \end{divstyle}
+% HEVEA \end{divstyle}
+\end{document}

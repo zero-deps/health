@@ -1,4 +1,4 @@
-package .stats
+package metrics
 
 import com.sun.management.{OperatingSystemMXBean, UnixOperatingSystemMXBean}
 import java.lang.management.{ManagementFactory}
@@ -40,8 +40,7 @@ package object client {
     Client.ErrorStat(
       msg = msg
     , cause = cause.getMessage
-    , st = cause.getStackTrace.filter(_.getClassName.startsWith("cms")).take(2).map(_.toString).toList
-    // , st = cause.getStackTrace.take(2).map(_.toString).toList
+    , st = cause.getStackTrace.take(2).map(_.toString).toList
     )
   }
 

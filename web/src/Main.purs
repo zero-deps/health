@@ -25,8 +25,8 @@ import Nodes as NodesCom
 import Prelude (class Eq, class Show, Unit, bind, discard, map, max, not, pure, show, unit, void, ($), (&&), (*), (-), (/=), (<>), (==), (>), (>=), (>>=), (<<<))
 import Proto.Uint8Array (Uint8Array)
 import React (ReactClass, ReactThis, ReactElement, createLeafElement, modifyState, component, getState, getProps)
-import React.DOM (a, button, div, i, li, nav, p, p', span, text, ul, h5, h2, iframe)
-import React.DOM.Props (href, onClick, src, style)
+import React.DOM (a, button, div, i, li, nav, p, p', span, text, ul, h5, h2)
+import React.DOM.Props (href, onClick)
 import ReactDOM as ReactDOM
 import Schema (ErrorInfo, NodeAddr, NodeInfo, UpdateData)
 import Web.Socket.WebSocket (WebSocket)
@@ -173,8 +173,8 @@ reactClass = component "Main" \this -> do
                   [ h5 [ cn "card-category" ] [ text "Paper" ]
                   , h2 [ cn "card-title" ] [ text "Monitoring and Management" ]
                   ]
-                , div [ cn "card-body", style { height: "calc(100vh - 220px)" } ]
-                  [ iframe [ src "http://ua--doc.ee..corp/health.html#start" ] []
+                , div [ cn "card-body" ]
+                  [ a [ href "https://github.com/zero-deps/metrics/blob/main/docs/health.tex" ] [ text "docs/health.tex" ]
                   ]
                 ]
               ]

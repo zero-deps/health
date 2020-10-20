@@ -1,4 +1,4 @@
-package .stats.client
+package metrics.client
 
 import akka.actor._
 import akka.event.Logging

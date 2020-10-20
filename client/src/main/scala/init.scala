@@ -1,4 +1,4 @@
-package .stats.client
+package metrics.client
 
 import akka.actor._
 import java.lang.management.ManagementFactory
@@ -16,7 +16,7 @@ object Stats {
 class Stats(leveldbDir: String)(implicit system: ActorSystem) {
   import system.dispatcher
   import system.log
-  import .stats.client.Client._
+  import Client._
 
   private val cfg = system.settings.config
 

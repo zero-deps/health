@@ -1,0 +1,6 @@
+* brew cask install xquartz
+* https://inkscape.org/en/download/mac-os/
+* Open svg file
+* File -> Document Properties... -> Page -> Page Size -> Custom size -> Resize page to content... -> Resize page to drawing or selection
+* File -> Save As... -> *.pdf -> Check "PDF+LaTeX"
+* In <name>.pdf_tex change <name>.pdf to img/<name>.pdf

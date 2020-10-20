@@ -2579,7 +2579,6 @@ var PS = {};
   var Effect_Uncurried = $PS["Effect.Uncurried"];  
   var value = $foreign.unsafeMkProps("value");    
   var style = $foreign.unsafeUnfoldProps("style");
-  var src = $foreign.unsafeMkProps("src");      
   var placeholder = $foreign.unsafeMkProps("placeholder");
   var onClick = function (f) {
       return $foreign.unsafeMkProps("onClick")(Effect_Uncurried.mkEffectFn1(f));
@@ -2598,7 +2597,6 @@ var PS = {};
   exports["href"] = href;
   exports["key"] = key;
   exports["placeholder"] = placeholder;
-  exports["src"] = src;
   exports["_type"] = _type;
   exports["value"] = value;
   exports["onChange"] = onChange;
@@ -2667,8 +2665,7 @@ var PS = {};
   var label = mkDOM(false)("label");
   var input = function (props) {
       return mkDOM(false)("input")(props)([  ]);
-  };                        
-  var iframe = mkDOM(false)("iframe");
+  };                              
   var i = mkDOM(false)("i");
   var h5 = mkDOM(false)("h5");
   var h3 = mkDOM(false)("h3");
@@ -2688,7 +2685,6 @@ var PS = {};
   exports["h3"] = h3;
   exports["h5"] = h5;
   exports["i"] = i;
-  exports["iframe"] = iframe;
   exports["input"] = input;
   exports["label"] = label;
   exports["li"] = li;
@@ -6509,9 +6505,7 @@ var PS = {};
                   }));
               };
               if (v.menu instanceof Paper) {
-                  return Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Paper") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.text("Monitoring and Management") ]) ]), React_DOM.div([ DomOps.cn("card-body"), React_DOM_Props.style({
-                      height: "calc(100vh - 220px)"
-                  }) ])([ React_DOM.iframe([ React_DOM_Props.src("http://ua--doc.ee..corp/health.html#start") ])([  ]) ]) ]) ]) ]));
+                  return Control_Applicative.pure(Effect.applicativeEffect)(React_DOM.div([ DomOps.cn("row") ])([ React_DOM.div([ DomOps.cn("col-md-12") ])([ React_DOM.div([ DomOps.cn("card") ])([ React_DOM.div([ DomOps.cn("card-header") ])([ React_DOM.h5([ DomOps.cn("card-category") ])([ React_DOM.text("Paper") ]), React_DOM.h2([ DomOps.cn("card-title") ])([ React_DOM.text("Monitoring and Management") ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.a([ React_DOM_Props.href("https://github.com/zero-deps/metrics/blob/main/docs/health.tex") ])([ React_DOM.text("docs/health.tex") ]) ]) ]) ]) ]));
               };
               throw new Error("Failed pattern match at Main (line 153, column 7 - line 153, column 50): " + [ v.constructor.name ]);
           };
