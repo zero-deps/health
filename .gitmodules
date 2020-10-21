@@ -1,6 +1,6 @@
 [submodule "deps/kvs"]
 	path = deps/kvs
-	url = git@github.com:zero-deps/kvs.git
+	url = https://github.com/zero-deps/kvs.git
 [submodule "deps/frontier"]
 	path = deps/frontier
-	url = git@github.com:zero-deps/frontier.git
+	url = https://github.com/zero-deps/frontier.git
