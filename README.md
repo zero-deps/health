@@ -1,5 +1,18 @@
 # Stats
 
+Application receives metrics, stores and display them in the dashboard with visual charts and reports.
+
+Application is for:
+* Software Engineers
+* Bussiness Analysts
+* Product Owner
+
+Use cases:
+* health monitoring of nodes/clusters
+* logging of errors
+* usage of features
+* etc.
+
 ## Overview
 
 ### Motivation
