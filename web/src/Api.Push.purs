@@ -34,10 +34,9 @@ type Metric = { name :: String, value :: String }
 type Metric' = { name :: Maybe String, value :: Maybe String }
 type Measure = { name :: String, value :: String }
 type Measure' = { name :: Maybe String, value :: Maybe String }
-type Error = { msg :: Maybe String, cause :: String, st :: Array String }
-defaultError :: { msg :: Maybe String, st :: Array String }
-defaultError = { msg: Nothing, st: [] }
-type Error' = { msg :: Maybe String, cause :: Maybe String, st :: Array String }
+type Error = { msg :: Maybe String, cause :: Maybe String, st :: Array String }
+defaultError :: { msg :: Maybe String, cause :: Maybe String, st :: Array String }
+defaultError = { msg: Nothing, cause: Nothing, st: [] }
 type Action = { action :: String }
 type Action' = { action :: Maybe String }
 type HostMsg = { host :: String, ipaddr :: String, time :: Number }
@@ -126,12 +125,9 @@ decodeMeasure _xs_ pos0 = do
 decodeError :: Uint8Array -> Int -> Decode.Result Error
 decodeError _xs_ pos0 = do
   { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
-  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { msg: Nothing, cause: Nothing, st: [] } pos
-  case val of
-    { msg, cause: Just cause, st } -> pure { pos: pos1, val: { msg, cause, st } }
-    _ -> Left $ Decode.MissingFields "Error"
+  tailRecM3 decode (pos + msglen) { msg: Nothing, cause: Nothing, st: [] } pos
     where
-    decode :: Int -> Error' -> Int -> Decode.Result' (Step { a :: Int, b :: Error', c :: Int } { pos :: Int, val :: Error' })
+    decode :: Int -> Error -> Int -> Decode.Result' (Step { a :: Int, b :: Error, c :: Int } { pos :: Int, val :: Error })
     decode end acc pos1 | pos1 < end = do
       { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of

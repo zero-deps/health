@@ -1910,23 +1910,11 @@ var PS = {};
               };
           };
           return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.unsignedVarint32(_xs_)(pos0))(function (v) {
-              return Control_Bind.bind(Data_Either.bindEither)(Control_Monad_Rec_Class.tailRecM3(Control_Monad_Rec_Class.monadRecEither)(decode)(v.pos + v.val | 0)({
+              return Control_Monad_Rec_Class.tailRecM3(Control_Monad_Rec_Class.monadRecEither)(decode)(v.pos + v.val | 0)({
                   msg: Data_Maybe.Nothing.value,
                   cause: Data_Maybe.Nothing.value,
                   st: [  ]
-              })(v.pos))(function (v1) {
-                  if (v1.val.cause instanceof Data_Maybe.Just) {
-                      return Control_Applicative.pure(Data_Either.applicativeEither)({
-                          pos: v1.pos,
-                          val: {
-                              msg: v1.val.msg,
-                              cause: v1.val.cause.value0,
-                              st: v1.val.st
-                          }
-                      });
-                  };
-                  return Data_Either.Left.create(new Proto_Decode.MissingFields("Error"));
-              });
+              })(v.pos);
           });
       };
   };
@@ -1983,23 +1971,23 @@ var PS = {};
                           return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.unsignedVarint32(_xs_)(pos1))(function (v1) {
                               var v2 = v1.val >>> 3;
                               if (v2 === 1) {
-                                  return decodeFieldLoop(end)(decodeMetric(_xs_)(v1.pos))(function ($216) {
-                                      return Data_Maybe.Just.create(Metric.create($216));
+                                  return decodeFieldLoop(end)(decodeMetric(_xs_)(v1.pos))(function ($207) {
+                                      return Data_Maybe.Just.create(Metric.create($207));
                                   });
                               };
                               if (v2 === 2) {
-                                  return decodeFieldLoop(end)(decodeMeasure(_xs_)(v1.pos))(function ($217) {
-                                      return Data_Maybe.Just.create(Measure.create($217));
+                                  return decodeFieldLoop(end)(decodeMeasure(_xs_)(v1.pos))(function ($208) {
+                                      return Data_Maybe.Just.create(Measure.create($208));
                                   });
                               };
                               if (v2 === 3) {
-                                  return decodeFieldLoop(end)(decodeError(_xs_)(v1.pos))(function ($218) {
-                                      return Data_Maybe.Just.create($$Error.create($218));
+                                  return decodeFieldLoop(end)(decodeError(_xs_)(v1.pos))(function ($209) {
+                                      return Data_Maybe.Just.create($$Error.create($209));
                                   });
                               };
                               if (v2 === 4) {
-                                  return decodeFieldLoop(end)(decodeAction(_xs_)(v1.pos))(function ($219) {
-                                      return Data_Maybe.Just.create(Action.create($219));
+                                  return decodeFieldLoop(end)(decodeAction(_xs_)(v1.pos))(function ($210) {
+                                      return Data_Maybe.Just.create(Action.create($210));
                                   });
                               };
                               return decodeFieldLoop(end)(Proto_Decode.skipType(_xs_)(v1.pos)(v1.val & 7))(function (v3) {
@@ -2016,7 +2004,7 @@ var PS = {};
                       if (v instanceof Data_Maybe.Nothing) {
                           return Data_Either.Left.create(new Proto_Decode.MissingFields("Stat"));
                       };
-                      throw new Error("Failed pattern match at Api.Push (line 80, column 5 - line 80, column 132): " + [ end.constructor.name, v.constructor.name, pos1.constructor.name ]);
+                      throw new Error("Failed pattern match at Api.Push (line 79, column 5 - line 79, column 132): " + [ end.constructor.name, v.constructor.name, pos1.constructor.name ]);
                   };
               };
           };
@@ -5486,7 +5474,7 @@ var PS = {};
                   wordBreak: "break-all"
               }) ])([ React_DOM.text(Data_Maybe.fromMaybe("")(props.err.msg)) ]), React_DOM.div([ React_DOM_Props.style({
                   wordBreak: "break-all"
-              }) ])([ React_DOM.text(props.err.cause) ]) ]), React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.div([ React_DOM_Props.style({
+              }) ])([ React_DOM.text(Data_Maybe.fromMaybe("")(props.err.cause)) ]) ]), React_DOM.td([ DomOps.cn("align-top") ])([ React_DOM.div([ React_DOM_Props.style({
                   fontFamily: "Fira Code",
                   wordBreak: "break-all"
               }) ])(Data_Functor.map(Data_Functor.functorArray)(function (y) {
@@ -7173,7 +7161,7 @@ var PS = {};
                   });
               };
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push["Error"])) {
-                  var key = v.value0.val.value0.stat.value0.cause + Data_Show.show(Data_Show.showNumber)(v.value0.val.value0.time);
+                  var key = Data_Maybe.fromMaybe("")(v.value0.val.value0.stat.value0.msg) + (Data_Maybe.fromMaybe("")(v.value0.val.value0.stat.value0.cause) + Data_Show.show(Data_Show.showNumber)(v.value0.val.value0.time));
                   var err = {
                       msg: v.value0.val.value0.stat.value0.msg,
                       cause: v.value0.val.value0.stat.value0.cause,

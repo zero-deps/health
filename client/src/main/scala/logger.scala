@@ -1,5 +1,6 @@
 package metrics.client
 
+import zero.ext._, option._
 import akka.actor._
 import akka.event.Logging
 import akka.event.Logging.{Error, InitializeLogger}
@@ -16,6 +17,6 @@ class Logger extends Actor {
     case msg: InitializeLogger =>
       sender() ! Logging.loggerInitialized()
     case event @ Error(cause: Throwable, logSource: String, logClass: Class[_], message: Any) =>
-      remote ! toErrorStat(msg=Some(message.toString).filter(_.nonEmpty), cause)
+      remote ! toErrorStat(msg=fromNullable(message).map(_.toString).filter(_.nonEmpty), cause)
   }
 }

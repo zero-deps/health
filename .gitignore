@@ -7,3 +7,5 @@
 /web/node_modules/
 /web/output/
 target/
+*.swp
+/.bsp/

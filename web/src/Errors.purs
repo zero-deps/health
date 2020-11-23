@@ -77,7 +77,7 @@ errorReactClass = component "Error" \this -> do
       [ td [ cn "align-top" ] [ text dt ]
       , td [ cn "align-top", style { width: "40%" } ]
         [ div [ style { wordBreak: "break-all" } ] [ text $ fromMaybe "" props.err.msg ]
-        , div [ style { wordBreak: "break-all" } ] [ text props.err.cause ]
+        , div [ style { wordBreak: "break-all" } ] [ text $ fromMaybe "" props.err.cause ]
         ]
       , td [ cn "align-top" ]
         [ div [ style { fontFamily: "Fira Code", wordBreak: "break-all" } ] $ map (\y -> 

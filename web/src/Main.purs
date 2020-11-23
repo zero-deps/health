@@ -242,7 +242,7 @@ reactClass = component "Main" \this -> do
             , action: Nothing
             }
         Right { val: StatMsg { stat: Error e, time, host }} -> do
-          let key = e.cause <> (show time)
+          let key = (fromMaybe "" e.msg) <> (fromMaybe "" e.cause) <> (show time)
           let err = { msg: e.msg, cause: e.cause, st: e.st, time, key }
           updateWith
             { host: host

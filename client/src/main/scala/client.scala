@@ -15,7 +15,7 @@ object Client {
   sealed trait Stat
   final case class MetricStat(name: String, value: String) extends Stat
   final case class MeasureStat(name: String, value: Long) extends Stat
-  final case class ErrorStat(msg: Option[String], cause: String, st: Seq[String]) extends Stat
+  final case class ErrorStat(msg: Option[String], cause: Option[String], st: Seq[String]) extends Stat
   final case class ActionStat(action: String) extends Stat
 }
 

@@ -32,7 +32,7 @@ sealed trait ClientMsg {
 
 @N(5) case class ErrorMsg
   ( @N(1) msg: Option[String]
-  , @N(2) cause: String
+  , @N(2) cause: Option[String]
   , @N(3) st: Seq[String]
   , @N(4) override val host: String
   , @N(5) override val ipaddr: String

@@ -7,7 +7,7 @@ type NodeAddr = String
 
 type ErrorInfo =
   { msg :: Maybe String
-  , cause :: String
+  , cause :: Maybe String
   , st :: Array String
   , time :: Number
   , key :: String -- for React

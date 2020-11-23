@@ -39,7 +39,7 @@ package object client {
   def toErrorStat(msg: Option[String], cause: Throwable): Client.ErrorStat = {
     Client.ErrorStat(
       msg = msg
-    , cause = cause.getMessage
+    , cause = fromNullable(cause.getMessage)
     , st = cause.getStackTrace.take(2).map(_.toString).toList
     )
   }
