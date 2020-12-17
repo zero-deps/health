@@ -1,13 +1,14 @@
 package metrics
+package app
 
 import annotation.unused
 
 import zero.ext.{seq=>_,_}, option._, int._
-import zio._, nio._, core._, clock._, stream._//, console._
+import zio._, nio._, core._, clock._, stream._
 import kvs.{Err=>_,Throwed=>_,_}, seq._
 import ftier._, ws._, udp._
 import com.typesafe.config.ConfigFactory
-import zd.proto._, api._
+import zd.proto.api._
 import java.util.concurrent.TimeUnit.{MILLISECONDS => `in ms`, HOURS => `in hours`}
 
 sealed trait NewEvent
@@ -15,7 +16,7 @@ case class Broadcast(msg: Push) extends NewEvent
 
 case class KvsErr(e: kvs.Err) extends ForeignErr
 
-object StatsApp extends zio.App {
+object MetricsApp extends zio.App {
   implicit object NodeCodec extends DataCodec[Node] {
     import zd.proto._, api._, macrosapi._
     implicit val c = caseCodecAuto[Node]
@@ -51,7 +52,7 @@ object StatsApp extends zio.App {
 
   type Clients = Set[WsContextData]
   
-  val httpHandler: http.Request => ZIO[Kvs, Err, http.Response] = {
+  val httpHandler: PartialFunction[http.Request, ZIO[Kvs, Err, http.Response]] = {
     case UpgradeRequest(r) => upgrade(r)
   }
 
@@ -93,7 +94,7 @@ object StatsApp extends zio.App {
         ctx   <- ZIO.access[WsContext](_.get)
         _     <- clients.update(_ + ctx)
         nodes <- Kvs.all[Node](fid(fid.Nodes()))
-        _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, ipaddr=en.ipaddr, time=en.time)))
+        _     <- nodes.map(_._2).mapError(KvsErr).foreach(en => send(HostMsg(host=en.host, time=en.time)))
         errsc <- Kvs.array.all[TimedErr](fid(fid.CommonErrors()))
         _     <- errsc.mapError(KvsErr).foreach(en => send(StatMsg(stat=Error(msg=en.msg, cause=en.cause, st=en.st), time=en.time, host="N/A")))
       } yield ()
@@ -118,32 +119,50 @@ object StatsApp extends zio.App {
   }
 
   val conf = store.RngConf()
-  val leveldbConf = conf.conf.leveldbConf
+  val dbDir = conf.conf.leveldbConf.dir
+  val metricsServerConf = SocketAddress.inetSocketAddress("127.0.0.1", 50123)
+  val metricsClientConf = Metrics.Config("127.0.0.1", 50123, dbDir)
+  val udpSize = metricsClientConf.msgSize
+  val as = "metrics"
+  val cfg = s"""
+    akka {
+      actor {
+        loglevel = error
+        loggers = [akka.event.slf4j.Slf4jLogger]
+        logging-filter = akka.event.slf4j.Slf4jLoggingFilter
+        provider = cluster
+      }
+      remote {
+        artery {
+          enabled = true
+          transport = tcp
+          canonical {
+            hostname = 127.0.0.1
+            port = 4343
+          }
+        }
+      }
+      cluster {
+        seed-nodes = [ "akka://$as@127.0.0.1:4343" ]
+      }
+    }
+    """
 
-  type Stats = Has[client.Stats]
-  def stats(leveldbConf: store.Rng.LvlConf): URLayer[ActorSystem, Stats] = {
-    ZLayer.fromService(client.Stats(leveldbConf.dir))
-  }
-
-  val app: ZIO[ActorSystem, Any, Unit] = {
+  val app: ZIO[ZEnv, Any, Unit] = {
     (for {
       q    <- Queue.unbounded[NewEvent]
       clients <- Ref.make(Set.empty: Clients)
-      ucfg <- IO.effect(ConfigFactory.load).orDie
-      uhos <- IO.effect(ucfg.getString("stats.server.host")).orDie
-      upor <- IO.effect(ucfg.getInt   ("stats.server.port")).orDie
-      udpa <- SocketAddress.inetSocketAddress(uhos, upor)
+      udpa <- metricsServerConf
       _    <- udp.bind(udpa)(channel =>
                 for {
                   data <- channel.read
-                  msg  <- IO.effect(decode[client.ClientMsg](data.toArray)).mapError(Throwed)
-                  // _    <- putStrLn(msg.toString)
-                  (host, ipaddr) = (msg.host, msg.ipaddr)
+                  (host, bs) = data
+                  msg  <- IO.effect(decode[api.Msg](bs.toArray)).mapError(Throwed)
                   time <- currentTime(`in ms`)
-                  _    <- Kvs.put(fid(fid.Nodes()), en_id(en_id.Host(host)), Node(ipaddr=ipaddr, time=time, host=host)).mapError(KvsErr)
-                  // _    <- q offer Broadcast(HostMsg(host=host, ipaddr=ipaddr, time=time))
+                  _    <- Kvs.put(fid(fid.Nodes()), en_id(en_id.Host(host)), Node(time=time, host=host)).mapError(KvsErr)
+                  // _    <- q offer Broadcast(HostMsg(host=host, time=time))
                   _    <- msg match {
-                    case x: client.MetricMsg if x.name == "cpu_mem" =>
+                    case x: api.MetricMsg if x.name == "cpu_mem" =>
                       for {
                         /* live (cpu+mem) */
                         _ <- Kvs.array.add(fid(fid.CpuMemLive(host)), size=20, Timed(value=x.value, time=time)).mapError(KvsErr)
@@ -166,24 +185,23 @@ object StatsApp extends zio.App {
                         )
                         _ <- Kvs.array.put(fid(fid.CpuDay(host)), idx=hour, AvgData(value=value, id=hours, n=n)).mapError(KvsErr)
                       } yield ()
-                    case x: client.MetricMsg =>
+                    case x: api.MetricMsg =>
                       for {
                         _ <- Kvs.put(fid(fid.Metrics(host)), en_id(en_id.Metric(x.name)), Timed(value=x.value, time=time)).mapError(KvsErr)
                       } yield ()
-                    case x: client.MeasureMsg =>
+                    case x: api.MeasureMsg =>
                       for {
-                        v  <- parseInt(x.value)
                         qd <- Kvs.get[QData](fid(fid.Measures(host)), en_id(en_id.Measure(x.name))).mapError(KvsErr)
-                        xs  = (Timed(v, time) +: qd.cata(_.xs, Vector.empty)).take(20)
+                        xs  = (Timed(x.value, time) +: qd.cata(_.xs, Vector.empty)).take(20)
                         q   = xs(Math.ceil(xs.size*0.9).toInt-1).value
                         _  <- Kvs.put(fid(fid.Measures(host)), en_id(en_id.Measure(x.name)), QData(xs, q)).mapError(KvsErr)
                       } yield ()
-                    case x: client.ErrorMsg =>
+                    case x: api.ErrorMsg =>
                       for {
                         _ <- Kvs.array.add(fid(fid.Errors(host)),   size=10, TimedErr(msg=x.msg, cause=x.cause, st=x.st, time)).mapError(KvsErr)
                         _ <- Kvs.array.add(fid(fid.CommonErrors()), size=20, TimedErr(msg=x.msg, cause=x.cause, st=x.st, time)).mapError(KvsErr)
                       } yield ()
-                    case x: client.ActionMsg =>
+                    case x: api.ActionMsg =>
                       for {
                         _ <- Kvs.array.add(fid(fid.ActionLive(host)), size=20, Timed(value=x.action, time=time)).mapError(KvsErr)
                       } yield ()
@@ -198,10 +216,13 @@ object StatsApp extends zio.App {
                 IO.succeed(req => httpHandler(req).provideLayer(ZLayer.succeed(kvs))),
                 IO.succeed(msg => wsHandler(q, clients)(msg).provideSomeLayer[WsContext](ZLayer.succeed(kvs)))
               )
-    } yield ()).provideLayer(ZEnv.live ++ stats(leveldbConf) ++ Kvs.live(conf) ++ (ZEnv.live >>> Udp.live(client.conf.msgSize)))
+    } yield ()).provideCustomLayer(
+      ((Udp.live(udpSize) ++ ZEnv.live) >>> Metrics.live(metricsClientConf))
+      ++ (actorSystem(as, ConfigFactory.parseString(cfg)) >>> Kvs.live(conf))
+      ++ (ZEnv.live >>> Udp.live(udpSize))
+    )
   }
 
-  def run(@unused args: List[String]): URIO[ZEnv, ExitCode] = {
-    app.provideLayer(actorSystem("Stats")).exitCode
-  }
+  def run(@unused args: List[String]): URIO[ZEnv, ExitCode] =
+    app.exitCode
 }

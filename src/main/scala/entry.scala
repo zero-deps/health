@@ -1,11 +1,11 @@
 package metrics
+package app
 
 import zd.proto.api.N
 
 case class Node
-  ( @N(1) ipaddr: String
-  , @N(2) time: Long
-  , @N(3) host: String
+  ( @N(1) time: Long
+  , @N(2) host: String
   )
 
 case class AvgData

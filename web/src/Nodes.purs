@@ -10,7 +10,7 @@ import Data.String.Common (toLower)
 import DomOps (cn, onChangeValue)
 import Effect (Effect)
 import Ext.String (includes)
-import Prelude (Unit, discard, bind, map, not, pure, unit, ($), (<=), (>), (-), (<>), (||))
+import Prelude (Unit, discard, bind, map, not, pure, unit, ($), (<=), (>), (-), (<>))
 import Api.Pull(Pull(HealthAsk), encodePull)
 import React (ReactClass, ReactElement, ReactThis, component, getProps, getState, modifyState)
 import React.DOM (div, table, tbody', td, text, th', thead, tr, tr', input, button)
@@ -57,7 +57,6 @@ reactClass = component "Nodes" \this -> do
               , style { cursor: "pointer" }
               ]
           [ td [ style { fontFamily: "Fira Code" } ] [ text x.host ]
-          , td [ style { fontFamily: "Fira Code" } ] [ text x.ipaddr ]
           , td [ style { fontFamily: "Fira Code" } ] [ text lastUpdate ]
           ]
       ) $ activeNodes state.active $ filterNodes state.filter props.nodes
@@ -85,7 +84,6 @@ reactClass = component "Nodes" \this -> do
                   [ thead [ cn "text-primary" ]
                     [ tr'
                       [ th' [ text "Host Name" ]
-                      , th' [ text "IP Address" ]
                       , th' [ text "Last Update" ]
                       ]
                     ]
@@ -101,7 +99,7 @@ filterNodes :: String -> Array NodeInfo -> Array NodeInfo
 filterNodes v xs | String.length v <= 2 = xs
 filterNodes v' xs =
   let v = toLower v'
-  in filter (\x -> includes v (toLower x.host) || includes v (toLower x.ipaddr)) xs
+  in filter (\x -> includes v (toLower x.host)) xs
   
 activeNodes :: Boolean -> Array NodeInfo -> Array NodeInfo
 activeNodes false xs = xs

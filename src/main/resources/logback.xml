@@ -12,8 +12,8 @@
     </encoder>
     <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
       <fileNamePattern>logs/stats-${HOSTNAME}-%d{yyyy-MM-dd}-%i.log.gz</fileNamePattern>
-      <maxFileSize>3GB</maxFileSize>
-      <maxHistory>32</maxHistory>
+      <maxFileSize>100MB</maxFileSize>
+      <maxHistory>3</maxHistory>
       <cleanHistoryOnStart>true</cleanHistoryOnStart>
     </rollingPolicy>
   </appender>

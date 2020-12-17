@@ -1,4 +1,5 @@
 package metrics
+package app
 
 import zd.proto._, api._, macrosapi._
 import kvs._

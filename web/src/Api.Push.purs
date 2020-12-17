@@ -39,8 +39,8 @@ defaultError :: { msg :: Maybe String, cause :: Maybe String, st :: Array String
 defaultError = { msg: Nothing, cause: Nothing, st: [] }
 type Action = { action :: String }
 type Action' = { action :: Maybe String }
-type HostMsg = { host :: String, ipaddr :: String, time :: Number }
-type HostMsg' = { host :: Maybe String, ipaddr :: Maybe String, time :: Maybe Number }
+type HostMsg = { host :: String, time :: Number }
+type HostMsg' = { host :: Maybe String, time :: Maybe Number }
 
 decodePush :: Uint8Array -> Decode.Result Push
 decodePush _xs_ = do
@@ -156,9 +156,9 @@ decodeAction _xs_ pos0 = do
 decodeHostMsg :: Uint8Array -> Int -> Decode.Result HostMsg
 decodeHostMsg _xs_ pos0 = do
   { pos, val: msglen } <- Decode.unsignedVarint32 _xs_ pos0
-  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { host: Nothing, ipaddr: Nothing, time: Nothing } pos
+  { pos: pos1, val } <- tailRecM3 decode (pos + msglen) { host: Nothing, time: Nothing } pos
   case val of
-    { host: Just host, ipaddr: Just ipaddr, time: Just time } -> pure { pos: pos1, val: { host, ipaddr, time } }
+    { host: Just host, time: Just time } -> pure { pos: pos1, val: { host, time } }
     _ -> Left $ Decode.MissingFields "HostMsg"
     where
     decode :: Int -> HostMsg' -> Int -> Decode.Result' (Step { a :: Int, b :: HostMsg', c :: Int } { pos :: Int, val :: HostMsg' })
@@ -166,7 +166,6 @@ decodeHostMsg _xs_ pos0 = do
       { pos: pos2, val: tag } <- Decode.unsignedVarint32 _xs_ pos1
       case tag `zshr` 3 of
         1 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { host = Just val }
-        2 -> decodeFieldLoop end (Decode.string _xs_ pos2) \val -> acc { ipaddr = Just val }
-        3 -> decodeFieldLoop end (Decode.signedVarint64 _xs_ pos2) \val -> acc { time = Just val }
+        2 -> decodeFieldLoop end (Decode.signedVarint64 _xs_ pos2) \val -> acc { time = Just val }
         _ -> decodeFieldLoop end (Decode.skipType _xs_ pos2 $ tag .&. 7) \_ -> acc
     decode end acc pos1 = pure $ Done { pos: pos1, val: acc }

@@ -197,10 +197,10 @@ reactClass = component "Main" \this -> do
     onMsg :: ReactThis Props State -> Uint8Array -> Effect Unit
     onMsg this bytes = do
       case decodePush bytes of
-        Right { val: HostMsg { host, ipaddr, time }} -> do
+        Right { val: HostMsg { host, time }} -> do
           modifyState this \s -> s{ nodes = alter (case _ of
-              Nothing -> Just { host, ipaddr, lastUpdate_ms: time, historyLoaded: false, nodeData: Nothing }
-              Just { historyLoaded, nodeData } -> Just { host, ipaddr, lastUpdate_ms: time, historyLoaded, nodeData }
+              Nothing -> Just { host, lastUpdate_ms: time, historyLoaded: false, nodeData: Nothing }
+              Just { historyLoaded, nodeData } -> Just { host, lastUpdate_ms: time, historyLoaded, nodeData }
             ) host s.nodes }
         Right { val: StatMsg { stat: Metric { name, value}, time, host }} -> do
           let cpu_mem = map (split (Pattern "~")) $ if name == "cpu_mem" then Just value else Nothing
@@ -422,7 +422,6 @@ reactClass = component "Main" \this -> do
                 }
               Nothing -> Just $
                 { host: a.host
-                , ipaddr: ""
                 , historyLoaded: false
                 , lastUpdate_ms: time'
                 , nodeData: Just

@@ -47,7 +47,6 @@ type MeasureUpdate =
 
 type NodeInfo =
   { host :: String
-  , ipaddr :: String
   , lastUpdate_ms :: Number
   , historyLoaded :: Boolean
   , nodeData :: Maybe NodeData

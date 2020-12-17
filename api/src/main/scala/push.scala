@@ -17,7 +17,7 @@ object Push {
 
 sealed trait Push
 @N(1) case class StatMsg(@N(1) stat: Stat, @N(2) time: Long, @N(3) host: String) extends Push
-@N(2) case class HostMsg(@N(1) host: String, @N(2) ipaddr: String, @N(3) time: Long) extends Push
+@N(2) case class HostMsg(@N(1) host: String, @N(2) time: Long) extends Push
 
 sealed trait Stat
 @N(1) case class Metric(@N(1) name: String, @N(2) value: String) extends Stat

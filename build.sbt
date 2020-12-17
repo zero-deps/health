@@ -1,9 +1,4 @@
-val akka = "2.5.31"
-val ext = "2.2.0.7.g8f0877e"
-val proto = "1.8"
-val protopurs = "2.2"
-
-ThisBuild / scalaVersion := "2.13.3"
+ThisBuild / scalaVersion := "2.13.4"
 ThisBuild / version := zero.ext.git.version
 ThisBuild / cancelable in Global := true
 ThisBuild / scalacOptions in Compile ++= Vector(
@@ -13,7 +8,7 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 , "-feature"
 , "-language:_"
 , "-unchecked"
-, "-Xfatal-warnings"
+// , "-Xfatal-warnings"
 , "-Xlint:adapted-args"
 , "-Xlint:constant"
 , "-Xlint:delayedinit-select"
@@ -39,27 +34,29 @@ ThisBuild / scalacOptions in Compile ++= Vector(
 )
 
 ThisBuild / resolvers += Resolver.jcenterRepo
-ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "ext-plug" % ext)
+ThisBuild / libraryDependencies += compilerPlugin("io.github.zero-deps" %% "ext-plug" % "2.4.1.g7c28a4a")
 
 ThisBuild / turbo := true
 ThisBuild / useCoursier := true
 Global / onChangedBuildSource := ReloadOnSourceChanges
+
+ThisBuild / githubOwner := "zero-deps"
+ThisBuild / githubRepository := "ext"
 
 lazy val stats = project.in(file(".")).settings(
   fork := true
 ).dependsOn(client, frontier, kvs_seq, api)
 
 lazy val client = project.in(file("client")).settings(
-  libraryDependencies += "com.typesafe.akka" %% "akka-actor" % akka % Provided
-, libraryDependencies += "io.github.zero-deps" %% "ext" % ext % Provided
-, libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto % Provided
-, libraryDependencies += "io.github.zero-deps" %% "proto-macros" % proto % Provided
-)
+  libraryDependencies += "io.github.zero-deps" %% "ext" % "2.4.1.g7c28a4a" % Provided
+, libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % "1.8"  % Provided
+, libraryDependencies += "io.github.zero-deps" %% "proto-macros"  % "1.8"  % Provided
+).dependsOn(frontier)
 
 lazy val api = project.in(file("api")).settings(
-  libraryDependencies += "io.github.zero-deps" %% "proto-purs" % protopurs
-, libraryDependencies += "io.github.zero-deps" %% "proto-macros" % proto % Compile
-, libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % proto
+  libraryDependencies += "io.github.zero-deps" %% "proto-purs" % "2.2"
+, libraryDependencies += "io.github.zero-deps" %% "proto-macros"  % "1.8" % Compile
+, libraryDependencies += "io.github.zero-deps" %% "proto-runtime" % "1.8"
 )
 
 lazy val frontier = project.in(file("deps/frontier"))

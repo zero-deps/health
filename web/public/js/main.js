@@ -1696,26 +1696,15 @@ var PS = {};
                                   return decodeFieldLoop(end)(Proto_Decode.string(_xs_)(v.pos))(function (val) {
                                       return {
                                           host: new Data_Maybe.Just(val),
-                                          ipaddr: acc.ipaddr,
                                           time: acc.time
                                       };
                                   });
                               };
                               if (v1 === 2) {
-                                  return decodeFieldLoop(end)(Proto_Decode.string(_xs_)(v.pos))(function (val) {
-                                      return {
-                                          ipaddr: new Data_Maybe.Just(val),
-                                          host: acc.host,
-                                          time: acc.time
-                                      };
-                                  });
-                              };
-                              if (v1 === 3) {
                                   return decodeFieldLoop(end)(Proto_Decode.signedVarint64(_xs_)(v.pos))(function (val) {
                                       return {
                                           time: new Data_Maybe.Just(val),
-                                          host: acc.host,
-                                          ipaddr: acc.ipaddr
+                                          host: acc.host
                                       };
                                   });
                               };
@@ -1734,15 +1723,13 @@ var PS = {};
           return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.unsignedVarint32(_xs_)(pos0))(function (v) {
               return Control_Bind.bind(Data_Either.bindEither)(Control_Monad_Rec_Class.tailRecM3(Control_Monad_Rec_Class.monadRecEither)(decode)(v.pos + v.val | 0)({
                   host: Data_Maybe.Nothing.value,
-                  ipaddr: Data_Maybe.Nothing.value,
                   time: Data_Maybe.Nothing.value
               })(v.pos))(function (v1) {
-                  if (v1.val.host instanceof Data_Maybe.Just && (v1.val.ipaddr instanceof Data_Maybe.Just && v1.val.time instanceof Data_Maybe.Just)) {
+                  if (v1.val.host instanceof Data_Maybe.Just && v1.val.time instanceof Data_Maybe.Just) {
                       return Control_Applicative.pure(Data_Either.applicativeEither)({
                           pos: v1.pos,
                           val: {
                               host: v1.val.host.value0,
-                              ipaddr: v1.val.ipaddr.value0,
                               time: v1.val.time.value0
                           }
                       });
@@ -1971,23 +1958,23 @@ var PS = {};
                           return Control_Bind.bind(Data_Either.bindEither)(Proto_Decode.unsignedVarint32(_xs_)(pos1))(function (v1) {
                               var v2 = v1.val >>> 3;
                               if (v2 === 1) {
-                                  return decodeFieldLoop(end)(decodeMetric(_xs_)(v1.pos))(function ($207) {
-                                      return Data_Maybe.Just.create(Metric.create($207));
+                                  return decodeFieldLoop(end)(decodeMetric(_xs_)(v1.pos))(function ($204) {
+                                      return Data_Maybe.Just.create(Metric.create($204));
                                   });
                               };
                               if (v2 === 2) {
-                                  return decodeFieldLoop(end)(decodeMeasure(_xs_)(v1.pos))(function ($208) {
-                                      return Data_Maybe.Just.create(Measure.create($208));
+                                  return decodeFieldLoop(end)(decodeMeasure(_xs_)(v1.pos))(function ($205) {
+                                      return Data_Maybe.Just.create(Measure.create($205));
                                   });
                               };
                               if (v2 === 3) {
-                                  return decodeFieldLoop(end)(decodeError(_xs_)(v1.pos))(function ($209) {
-                                      return Data_Maybe.Just.create($$Error.create($209));
+                                  return decodeFieldLoop(end)(decodeError(_xs_)(v1.pos))(function ($206) {
+                                      return Data_Maybe.Just.create($$Error.create($206));
                                   });
                               };
                               if (v2 === 4) {
-                                  return decodeFieldLoop(end)(decodeAction(_xs_)(v1.pos))(function ($210) {
-                                      return Data_Maybe.Just.create(Action.create($210));
+                                  return decodeFieldLoop(end)(decodeAction(_xs_)(v1.pos))(function ($207) {
+                                      return Data_Maybe.Just.create(Action.create($207));
                                   });
                               };
                               return decodeFieldLoop(end)(Proto_Decode.skipType(_xs_)(v1.pos)(v1.val & 7))(function (v3) {
@@ -6196,7 +6183,7 @@ var PS = {};
           };
           var v1 = Data_String_Common.toLower(v);
           return Data_Array.filter(function (x) {
-              return Ext_String.includes(v1)(Data_String_Common.toLower(x.host)) || Ext_String.includes(v1)(Data_String_Common.toLower(x.ipaddr));
+              return Ext_String.includes(v1)(Data_String_Common.toLower(x.host));
           })(xs);
       };
   };
@@ -6213,7 +6200,7 @@ var PS = {};
                   return x.lastUpdate_ms > max_time - 3600000.0;
               })(xs);
           };
-          throw new Error("Failed pattern match at Nodes (line 106, column 1 - line 106, column 59): " + [ v.constructor.name, xs.constructor.name ]);
+          throw new Error("Failed pattern match at Nodes (line 104, column 1 - line 104, column 59): " + [ v.constructor.name, xs.constructor.name ]);
       };
   };
   var reactClass = (function () {
@@ -6242,8 +6229,6 @@ var PS = {};
                           fontFamily: "Fira Code"
                       }) ])([ React_DOM.text(x.host) ]), React_DOM.td([ React_DOM_Props.style({
                           fontFamily: "Fira Code"
-                      }) ])([ React_DOM.text(x.ipaddr) ]), React_DOM.td([ React_DOM_Props.style({
-                          fontFamily: "Fira Code"
                       }) ])([ React_DOM.text(lastUpdate) ]) ]);
                   };
               })(activeNodes(state.active)(filterNodes(state.filter)(props.nodes))))();
@@ -6266,7 +6251,7 @@ var PS = {};
                           active: v1.active
                       };
                   });
-              }) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Host Name") ]), React_DOM["th'"]([ React_DOM.text("IP Address") ]), React_DOM["th'"]([ React_DOM.text("Last Update") ]) ]) ]), React_DOM["tbody'"](rows) ]) ]) ]) ]) ]) ]);
+              }) ]) ]) ]), React_DOM.div([ DomOps.cn("card-body") ])([ React_DOM.div([ DomOps.cn("table-responsive") ])([ React_DOM.table([ DomOps.cn("table tablesorter") ])([ React_DOM.thead([ DomOps.cn("text-primary") ])([ React_DOM["tr'"]([ React_DOM["th'"]([ React_DOM.text("Host Name") ]), React_DOM["th'"]([ React_DOM.text("Last Update") ]) ]) ]), React_DOM["tbody'"](rows) ]) ]) ]) ]) ]) ]);
           };
       };
       return React.component()("Nodes")(function ($$this) {
@@ -6464,16 +6449,15 @@ var PS = {};
                           return React.modifyState($$this)(function (s) {
                               return {
                                   menu: s.menu,
-                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($183) {
+                                  nodes: Data_Map_Internal.update(Data_Ord.ordString)(function ($182) {
                                       return Data_Maybe.Just.create((function (v2) {
                                           return {
                                               historyLoaded: true,
                                               host: v2.host,
-                                              ipaddr: v2.ipaddr,
                                               lastUpdate_ms: v2.lastUpdate_ms,
                                               nodeData: v2.nodeData
                                           };
-                                      })($183));
+                                      })($182));
                                   })(host)(s.nodes),
                                   node: new Data_Maybe.Just(host),
                                   errors: s.errors,
@@ -6874,8 +6858,7 @@ var PS = {};
                                       importLog: importLog$prime
                                   }),
                                   historyLoaded: v.value0.historyLoaded,
-                                  host: v.value0.host,
-                                  ipaddr: v.value0.ipaddr
+                                  host: v.value0.host
                               });
                           };
                           if (v instanceof Data_Maybe.Just && v.value0.nodeData instanceof Data_Maybe.Nothing) {
@@ -6908,14 +6891,12 @@ var PS = {};
                                       importLog: importLog
                                   }),
                                   historyLoaded: v.value0.historyLoaded,
-                                  host: v.value0.host,
-                                  ipaddr: v.value0.ipaddr
+                                  host: v.value0.host
                               });
                           };
                           if (v instanceof Data_Maybe.Nothing) {
                               return Data_Maybe.Just.create({
                                   host: a.host,
-                                  ipaddr: "",
                                   historyLoaded: false,
                                   lastUpdate_ms: a.time,
                                   nodeData: new Data_Maybe.Just({
@@ -6946,7 +6927,7 @@ var PS = {};
                                   })
                               });
                           };
-                          throw new Error("Failed pattern match at Main (line 340, column 29 - line 454, column 18): " + [ v.constructor.name ]);
+                          throw new Error("Failed pattern match at Main (line 340, column 29 - line 453, column 18): " + [ v.constructor.name ]);
                       })(a.host)(s.nodes);
                       React.modifyState($$this)(function (v) {
                           return {
@@ -6977,7 +6958,7 @@ var PS = {};
                       if (a.err instanceof Data_Maybe.Nothing) {
                           return Data_Unit.unit;
                       };
-                      throw new Error("Failed pattern match at Main (line 457, column 9 - line 459, column 31): " + [ a.err.constructor.name ]);
+                      throw new Error("Failed pattern match at Main (line 456, column 9 - line 458, column 31): " + [ a.err.constructor.name ]);
                   };
               };
               var v = Api_Push.decodePush(bytes);
@@ -6989,7 +6970,6 @@ var PS = {};
                               if (v2 instanceof Data_Maybe.Nothing) {
                                   return new Data_Maybe.Just({
                                       host: v.value0.val.value0.host,
-                                      ipaddr: v.value0.val.value0.ipaddr,
                                       lastUpdate_ms: v.value0.val.value0.time,
                                       historyLoaded: false,
                                       nodeData: Data_Maybe.Nothing.value
@@ -6998,13 +6978,12 @@ var PS = {};
                               if (v2 instanceof Data_Maybe.Just) {
                                   return new Data_Maybe.Just({
                                       host: v.value0.val.value0.host,
-                                      ipaddr: v.value0.val.value0.ipaddr,
                                       lastUpdate_ms: v.value0.val.value0.time,
                                       historyLoaded: v2.value0.historyLoaded,
                                       nodeData: v2.value0.nodeData
                                   });
                               };
-                              throw new Error("Failed pattern match at Main (line 201, column 52 - line 203, column 118): " + [ v2.constructor.name ]);
+                              throw new Error("Failed pattern match at Main (line 201, column 52 - line 203, column 110): " + [ v2.constructor.name ]);
                           })(v.value0.val.value0.host)(s.nodes),
                           node: s.node,
                           errors: s.errors,
@@ -7017,50 +6996,50 @@ var PS = {};
               };
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Metric)) {
                   var cpu_mem = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $134 = v.value0.val.value0.stat.value0.name === "cpu_mem";
-                      if ($134) {
+                      var $133 = v.value0.val.value0.stat.value0.name === "cpu_mem";
+                      if ($133) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var cpu_hour = (function () {
-                      var $135 = v.value0.val.value0.stat.value0.name === "cpu.day";
-                      if ($135) {
+                      var $134 = v.value0.val.value0.stat.value0.name === "cpu.day";
+                      if ($134) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var uptime = (function () {
-                      var $136 = v.value0.val.value0.stat.value0.name === "uptime";
-                      if ($136) {
+                      var $135 = v.value0.val.value0.stat.value0.name === "uptime";
+                      if ($135) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var version = (function () {
-                      var $137 = v.value0.val.value0.stat.value0.name === "v";
-                      if ($137) {
+                      var $136 = v.value0.val.value0.stat.value0.name === "v";
+                      if ($136) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var fs = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $138 = v.value0.val.value0.stat.value0.name === "fs./";
-                      if ($138) {
+                      var $137 = v.value0.val.value0.stat.value0.name === "fs./";
+                      if ($137) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var fd = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $139 = v.value0.val.value0.stat.value0.name === "fd";
-                      if ($139) {
+                      var $138 = v.value0.val.value0.stat.value0.name === "fd";
+                      if ($138) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })());
                   var thr = Data_Functor.map(Data_Maybe.functorMaybe)(Data_String_Common.split("~"))((function () {
-                      var $140 = v.value0.val.value0.stat.value0.name === "thr";
-                      if ($140) {
+                      var $139 = v.value0.val.value0.stat.value0.name === "thr";
+                      if ($139) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
@@ -7087,57 +7066,57 @@ var PS = {};
               if (v instanceof Data_Either.Right && (v.value0.val instanceof Api_Push.StatMsg && v.value0.val.value0.stat instanceof Api_Push.Measure)) {
                   var value$prime = Global.readInt(10)(v.value0.val.value0.stat.value0.value);
                   var searchTs = (function () {
-                      var $150 = v.value0.val.value0.stat.value0.name === "search.ts";
-                      if ($150) {
+                      var $149 = v.value0.val.value0.stat.value0.name === "search.ts";
+                      if ($149) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchTs_thirdQ = (function () {
-                      var $151 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
-                      if ($151) {
+                      var $150 = v.value0.val.value0.stat.value0.name === "search.ts.thirdQ";
+                      if ($150) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc = (function () {
-                      var $152 = v.value0.val.value0.stat.value0.name === "search.wc";
-                      if ($152) {
+                      var $151 = v.value0.val.value0.stat.value0.name === "search.wc";
+                      if ($151) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchWc_thirdQ = (function () {
-                      var $153 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
-                      if ($153) {
+                      var $152 = v.value0.val.value0.stat.value0.name === "search.wc.thirdQ";
+                      if ($152) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchFs = (function () {
-                      var $154 = v.value0.val.value0.stat.value0.name === "search.fs";
-                      if ($154) {
+                      var $153 = v.value0.val.value0.stat.value0.name === "search.fs";
+                      if ($153) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var searchFs_thirdQ = (function () {
-                      var $155 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
-                      if ($155) {
+                      var $154 = v.value0.val.value0.stat.value0.name === "search.fs.thirdQ";
+                      if ($154) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var reindexAll = (function () {
-                      var $156 = v.value0.val.value0.stat.value0.name === "reindex.all";
-                      if ($156) {
+                      var $155 = v.value0.val.value0.stat.value0.name === "reindex.all";
+                      if ($155) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
                   })();
                   var reindexAll_thirdQ = (function () {
-                      var $157 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
-                      if ($157) {
+                      var $156 = v.value0.val.value0.stat.value0.name === "reindex.all.thirdQ";
+                      if ($156) {
                           return new Data_Maybe.Just(v.value0.val.value0.stat.value0.value);
                       };
                       return Data_Maybe.Nothing.value;
